@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [2.0.0-ALPHA] - tbd
+
+This release includes a major change to Freight's database structure and therefore requires some additional care when updating. Therefore please follow our special update instructions below.
+
+>**Hint**:<br>Should you run into any issues and need help please give us a shout on the AA Discord (#community-packages).
+
+### Update instructions
+
+Please follow these instructions for updating Freight 1.x. If you are already on 2.x and just installing a patch you can ignore these special instructions:
+
+1. Make sure you are on the latest stable version of Freight (1.7.1). If not please fully upgrade first: `pip install aa-freight==1.7.1` & migrate & restart
+1. Freight now requires [django-eveuniverse](https://gitlab.com/ErikKalkoken/django-eveuniverse). Please install it now in case it is not yet installed on your system.
+1. Make sure your current AA installation has no errors: `python manage.py check`
+1. Shut down your AA instance completely: `sudo supervisorctl stop myauth:`
+1. Backup your AA database: `sudo mysqldump alliance_auth -u root > alliance_auth_backup.sql`
+1. Install the 2.x update: `pip install -U freight`
+1. Load missing eveuniverse data specific to your installation with this command: `python manage.py freight_preload_eveuniverse`
+1. Clear your cache: `sudo redis-cli flushall;`
+1. Run migrate: `python manage.py migrate`
+1. Verify that the migration went through without any errors or warnings by checking the console output of the last command
+1. Copy static files: `python manage.py collectstatic --noinput`
+1. When you have no errors: Restart your AA instance: `sudo supervisorctl start myauth:`
+
+### Changed
+
+- Replaced proprietary EveEntity with eveuniverse pendant
+- Dropped support for Python 3.7
+- Added support for Python 3.10
+- Allow tasks to fail on exceptions instead of catching and tracking them
+- Will no longer send notifications to users after adding contract handler
+
 ## [1.7.1] - 2022-09-07
 
 ### Changed

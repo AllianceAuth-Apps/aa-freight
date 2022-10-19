@@ -1,8 +1,8 @@
 from typing import Tuple
 
-from allianceauth.eveonline.models import EveCharacter
+from eveuniverse.models import EveEntity
 
-from .models import EveEntity
+from allianceauth.eveonline.models import EveCharacter
 
 
 def update_or_create_eve_entity_from_evecharacter(

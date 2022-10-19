@@ -18,9 +18,11 @@ django.setup()
 """MAIN"""
 import random
 
+from eveuniverse.models import EveEntity
+
 from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 
-from freight.models import Contract, ContractHandler, EveEntity, Location, Pricing
+from freight.models import Contract, ContractHandler, Location, Pricing
 from freight.tests.testdata.factories_2 import ContractFactory
 
 GURISTAS_CORPORATION_ID = 1000127

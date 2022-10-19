@@ -37,7 +37,7 @@ class TestContractAdmin(TestCase):
         cls.handler = create_contract_handler(character=character_ownership)
         cls.contract = create_contract(handler=cls.handler)
 
-    @patch(MODULE_PATH + ".ContractAdmin.message_user", auto_spec=True)
+    @patch(MODULE_PATH + ".ContractAdmin.message_user", spec=True)
     @patch(MODULE_PATH + ".Contract.send_pilot_notification")
     def test_should_send_pilots_notification(
         self, mock_send_pilot_notification, mock_message_user
@@ -50,7 +50,7 @@ class TestContractAdmin(TestCase):
         self.assertEqual(mock_send_pilot_notification.call_count, 1)
         self.assertTrue(mock_message_user.called)
 
-    @patch(MODULE_PATH + ".ContractAdmin.message_user", auto_spec=True)
+    @patch(MODULE_PATH + ".ContractAdmin.message_user", spec=True)
     @patch(MODULE_PATH + ".Contract.send_customer_notification")
     def test_should_send_customer_notification(
         self, mock_send_customer_notification, mock_message_user

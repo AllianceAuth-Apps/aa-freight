@@ -1,4 +1,4 @@
 default_app_config = "freight.apps.FreightConfig"
 
-__version__ = "1.7.1"
+__version__ = "2.0.0a1"
 __title__ = "Freight"

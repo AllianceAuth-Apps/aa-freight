@@ -1,8 +1,5 @@
 from celery import chain, shared_task
 
-from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
-
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.logging import LoggerAddTag
 
@@ -12,29 +9,17 @@ from .models import Contract, ContractHandler, Location
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
 
-def _get_user(user_pk) -> User:
-    """returns the user or None. Logs if user is requested but can't be found."""
-    user = None
-    if user_pk:
-        try:
-            user = User.objects.get(pk=user_pk)
-        except User.DoesNotExist:
-            logger.warning("Ignoring non-existing user with pk %s", user_pk)
-    return user
-
-
 def _get_contract_handler() -> ContractHandler:
     handler = ContractHandler.objects.first()
     if not handler:
-        logger.warning("No contract handler was found")
-        raise ObjectDoesNotExist()
+        raise ContractHandler.DoesNotExist("No contract handler was found")
     return handler
 
 
 @shared_task
-def update_contracts_esi(force_sync=False, user_pk=None) -> None:
+def update_contracts_esi(force_sync=False) -> None:
     """start syncing contracts"""
-    _get_contract_handler().update_contracts_esi(force_sync, user=_get_user(user_pk))
+    _get_contract_handler().update_contracts_esi(force_sync)
 
 
 @shared_task
@@ -44,10 +29,10 @@ def send_contract_notifications(force_sent=False, rate_limited=True) -> None:
 
 
 @shared_task
-def run_contracts_sync(force_sync=False, user_pk=None) -> None:
+def run_contracts_sync(force_sync=False) -> None:
     """main task coordinating contract sync"""
     my_chain = chain(
-        update_contracts_esi.si(force_sync, user_pk), send_contract_notifications.si()
+        update_contracts_esi.si(force_sync), send_contract_notifications.si()
     )
     my_chain.delay()
 
@@ -64,7 +49,7 @@ def update_contracts_pricing() -> int:
 def update_location(location_id: int) -> None:
     """Updates the location from ESI"""
     Location.objects.get(id=location_id)
-    token = _get_contract_handler().token()
+    token = _get_contract_handler().valid_token()
     Location.objects.update_or_create_esi(location_id=location_id, token=token)
 
 
