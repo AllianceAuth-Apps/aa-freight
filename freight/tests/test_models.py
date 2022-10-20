@@ -574,20 +574,20 @@ class TestContract(NoSocketsTestCase):
         self.assertListEqual(self.contract.get_issue_list(), ["one", "two"])
 
     def test_generate_embed_w_pricing(self):
-        x = self.contract._generate_embed()
-        self.assertIsInstance(x, Embed)
-        self.assertEqual(x.color, Contract.EMBED_COLOR_PASSED)
+        obj = self.contract._generate_embed()
+        self.assertIsInstance(obj, Embed)
+        self.assertEqual(obj.color, Contract.EMBED_COLOR_PASSED)
 
     def test_generate_embed_w_pricing_issues(self):
         self.contract.issues = ["we have issues"]
-        x = self.contract._generate_embed()
-        self.assertIsInstance(x, Embed)
-        self.assertEqual(x.color, Contract.EMBED_COLOR_FAILED)
+        obj = self.contract._generate_embed()
+        self.assertIsInstance(obj, Embed)
+        self.assertEqual(obj.color, Contract.EMBED_COLOR_FAILED)
 
     def test_generate_embed_wo_pricing(self):
         self.contract.pricing = None
-        x = self.contract._generate_embed()
-        self.assertIsInstance(x, Embed)
+        obj = self.contract._generate_embed()
+        self.assertIsInstance(obj, Embed)
 
 
 @patch(MODULE_PATH + ".dhooks_lite.Webhook.execute", spec=True)

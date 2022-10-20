@@ -608,10 +608,10 @@ if "discord" in app_labels():
         def test_dont_send_pilot_notifications_for_expired_contracts(
             self, mock_webhook_execute
         ):
-            x = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
-            Contract.objects.all().exclude(pk=x.pk).delete()
-            x.date_expired = now() - timedelta(hours=1)
-            x.save()
+            obj = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
+            Contract.objects.all().exclude(pk=obj.pk).delete()
+            obj.date_expired = now() - timedelta(hours=1)
+            obj.save()
             Contract.objects.send_notifications(rate_limited=False)
             self.assertEqual(mock_webhook_execute.call_count, 0)
 
@@ -621,8 +621,8 @@ if "discord" in app_labels():
         @patch(MODELS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
         @patch(MODELS_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
         def test_send_pilot_notifications_only_once(self, mock_webhook_execute):
-            x = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
-            Contract.objects.all().exclude(pk=x.pk).delete()
+            obj = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
+            Contract.objects.all().exclude(pk=obj.pk).delete()
 
             # round #1
             Contract.objects.send_notifications(rate_limited=False)
@@ -661,10 +661,10 @@ if "discord" in app_labels():
         def test_dont_send_customer_notifications_for_expired_contracts(
             self, mock_webhook_execute
         ):
-            x = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
-            Contract.objects.all().exclude(pk=x.pk).delete()
-            x.date_expired = now() - timedelta(hours=1)
-            x.save()
+            obj = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
+            Contract.objects.all().exclude(pk=obj.pk).delete()
+            obj.date_expired = now() - timedelta(hours=1)
+            obj.save()
             Contract.objects.send_notifications(rate_limited=False)
             self.assertEqual(mock_webhook_execute.call_count, 0)
 
@@ -676,8 +676,8 @@ if "discord" in app_labels():
         def test_send_customer_notifications_only_once_per_state(
             self, mock_webhook_execute
         ):
-            x = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
-            Contract.objects.all().exclude(pk=x.pk).delete()
+            obj = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
+            Contract.objects.all().exclude(pk=obj.pk).delete()
 
             # round #1
             Contract.objects.send_notifications(rate_limited=False)
