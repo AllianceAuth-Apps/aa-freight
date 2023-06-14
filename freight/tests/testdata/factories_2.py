@@ -4,10 +4,23 @@ import factory
 import factory.fuzzy
 
 from django.utils import timezone
+from eveuniverse.tests.testdata.factories import create_eve_entity
 
 from allianceauth.eveonline.models import EveCorporationInfo
+from app_utils.testdata_factories import UserMainFactory
 
-from freight.models import Contract
+from freight.models import Contract, ContractHandler
+
+
+class DefaultUserMainFactory(UserMainFactory):
+    ...
+
+
+class ContractHandlerFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = ContractHandler
+
+    organization = factory.LazyAttribute(lambda o: create_eve_entity())
 
 
 class ContractFactory(factory.django.DjangoModelFactory):
