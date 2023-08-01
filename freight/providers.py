@@ -1,3 +1,5 @@
+"""ESI client provider for Freight."""
+
 from pathlib import Path
 
 from esi.clients import EsiClientProvider

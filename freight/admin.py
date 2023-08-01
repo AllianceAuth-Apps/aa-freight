@@ -1,3 +1,7 @@
+"""Admin site for Freight."""
+
+# pylint: disable=missing-class-docstring, missing-function-docstring
+
 from django.conf import settings
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _

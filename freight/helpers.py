@@ -1,3 +1,5 @@
+"""Helpers for Freight."""
+
 from typing import Tuple
 
 from allianceauth.eveonline.models import EveCharacter

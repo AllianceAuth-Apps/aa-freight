@@ -1,3 +1,5 @@
+"""Template tags for Freight."""
+
 from django import template
 
 register = template.Library()

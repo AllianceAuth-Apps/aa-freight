@@ -1,3 +1,5 @@
+"""Forms for Freight."""
+
 import math
 
 from django import forms

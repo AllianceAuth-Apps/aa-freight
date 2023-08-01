@@ -1,3 +1,5 @@
+"""Models for Freight."""
+
 import hashlib
 import json
 from datetime import timedelta
@@ -142,18 +144,22 @@ class Location(models.Model):
 
     @property
     def category(self):
+        """Return category ID for this location."""
         return self.category_id
 
     @property
     def solar_system_name(self):
+        """Return solar system name for this location.."""
         return self.name.split(" ", 1)[0]
 
     @property
     def location_name(self):
+        """Return name of this location."""
         return self.name.rsplit("-", 1)[1].strip()
 
     @classmethod
     def get_esi_scopes(cls):
+        """Return ESI scopes required to fetch this data."""
         return ["esi-universe.read_structures.v1"]
 
 
@@ -330,14 +336,17 @@ class Pricing(models.Model):
 
     @property
     def name(self) -> str:
+        """Return default pricing name."""
         return self._name(FREIGHT_FULL_ROUTE_NAMES)
 
     @property
     def name_full(self) -> str:
+        """Return full pricing name."""
         return self._name(full_name=True)
 
     @property
     def name_short(self) -> str:
+        """Return short pricing name."""
         return self._name(full_name=False)
 
     def _name(self, full_name: bool) -> str:
@@ -545,7 +554,7 @@ class EveEntity(models.Model):
             return EveCharacter.generic_portrait_url(self.id, size=size)
 
         raise NotImplementedError(
-            "Avatar URL not implemented for category %s" % self.category
+            f"Avatar URL not implemented for category {self.category}"
         )
 
 
@@ -900,6 +909,8 @@ class Contract(models.Model):
     """An Eve Online courier contract with additional meta data"""
 
     class Status(models.TextChoices):
+        """A contract status."""
+
         OUTSTANDING = "outstanding", "outstanding"
         IN_PROGRESS = "in_progress", "in progress"
         FINISHED_ISSUER = "finished_issuer", "finished issuer"
@@ -1098,8 +1109,7 @@ class Contract(models.Model):
         """returns current pricing issues as list of strings"""
         if self.issues:
             return json.loads(self.issues)
-        else:
-            return []
+        return []
 
     def _generate_embed_description(self) -> object:
         """generates a Discord embed for this contract"""

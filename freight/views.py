@@ -1,3 +1,5 @@
+"""Views for freight."""
+
 import datetime
 
 from django.conf import settings
@@ -197,7 +199,7 @@ def calculator(request, pricing_pk=None):
         collateral = None
     else:
         form = CalculatorForm(request.POST)
-        request.POST._mutable = True
+        request.POST._mutable = True  # pylint: disable=protected-access
         pricing_pk = form.data.get("pricing")
         pricing = Pricing.objects.get_or_default(pricing_pk)
         volume, collateral, price = form.get_calculated_data(pricing)

@@ -1,3 +1,5 @@
+"""Managers for Freight."""
+
 # pylint: disable = missing-class-docstring, import-outside-toplevel
 
 import json
@@ -237,11 +239,13 @@ class ContractQuerySet(models.QuerySet):
                     self.model.Status.IN_PROGRESS,
                 ]
             ).exclude(date_expired__lt=now())
-        elif category == constants.CONTRACT_LIST_ALL:
+
+        if category == constants.CONTRACT_LIST_ALL:
             if not user.has_perm("freight.view_contracts"):
                 return self.none()
             return self
-        elif category == constants.CONTRACT_LIST_USER:
+
+        if category == constants.CONTRACT_LIST_USER:
             if not user.has_perm("freight.use_calculator"):
                 return self.none()
             return self.issued_by_user(user=user).filter(
@@ -252,6 +256,7 @@ class ContractQuerySet(models.QuerySet):
                     self.model.Status.FAILED,
                 ]
             )
+
         raise ValueError(f"Invalid category: {category}")
 
 
@@ -306,7 +311,7 @@ class ContractManagerBase(models.Manager):
         if contract[property_name] and not isinstance(
             contract[property_name], datetime
         ):
-            raise TypeError("%s must be of type datetime" % property_name)
+            raise TypeError(f"{property_name} must be of type datetime")
 
     def _identify_locations(self, contract: dict, token: Token) -> tuple:
         from .models import Location

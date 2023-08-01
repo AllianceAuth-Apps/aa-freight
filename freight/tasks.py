@@ -1,3 +1,5 @@
+"""Tasks for Freight."""
+
 from celery import chain, shared_task
 
 from django.contrib.auth.models import User
