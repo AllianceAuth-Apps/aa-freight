@@ -1,3 +1,5 @@
+"""Freight is an Alliance Auth app for running a freight service."""
+
 default_app_config = "freight.apps.FreightConfig"
 
 __version__ = "1.9.0"

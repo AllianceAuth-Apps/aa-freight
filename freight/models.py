@@ -1242,7 +1242,7 @@ class Contract(models.Model):
             character_ownerships__character=self.issuer
         ).first()
         if not issuer_user:
-            logger.info(
+            logger.warning(
                 "%s: Could not find matching user for issuer: %s", self, self.issuer
             )
             return
