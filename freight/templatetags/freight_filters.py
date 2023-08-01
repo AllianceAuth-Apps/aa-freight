@@ -13,9 +13,9 @@ def power10(value, k=0):
 
 
 @register.filter
-def formatnumber(value, p=1):
-    """return a formated number with thousands seperators"""
+def formatnumber(value, precision=1):
+    """return a formatted number with thousands separators"""
     try:
-        return "{:,.{}f}".format(float(value), int(p))
+        return "{:,.{}f}".format(float(value), int(precision))
     except (ValueError, TypeError):
         return None

@@ -38,7 +38,7 @@ class LocationAdmin(admin.ModelAdmin):
 
     @admin.display(description=_("Update selected locations from ESI"))
     def update_location(self, request, queryset):
-        location_ids = list()
+        location_ids = []
         for obj in queryset:
             location_ids.append(obj.pk)
 

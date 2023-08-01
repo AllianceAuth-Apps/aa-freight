@@ -36,7 +36,7 @@ class TestEveEntityManager(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        esi_data = dict()
+        esi_data = {}
         for character in characters_data:
             esi_data[character["character_id"]] = {
                 "id": character["character_id"],
@@ -60,7 +60,7 @@ class TestEveEntityManager(NoSocketsTestCase):
 
     @classmethod
     def esi_post_universe_names(cls, *args, **kwargs) -> list:
-        data = list()
+        data = []
         if "ids" not in kwargs:
             raise ValueError("missing parameter: ids")
         for id in kwargs["ids"]:

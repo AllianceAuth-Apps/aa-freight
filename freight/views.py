@@ -87,7 +87,7 @@ def contract_list_all(request):
 @permission_required("freight.basic_access")
 def contract_list_data(request, category: str) -> JsonResponse:
     """Return list of outstanding contracts for contract_list AJAX call."""
-    contracts_data = list()
+    contracts_data = []
     contracts_qs = Contract.objects.select_related(
         "acceptor",
         "acceptor_corporation",
@@ -129,9 +129,8 @@ def contract_list_data(request, category: str) -> JsonResponse:
 
         if contract.title or settings.DEBUG:
             if settings.DEBUG:
-                title = "{}{}".format(
-                    f"{contract.title} " if contract.title else "", contract.contract_id
-                )
+                title_first = f"{contract.title} " if contract.title else ""
+                title = f"{title_first}{contract.contract_id}"
             else:
                 title = contract.title
 
@@ -510,7 +509,7 @@ def statistics_pilot_corporations_data(request):
             )
         )
     )
-    totals = list()
+    totals = []
     for corporation in corporation_totals:
         if corporation.contracts_count > 0:
             alliance = (
@@ -546,7 +545,7 @@ def statistics_customer_data(request):
         )
         .annotate(volume=Sum("contracts_issuer__volume", filter=finished_contracts))
     )
-    totals = list()
+    totals = []
     for customer in customer_totals:
         if customer.contracts_count > 0:
             totals.append(

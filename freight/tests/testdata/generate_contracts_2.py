@@ -64,7 +64,7 @@ if len(characters) < 2:
         "Need at least 2 EveCharacters with the related EveCorporationInfo."
     )
 
-contracts = list()
+contracts = []
 for _ in range(CONTACTS_COUNT):
     sample_character_ids = random.sample(set(characters.keys()), 2)
     issuer = characters.get(sample_character_ids[0])

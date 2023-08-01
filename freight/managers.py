@@ -1,7 +1,9 @@
+# pylint: disable = missing-class-docstring, import-outside-toplevel
+
 import json
 from datetime import datetime
 from time import sleep
-from typing import Tuple
+from typing import Any, Tuple
 
 from bravado.exception import HTTPForbidden, HTTPUnauthorized
 
@@ -57,7 +59,7 @@ class LocationManager(models.Manager):
 
     def get_or_create_esi(
         self, token: Token, location_id: int, add_unknown: bool = True
-    ) -> Tuple[models.Model, bool]:
+    ) -> Tuple[Any, bool]:
         """gets or creates location object with data fetched from ESI"""
         from .models import Location
 
@@ -72,11 +74,11 @@ class LocationManager(models.Manager):
 
     def update_or_create_esi(
         self, token: Token, location_id: int, add_unknown: bool = True
-    ) -> Tuple[models.Model, bool]:
+    ) -> Tuple[Any, bool]:
         """updates or creates location object with data fetched from ESI"""
         from .models import Location
 
-        if location_id >= self.STATION_ID_START and location_id <= self.STATION_ID_END:
+        if self.STATION_ID_START <= location_id <= self.STATION_ID_END:
             logger.info("%s: Fetching station from ESI", location_id)
             station = esi.client.Universe.get_universe_stations_station_id(
                 station_id=location_id
@@ -90,35 +92,36 @@ class LocationManager(models.Manager):
                     "category_id": Location.Category.STATION_ID,
                 },
             )
+
         try:
             structure = esi.client.Universe.get_universe_structures_structure_id(
                 token=token.valid_access_token(), structure_id=location_id
             ).results()
         except (HTTPUnauthorized, HTTPForbidden) as ex:
-            logger.warn("%s: No access to this structure: %s", location_id, ex)
+            logger.warning("%s: No access to this structure: %s", location_id, ex)
             if add_unknown:
                 return self.get_or_create(
                     id=location_id,
                     defaults={
-                        "name": "Unknown structure {}".format(location_id),
+                        "name": f"Unknown structure {location_id}",
                         "category_id": Location.Category.STRUCTURE_ID,
                     },
                 )
             raise ex
-        else:
-            return self.update_or_create(
-                id=location_id,
-                defaults={
-                    "name": structure["name"],
-                    "solar_system_id": structure["solar_system_id"],
-                    "type_id": structure["type_id"],
-                    "category_id": Location.Category.STRUCTURE_ID,
-                },
-            )
+
+        return self.update_or_create(
+            id=location_id,
+            defaults={
+                "name": structure["name"],
+                "solar_system_id": structure["solar_system_id"],
+                "type_id": structure["type_id"],
+                "category_id": Location.Category.STRUCTURE_ID,
+            },
+        )
 
 
 class EveEntityManager(models.Manager):
-    def get_or_create_esi(self, *, id: int) -> Tuple[models.Model, bool]:
+    def get_or_create_esi(self, *, id: int) -> Tuple[Any, bool]:
         """gets or creates entity object with data fetched from ESI"""
         from .models import EveEntity
 
@@ -128,7 +131,7 @@ class EveEntityManager(models.Manager):
         except EveEntity.DoesNotExist:
             return self.update_or_create_esi(id=id)
 
-    def update_or_create_esi(self, *, id: int) -> Tuple[models.Model, bool]:
+    def update_or_create_esi(self, *, id: int) -> Tuple[Any, bool]:
         """updates or creates entity object with data fetched from ESI"""
         response = esi.client.Universe.post_universe_names(ids=[id]).results()
         if len(response) != 1:
@@ -168,7 +171,7 @@ class ContractQuerySet(models.QuerySet):
         def _make_key(location_id_1: int, location_id_2: int) -> str:
             return "{}x{}".format(int(location_id_1), int(location_id_2))
 
-        pricings = dict()
+        pricings = {}
         for obj in Pricing.objects.filter(is_active=True).order_by("-id"):
             pricings[_make_key(obj.start_location_id, obj.end_location_id)] = obj
             if obj.is_bidirectional:
@@ -255,7 +258,7 @@ class ContractQuerySet(models.QuerySet):
 class ContractManagerBase(models.Manager):
     def update_or_create_from_dict(
         self, handler: object, contract: dict, token: Token
-    ) -> Tuple[models.Model, bool]:
+    ) -> Tuple[Any, bool]:
         """updates or creates a contract from given dict"""
         # validate types
         self._ensure_datetime_type_or_none(contract, "date_accepted")

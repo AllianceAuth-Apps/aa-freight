@@ -20,7 +20,8 @@ def update_or_create_eve_entity_from_evecharacter(
                 "category": EveEntity.CATEGORY_ALLIANCE,
             },
         )
-    elif category == EveEntity.CATEGORY_CORPORATION:
+
+    if category == EveEntity.CATEGORY_CORPORATION:
         return EveEntity.objects.update_or_create(
             id=character.corporation_id,
             defaults={
@@ -28,7 +29,8 @@ def update_or_create_eve_entity_from_evecharacter(
                 "category": EveEntity.CATEGORY_CORPORATION,
             },
         )
-    elif category == EveEntity.CATEGORY_CHARACTER:
+
+    if category == EveEntity.CATEGORY_CHARACTER:
         return EveEntity.objects.update_or_create(
             id=character.character_id,
             defaults={
@@ -36,4 +38,5 @@ def update_or_create_eve_entity_from_evecharacter(
                 "category": EveEntity.CATEGORY_CHARACTER,
             },
         )
+
     raise ValueError(f"Invalid category: f{category}")

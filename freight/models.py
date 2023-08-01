@@ -56,7 +56,7 @@ from .providers import esi
 if "discord" in app_labels():
     from allianceauth.services.modules.discord.models import DiscordUser
 else:
-    DiscordUser = None
+    DiscordUser = None  # pylint: disable=invalid-name
 
 try:
     from discordproxy.client import DiscordClient
@@ -459,7 +459,7 @@ class Pricing(models.Model):
             raise ValueError("collateral can not be negative")
         if reward and reward < 0:
             raise ValueError("reward can not be negative")
-        issues = list()
+        issues = []
         if volume is not None and self.volume_min and volume < self.volume_min:
             issues.append(
                 "below the minimum required volume of {:,.0f} m3".format(
@@ -548,10 +548,13 @@ class EveEntity(models.Model):
         """Url to an icon image for this organization."""
         if self.category == self.CATEGORY_ALLIANCE:
             return EveAllianceInfo.generic_logo_url(self.id, size=size)
-        elif self.category == self.CATEGORY_CORPORATION:
+
+        if self.category == self.CATEGORY_CORPORATION:
             return EveCorporationInfo.generic_logo_url(self.id, size=size)
-        elif self.category == self.CATEGORY_CHARACTER:
+
+        if self.category == self.CATEGORY_CHARACTER:
             return EveCharacter.generic_portrait_url(self.id, size=size)
+
         raise NotImplementedError(
             "Avatar URL not implemented for category %s" % self.category
         )
@@ -714,11 +717,10 @@ class ContractHandler(models.Model):
             self.set_sync_status(self.ERROR_TOKEN_EXPIRED)
             raise TokenExpiredError() from None
 
-        else:
-            if not token:
-                logger.error("%s: No valid token found", self)
-                self.set_sync_status(self.ERROR_TOKEN_INVALID)
-                raise TokenInvalidError() from None
+        if not token:
+            logger.error("%s: No valid token found", self)
+            self.set_sync_status(self.ERROR_TOKEN_INVALID)
+            raise TokenInvalidError() from None
 
         return token
 
@@ -782,8 +784,8 @@ class ContractHandler(models.Model):
 
     def _save_contract_to_file(self, contracts):
         """saves raw contracts to file for debugging"""
-        with open("contracts_raw.json", "w", encoding="utf-8") as f:
-            json.dump(contracts, f, cls=DjangoJSONEncoder, sort_keys=True, indent=4)
+        with open("contracts_raw.json", "w", encoding="utf-8") as file:
+            json.dump(contracts, file, cls=DjangoJSONEncoder, sort_keys=True, indent=4)
 
     def _process_contracts_from_esi(
         self, contracts_all: list, token: object, force_sync: bool
@@ -797,7 +799,7 @@ class ContractHandler(models.Model):
         ]
 
         # 2nd filter: remove contracts not in scope due to operation mode
-        contracts = list()
+        contracts = []
         for contract in contracts_courier:
             try:
                 issuer = EveCharacter.objects.get(character_id=contract["issuer_id"])
@@ -1063,8 +1065,8 @@ class Contract(models.Model):
         if self.date_completed:
             td = self.date_completed - self.date_issued
             return td.days * 24 + (td.seconds / 3600)
-        else:
-            return None
+
+        return None
 
     @property
     def date_latest(self) -> bool:
@@ -1205,7 +1207,7 @@ class Contract(models.Model):
                     self.date_notified = now()
                     self.save()
                 else:
-                    logger.warn(
+                    logger.warning(
                         "%s: Failed to send message. HTTP code: %s",
                         self,
                         response.status_code,
@@ -1293,7 +1295,7 @@ class Contract(models.Model):
                 defaults={"date_notified": now()},
             )
         else:
-            logger.warn(
+            logger.warning(
                 "%s: Failed to send message. HTTP code: %s",
                 self,
                 response.status_code,
