@@ -169,7 +169,7 @@ class ContractQuerySet(models.QuerySet):
         from .models import Pricing
 
         def _make_key(location_id_1: int, location_id_2: int) -> str:
-            return "{}x{}".format(int(location_id_1), int(location_id_2))
+            return f"{location_id_1}x{location_id_2}"
 
         pricings = {}
         for obj in Pricing.objects.filter(is_active=True).order_by("-id"):
@@ -252,7 +252,7 @@ class ContractQuerySet(models.QuerySet):
                     self.model.Status.FAILED,
                 ]
             )
-        raise ValueError("Invalid category: {}".format(category))
+        raise ValueError(f"Invalid category: {category}")
 
 
 class ContractManagerBase(models.Manager):
@@ -358,7 +358,7 @@ class ContractManagerBase(models.Manager):
                         )
                 else:
                     raise ValueError(
-                        "Acceptor has invalid category: {}".format(entity.category)
+                        f"Acceptor has invalid category: {entity.category}"
                     )
 
             except Exception:

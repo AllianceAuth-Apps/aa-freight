@@ -16,6 +16,6 @@ def power10(value, k=0):
 def formatnumber(value, precision=1):
     """return a formatted number with thousands separators"""
     try:
-        return "{:,.{}f}".format(float(value), int(precision))
+        return f"{value:,.{precision}f}"
     except (ValueError, TypeError):
         return None

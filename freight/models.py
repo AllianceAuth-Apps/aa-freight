@@ -138,9 +138,7 @@ class Location(models.Model):
         return self.name
 
     def __repr__(self) -> str:
-        return "{}(pk={}, name='{}')".format(
-            self.__class__.__name__, self.pk, self.name
-        )
+        return f"{self.__class__.__name__}(pk={self.pk}, name='{self.name}')"
 
     @property
     def category(self):
@@ -289,9 +287,7 @@ class Pricing(models.Model):
         return self.name
 
     def __repr__(self) -> str:
-        return "{}(pk={}, name='{}')".format(
-            self.__class__.__name__, self.pk, self.name_full
-        )
+        return f"{self.__class__.__name__}(pk={self.pk}, name='{self.name_full}')"
 
     def clean(self):
         if (
@@ -352,9 +348,8 @@ class Pricing(models.Model):
             start_name = self.start_location.solar_system_name
             end_name = self.end_location.solar_system_name
 
-        route_name = "{} {} {}".format(
-            start_name, "<->" if self.is_bidirectional else "->", end_name
-        )
+        arrow = "<->" if self.is_bidirectional else "->"
+        route_name = f"{start_name} {arrow} {end_name}"
         return route_name
 
     def price_per_volume_modifier(self):
@@ -462,15 +457,11 @@ class Pricing(models.Model):
         issues = []
         if volume is not None and self.volume_min and volume < self.volume_min:
             issues.append(
-                "below the minimum required volume of {:,.0f} m3".format(
-                    self.volume_min
-                )
+                f"below the minimum required volume of {self.volume_min:,.0f} m3"
             )
         if volume is not None and self.volume_max and volume > self.volume_max:
             issues.append(
-                "exceeds the maximum allowed volume of {:,.0f} m3".format(
-                    self.volume_max
-                )
+                f"exceeds the maximum allowed volume of {self.volume_max:,.0f} m3"
             )
         if (
             collateral is not None
@@ -478,9 +469,8 @@ class Pricing(models.Model):
             and collateral > self.collateral_max
         ):
             issues.append(
-                "exceeds the maximum allowed collateral of {:,.0f} ISK".format(
-                    self.collateral_max
-                )
+                "exceeds the maximum allowed collateral "
+                f"of {self.collateral_max:,.0f} ISK"
             )
         if (
             collateral is not None
@@ -488,17 +478,15 @@ class Pricing(models.Model):
             and collateral < self.collateral_min
         ):
             issues.append(
-                "below the minimum required collateral of {:,.0f} ISK".format(
-                    self.collateral_min
-                )
+                "below the minimum required collateral "
+                f"of {self.collateral_min:,.0f} ISK"
             )
         if reward is not None:
             calculated_price = self.get_calculated_price(volume, collateral)
             if reward < calculated_price:
                 issues.append(
-                    "reward is below the calculated price of {:,.0f} ISK".format(
-                        calculated_price
-                    )
+                    "reward is below the calculated price "
+                    f"of {calculated_price:,.0f} ISK"
                 )
         if len(issues) == 0:
             return None
@@ -528,8 +516,9 @@ class EveEntity(models.Model):
         return self.name
 
     def __repr__(self) -> str:
-        return "{}(id={}, category='{}', name='{}')".format(
-            self.__class__.__name__, self.id, self.category, self.name
+        return (
+            f"{self.__class__.__name__}(id={self.id}, category='{self.category}', "
+            f"name='{self.name}')"
         )
 
     @property
@@ -629,8 +618,9 @@ class ContractHandler(models.Model):
         return str(self.organization.name)
 
     def __repr__(self) -> str:
-        return "{}(pk={}, organization='{}')".format(
-            self.__class__.__name__, self.pk, str(self.organization.name)
+        return (
+            f"{self.__class__.__name__}(pk={self.pk}, "
+            f"organization='{self.organization.name}')"
         )
 
     @property
@@ -677,7 +667,7 @@ class ContractHandler(models.Model):
         else:
             extra_text = ""
 
-        return "Private ({}) {}".format(self.organization.name, extra_text)
+        return f"Private ({self.organization.name}) {extra_text}"
 
     def set_sync_status(self, error: int = None) -> None:
         """sets the sync status incl. sync time and saves the object.
@@ -828,7 +818,7 @@ class ContractHandler(models.Model):
 
             else:
                 raise NotImplementedError(
-                    "Unsupported operation mode: {}".format(self.operation_mode)
+                    f"Unsupported operation mode: {self.operation_mode}"
                 )
             if in_scope:
                 contracts.append(contract)
@@ -879,20 +869,21 @@ class ContractHandler(models.Model):
 
     def _report_to_user(self, user, success, error_code):
         try:
-            message = 'Syncing of contracts for "{}"'.format(self.organization.name)
-            message += ' in operation mode "{}" {}.\n'.format(
-                self.operation_mode_friendly,
-                "completed successfully" if success else "has failed",
+            status_text = "completed successfully" if success else "has failed"
+            message = (
+                f'Syncing of contracts for "{self.organization.name}"'
+                f' in operation mode "{self.operation_mode_friendly}" {status_text}.\n'
             )
             if success:
-                message += "{:,} contracts synced.".format(self.contracts.count())
+                message += f"{self.contracts.count():,} contracts synced."
             else:
-                message += "Error code: {}".format(error_code)
+                message += f"Error code: {error_code}"
 
             notify(
                 user=user,
-                title="Freight: Contracts sync for {}: {}".format(
-                    self.organization.name, "OK" if success else "FAILED"
+                title=(
+                    f"Freight: Contracts sync for {self.organization.name}: "
+                    f'{"OK" if success else "FAILED"}'
                 ),
                 message=message,
                 level="success" if success else "danger",
@@ -1020,18 +1011,16 @@ class Contract(models.Model):
         ]
 
     def __str__(self) -> str:
-        return "{}: {} -> {}".format(
-            self.contract_id,
-            self.start_location.solar_system_name,
-            self.end_location.solar_system_name,
+        return (
+            f"{self.contract_id}: {self.start_location.solar_system_name} "
+            f"-> {self.end_location.solar_system_name}"
         )
 
     def __repr__(self) -> str:
-        return "{}(contract_id={}, start_location={}, end_location={})".format(
-            self.__class__.__name__,
-            self.contract_id,
-            self.start_location.solar_system_name,
-            self.end_location.solar_system_name,
+        return (
+            f"{self.__class__.__name__}(contract_id={self.contract_id}, "
+            f"start_location={self.start_location.solar_system_name}, "
+            f"end_location={self.end_location.solar_system_name})"
         )
 
     @property
@@ -1063,8 +1052,8 @@ class Contract(models.Model):
     @property
     def hours_issued_2_completed(self) -> float:
         if self.date_completed:
-            td = self.date_completed - self.date_issued
-            return td.days * 24 + (td.seconds / 3600)
+            delta = self.date_completed - self.date_issued
+            return delta.days * 24 + (delta.seconds / 3600)
 
         return None
 
@@ -1194,10 +1183,10 @@ class Contract(models.Model):
                     site_absolute_url(), reverse("freight:contract_list_all")
                 )
                 contents += (
-                    "There is a new courier contract from {} "
+                    f"There is a new courier contract from {self.issuer} "
                     "looking to be picked up "
-                    "[[show]({})]:"
-                ).format(self.issuer, contract_list_url)
+                    f"[[show]({contract_list_url})]:"
+                )
 
                 embed = self._generate_embed()
                 response = hook.execute(
@@ -1331,9 +1320,9 @@ class Contract(models.Model):
     def _generate_contents(
         self, discord_user_id, status_to_report, include_mention=True
     ):
-        contents = "<@{}>\n".format(discord_user_id) if include_mention else ""
+        contents = f"<@{discord_user_id}>\n" if include_mention else ""
         if self.acceptor_name:
-            acceptor_text = "by {} ".format(self.acceptor_name)
+            acceptor_text = f"by {self.acceptor_name} "
         else:
             acceptor_text = ""
         if status_to_report == self.Status.OUTSTANDING:
@@ -1346,13 +1335,13 @@ class Contract(models.Model):
                     "and correct the following issues:\n"
                 )
                 for issue in issues:
-                    contents += "• {}\n".format(issue)
+                    contents += f"• {issue}\n"
             else:
-                contents += " and it will be picked up by " "one of our pilots shortly."
+                contents += " and it will be picked up by one of our pilots shortly."
         elif status_to_report == self.Status.IN_PROGRESS:
             contents += (
-                "Your contract has been picked up {}"
-                "and will be delivered to you shortly.".format(acceptor_text)
+                f"Your contract has been picked up {acceptor_text}"
+                "and will be delivered to you shortly."
             )
         elif status_to_report == self.Status.FINISHED:
             contents += (
@@ -1361,8 +1350,8 @@ class Contract(models.Model):
             )
         elif status_to_report == self.Status.FAILED:
             contents += (
-                "Your contract has been **failed** {}"
-                "Thank you for using our freight service.".format(acceptor_text)
+                f"Your contract has been **failed** {acceptor_text}"
+                "Thank you for using our freight service."
             )
         else:
             raise NotImplementedError()
@@ -1384,9 +1373,10 @@ class ContractCustomerNotification(models.Model):
         unique_together = (("contract", "status"),)
 
     def __str__(self):
-        return "{} - {}".format(self.contract.contract_id, self.status)
+        return f"{self.contract.contract_id} - {self.status}"
 
     def __repr__(self) -> str:
-        return "{}(pk={}, contract_id={}, status={})".format(
-            self.__class__.__name__, self.pk, self.contract.contract_id, self.status
+        return (
+            f"{self.__class__.__name__}(pk={self.pk}, "
+            f"contract_id={self.contract.contract_id}, status={self.status})"
         )

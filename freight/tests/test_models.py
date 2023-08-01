@@ -82,10 +82,10 @@ class TestPricing(NoSocketsTestCase):
             start_location=self.jita, end_location=self.amamake, price_base=50000000
         )
         expected = (
-            "Pricing(pk={}, "
+            f"Pricing(pk={p.pk}, "
             "name='Jita IV - Moon 4 - Caldari Navy Assembly Plant "
             "<-> Amamake - 3 Time Nearly AT Winners')"
-        ).format(p.pk)
+        )
         self.assertEqual(repr(p), expected)
 
     @patch(MODULE_PATH + ".FREIGHT_FULL_ROUTE_NAMES", False)
@@ -892,8 +892,10 @@ class TestLocation(NoSocketsTestCase):
 
     def test_repr(self):
         expected = (
-            "Location(pk={}, name='Amamake - 3 Time Nearly AT " "Winners')"
-        ).format(self.amamake.pk)
+            f"Location(pk={self.amamake.pk}, "
+            "name='Amamake - 3 Time Nearly AT "
+            "Winners')"
+        )
         self.assertEqual(repr(self.amamake), expected)
 
     def test_category(self):
@@ -949,8 +951,8 @@ class TestContractHandler(NoSocketsTestCase):
         self.assertEqual(str(self.handler), "Justice League")
 
     def test_repr(self):
-        expected = "ContractHandler(pk={}, organization='Justice League')".format(
-            self.handler.pk
+        expected = (
+            f"ContractHandler(pk={self.handler.pk}, organization='Justice League')"
         )
         self.assertEqual(repr(self.handler), expected)
 
@@ -1438,8 +1440,9 @@ class TestEveEntity(NoSocketsTestCase):
 
     def test_repr(self):
         expected = (
-            "EveEntity(id={}, " "category='character', " "name='Bruce Wayne')"
-        ).format(self.character.id)
+            f"EveEntity(id={self.character.id}, category='character', "
+            "name='Bruce Wayne')"
+        )
         self.assertEqual(repr(self.character), expected)
 
     def test_is_alliance(self):
@@ -1551,13 +1554,15 @@ class TestContractCustomerNotification(NoSocketsTestCase):
         )
 
     def test_str(self):
-        expected = "{} - in_progress".format(self.contract.contract_id)
+        expected = f"{self.contract.contract_id} - in_progress"
         self.assertEqual(str(self.notification), expected)
 
     def test_repr(self):
         expected = (
-            "ContractCustomerNotification(pk={}, contract_id={}, " "status=in_progress)"
-        ).format(self.notification.pk, self.notification.contract.contract_id)
+            f"ContractCustomerNotification(pk={self.notification.pk}, "
+            f"contract_id={self.notification.contract.contract_id}, "
+            "status=in_progress)"
+        )
         self.assertEqual(repr(self.notification), expected)
 
 

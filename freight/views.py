@@ -109,9 +109,8 @@ def contract_list_data(request, category: str) -> JsonResponse:
                     tooltip_text,
                 )
             else:
-                tooltip_text = "{}\n{}".format(
-                    route_name, "\n".join(contract.get_issue_list())
-                )
+                issues_text = "\n".join(contract.get_issue_list())
+                tooltip_text = f"{route_name}\n{issues_text}"
                 icon_html = format_html(
                     (
                         '<span class="{}">'
