@@ -106,6 +106,8 @@ class Location(models.Model):
     """An Eve Online courier contract location: station or Upwell structure"""
 
     class Category(models.IntegerChoices):
+        """A location category."""
+
         STATION_ID = 3, "station"
         STRUCTURE_ID = 65, "structure"
         UNKNOWN_ID = 0, "(unknown)"
@@ -279,7 +281,8 @@ class Pricing(models.Model):
     class Meta:
         unique_together = (("start_location", "end_location"),)
 
-    def save(self, update_contracts=True, *args, **kwargs) -> None:
+    def save(self, *args, **kwargs) -> None:
+        update_contracts = kwargs.pop("update_contracts", True)
         super().save(*args, **kwargs)
         if update_contracts:
             self._update_contracts()

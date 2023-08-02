@@ -10,6 +10,8 @@ from .models import Pricing
 
 
 class CalculatorForm(forms.Form):
+    """A form for the price calculator."""
+
     pricing = forms.ModelChoiceField(
         queryset=Pricing.objects.select_related("start_location", "end_location")
         .filter(is_active=True)
@@ -54,6 +56,7 @@ class CalculatorForm(forms.Form):
                 raise ValidationError(f"{issue_prefix} {', '.join(issues)}")
 
     def get_calculated_data(self, pricing: object) -> tuple:
+        """Return calculated pricing data."""
         if self.is_valid():
             if self.cleaned_data["volume"]:
                 volume = int(self.cleaned_data["volume"])
@@ -77,6 +80,8 @@ class CalculatorForm(forms.Form):
 
 
 class AddLocationForm(forms.Form):
+    """A form for adding a new location."""
+
     location_id = forms.IntegerField(
         label="Location ID",
         help_text="Eve Online ID for a station or an Upwell structure",

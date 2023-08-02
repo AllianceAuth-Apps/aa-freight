@@ -1,6 +1,6 @@
 """Managers for Freight."""
 
-# pylint: disable = missing-class-docstring, import-outside-toplevel
+# pylint: disable = missing-class-docstring, import-outside-toplevel, redefined-builtin
 
 import json
 from datetime import datetime
@@ -33,11 +33,12 @@ logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
 class PricingManager(models.Manager):
     def get_queryset(self) -> models.QuerySet:
+        """:private:"""
         return super().get_queryset().select_related("start_location", "end_location")
 
     def get_default(self):
-        """return the default pricing if defined
-        else the first pricing, which can be None if no pricing exists
+        """Return the default pricing if defined
+        else the first pricing, which can be None if no pricing exists.
         """
         pricing_qs = self.filter(is_active=True)
         pricing = pricing_qs.filter(is_default=True).first()
@@ -46,7 +47,7 @@ class PricingManager(models.Manager):
         return pricing
 
     def get_or_default(self, pk: int = None):
-        """returns the pricing for given pk if found else default pricing"""
+        """Return the pricing for given pk if found else default pricing."""
         if pk:
             try:
                 return self.filter(is_active=True).get(pk=pk)
@@ -150,7 +151,7 @@ class EveEntityManager(models.Manager):
 
 class ContractQuerySet(models.QuerySet):
     def pending_count(self) -> int:
-        """returns the number of pending contacts for this QS"""
+        """Returns the number of pending contracts."""
         return (
             self.filter(status=self.model.Status.OUTSTANDING)
             .exclude(date_expired__lt=now())
@@ -158,10 +159,11 @@ class ContractQuerySet(models.QuerySet):
         )
 
     def filter_not_completed(self):
+        """Return contracts which are not yet completed."""
         return self.exclude(status__in=self.model.Status.completed())
 
     def issued_by_user(self, user: User) -> models.QuerySet:
-        """returns QS of contracts issued by a character owned by given user"""
+        """Returns contracts issued by a character owned by given user."""
         return self.filter(
             issuer__in=EveCharacter.objects.filter(character_ownership__user=user)
         )
@@ -264,7 +266,7 @@ class ContractManagerBase(models.Manager):
     def update_or_create_from_dict(
         self, handler: object, contract: dict, token: Token
     ) -> Tuple[Any, bool]:
-        """updates or creates a contract from given dict"""
+        """Updates or create a contract from dict."""
         # validate types
         self._ensure_datetime_type_or_none(contract, "date_accepted")
         self._ensure_datetime_type_or_none(contract, "date_completed")
@@ -280,7 +282,7 @@ class ContractManagerBase(models.Manager):
         )
         title = contract["title"] if "title" in contract else None
         start_location, end_location = self._identify_locations(contract, token)
-        return self.update_or_create(
+        obj, created = self.update_or_create(
             handler=handler,
             contract_id=contract["contract_id"],
             defaults={
@@ -305,6 +307,7 @@ class ContractManagerBase(models.Manager):
                 "issues": None,
             },
         )
+        return obj, created
 
     @staticmethod
     def _ensure_datetime_type_or_none(contract: dict, property_name: str):
