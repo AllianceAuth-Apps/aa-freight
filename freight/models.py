@@ -3,6 +3,7 @@
 import hashlib
 import json
 from datetime import timedelta
+from typing import Set
 from urllib.parse import urljoin
 
 import dhooks_lite
@@ -13,7 +14,6 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import MinValueValidator
 from django.db import models, transaction
 from django.urls import reverse
-from django.utils.functional import classproperty
 from django.utils.timezone import now
 from esi.errors import TokenExpiredError, TokenInvalidError
 from esi.models import Token
@@ -922,9 +922,9 @@ class Contract(models.Model):
         DELETED = "deleted", "deleted"
         REVERSED = "reversed", "reversed"
 
-        @classproperty
-        def completed(cls) -> set:
-            """Status representing a completed contract."""
+        @classmethod
+        def completed(cls) -> Set["Contract.Status"]:
+            """Return status representing a completed contract."""
             return {
                 cls.FINISHED_ISSUER,
                 cls.FINISHED_CONTRACTOR,
@@ -936,8 +936,9 @@ class Contract(models.Model):
                 cls.FAILED,
             }
 
-        @classproperty
-        def for_customer_notification(cls) -> set:
+        @classmethod
+        def for_customer_notification(cls) -> Set["Contract.Status"]:
+            """Return status relevant for custom notification."""
             return {cls.OUTSTANDING, cls.IN_PROGRESS, cls.FINISHED, cls.FAILED}
 
     EMBED_COLOR_PASSED = 0x008000
@@ -1037,7 +1038,7 @@ class Contract(models.Model):
     @property
     def is_completed(self) -> bool:
         """whether this contract is completed or active"""
-        return self.status in self.Status.completed
+        return self.status in self.Status.completed()
 
     @property
     def is_in_progress(self) -> bool:
@@ -1222,7 +1223,7 @@ class Contract(models.Model):
             FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL or FREIGHT_DISCORDPROXY_ENABLED
         ) and DiscordUser:
             status_to_report = None
-            for status in self.Status.for_customer_notification:
+            for status in self.Status.for_customer_notification():
                 if self.status == status and (
                     force_sent or not self.customer_notifications.filter(status=status)
                 ):

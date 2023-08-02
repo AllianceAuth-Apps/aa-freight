@@ -158,7 +158,7 @@ class ContractQuerySet(models.QuerySet):
         )
 
     def filter_not_completed(self):
-        return self.exclude(status__in=self.model.Status.completed)
+        return self.exclude(status__in=self.model.Status.completed())
 
     def issued_by_user(self, user: User) -> models.QuerySet:
         """returns QS of contracts issued by a character owned by given user"""
@@ -437,7 +437,7 @@ class ContractManagerBase(models.Manager):
     ) -> None:
         if FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL or FREIGHT_DISCORDPROXY_ENABLED:
             contracts_qs = self.filter(
-                status__in=self.model.Status.for_customer_notification
+                status__in=self.model.Status.for_customer_notification()
             )
             if not FREIGHT_NOTIFY_ALL_CONTRACTS:
                 contracts_qs = contracts_qs.exclude(pricing__exact=None)
