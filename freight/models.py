@@ -1,9 +1,11 @@
 """Models for Freight."""
 
+# pylint: disable = import-outside-toplevel, ungrouped-imports
+
 import hashlib
 import json
 from datetime import timedelta
-from typing import Set
+from typing import List, Optional, Set
 from urllib.parse import urljoin
 
 import dhooks_lite
@@ -458,8 +460,8 @@ class Pricing(models.Model):
 
     def get_contract_price_check_issues(
         self, volume: float, collateral: float, reward: float = None
-    ) -> list:
-        """returns list of validation error messages or none if ok"""
+    ) -> Optional[List[str]]:
+        """Return list of validation error messages or none if ok."""
         if volume and volume < 0:
             raise ValueError("volume can not be negative")
         if collateral and collateral < 0:
@@ -535,14 +537,17 @@ class EveEntity(models.Model):
 
     @property
     def is_alliance(self) -> bool:
+        """Return True if entity is an alliance, else False."""
         return self.category == self.CATEGORY_ALLIANCE
 
     @property
     def is_corporation(self) -> bool:
+        """Return True if entity is an corporation, else False."""
         return self.category == self.CATEGORY_CORPORATION
 
     @property
     def is_character(self) -> bool:
+        """Return True if entity is a character, else False."""
         return self.category == self.CATEGORY_CHARACTER
 
     def icon_url(self, size=AVATAR_SIZE) -> str:
@@ -640,13 +645,14 @@ class ContractHandler(models.Model):
         """returns user friendly description of operation mode"""
         return Freight.operation_mode_friendly(self.operation_mode)
 
-    @property
-    def last_error_message_friendly(self) -> str:
-        msg = [(x, y) for x, y in self.ERRORS_LIST if x == self.last_error]
-        return msg[0][1] if len(msg) > 0 else "Undefined error"
+    # @property
+    # def last_error_message_friendly(self) -> str:
+    #     msg = [(x, y) for x, y in self.ERRORS_LIST if x == self.last_error]
+    #     return msg[0][1] if len(msg) > 0 else "Undefined error"
 
     @classmethod
-    def get_esi_scopes(cls) -> list:
+    def get_esi_scopes(cls) -> List[str]:
+        """Return list of required ESI scopes to fetch contracts."""
         return [
             "esi-contracts.read_corporation_contracts.v1",
             "esi-universe.read_structures.v1",
@@ -727,6 +733,7 @@ class ContractHandler(models.Model):
         return token
 
     def update_contracts_esi(self, force_sync=False, user=None) -> bool:
+        """Update contracts from ESI."""
         try:
             self._validate_update_readiness()
             token = self.token()
@@ -1045,10 +1052,12 @@ class Contract(models.Model):
 
     @property
     def is_in_progress(self) -> bool:
+        """Return True if this contract is in progress, else False."""
         return self.status == self.Status.IN_PROGRESS
 
     @property
     def is_failed(self) -> bool:
+        """Return True if this contract is failed, else False."""
         return self.status == self.Status.FAILED
 
     @property
@@ -1058,19 +1067,21 @@ class Contract(models.Model):
 
     @property
     def has_pricing(self) -> bool:
+        """Return True if this contract has pricing, else False."""
         return bool(self.pricing)
 
     @property
     def has_pricing_errors(self) -> bool:
+        """Return True if this contract has pricing errors, else False."""
         return bool(self.issues)
 
-    @property
-    def hours_issued_2_completed(self) -> float:
-        if self.date_completed:
-            delta = self.date_completed - self.date_issued
-            return delta.days * 24 + (delta.seconds / 3600)
+    # @property
+    # def hours_issued_2_completed(self) -> float:
+    #     if self.date_completed:
+    #         delta = self.date_completed - self.date_issued
+    #         return delta.days * 24 + (delta.seconds / 3600)
 
-        return None
+    #     return None
 
     @property
     def date_latest(self) -> bool:
@@ -1104,7 +1115,8 @@ class Contract(models.Model):
 
         return name
 
-    def get_price_check_issues(self, pricing: Pricing) -> list:
+    def get_price_check_issues(self, pricing: Pricing) -> Optional[List[str]]:
+        """Return list of pricing issues."""
         return pricing.get_contract_price_check_issues(
             self.volume, self.collateral, self.reward
         )

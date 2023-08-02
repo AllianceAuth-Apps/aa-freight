@@ -527,11 +527,11 @@ class TestContract(NoSocketsTestCase):
         excepted = "Contract(contract_id=1, start_location=Jita, end_location=Amamake)"
         self.assertEqual(repr(self.contract), excepted)
 
-    def test_hours_issued_2_completed(self):
-        self.contract.date_completed = self.contract.date_issued + dt.timedelta(hours=9)
-        self.assertEqual(self.contract.hours_issued_2_completed, 9)
-        self.contract.date_completed = None
-        self.assertIsNone(self.contract.hours_issued_2_completed)
+    # def test_hours_issued_2_completed(self):
+    #     self.contract.date_completed = self.contract.date_issued + dt.timedelta(hours=9)
+    #     self.assertEqual(self.contract.hours_issued_2_completed, 9)
+    #     self.contract.date_completed = None
+    #     self.assertIsNone(self.contract.hours_issued_2_completed)
 
     def test_date_latest(self):
         # initial contract only had date_issued
@@ -1414,16 +1414,16 @@ class TestContractsSync(NoSocketsTestCase):
         handler.operation_mode = FREIGHT_OPERATION_MODE_CORP_PUBLIC
         self.assertEqual(handler.operation_mode_friendly, FREIGHT_OPERATION_MODES[3][1])
 
-    def test_last_error_message_friendly(self):
-        handler = ContractHandler.objects.create(
-            organization=self.alliance,
-            operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
-            character=self.main_ownership,
-            last_error=ContractHandler.ERROR_UNKNOWN,
-        )
-        self.assertEqual(
-            handler.last_error_message_friendly, ContractHandler.ERRORS_LIST[7][1]
-        )
+    # def test_last_error_message_friendly(self):
+    #     handler = ContractHandler.objects.create(
+    #         organization=self.alliance,
+    #         operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
+    #         character=self.main_ownership,
+    #         last_error=ContractHandler.ERROR_UNKNOWN,
+    #     )
+    #     self.assertEqual(
+    #         handler.last_error_message_friendly, ContractHandler.ERRORS_LIST[7][1]
+    #     )
 
 
 class TestEveEntity(NoSocketsTestCase):
