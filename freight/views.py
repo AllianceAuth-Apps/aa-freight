@@ -118,10 +118,6 @@ def contract_list_data(request, category: str) -> JsonResponse:
             contract.end_location,
             contract.end_location.solar_system_name,
         )
-        try:
-            issuer_character_name = contract.issuer.character_name
-        except AttributeError:
-            issuer_character_name = None
         contracts_data.append(
             {
                 "contract_id": contract.contract_id,
@@ -139,7 +135,7 @@ def contract_list_data(request, category: str) -> JsonResponse:
                 "volume": contract.volume,
                 "date_issued": contract.date_issued.isoformat(),
                 "date_expired": contract.date_expired.isoformat(),
-                "issuer": issuer_character_name,
+                "issuer": contract.issuer.character_name,
                 "date_accepted": contract.date_accepted.isoformat()
                 if contract.date_accepted
                 else None,
