@@ -68,4 +68,5 @@ disable = [
     "too-few-public-methods",
     "cyclic-import",
     "imported-auth-user",
+    "import-outside-toplevel",
 ]
