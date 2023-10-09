@@ -265,7 +265,7 @@ class ContractQuerySet(models.QuerySet):
 
 class ContractManagerBase(models.Manager):
     def update_or_create_from_dict(
-        self, handler: object, contract: dict, token: Token
+        self, handler: Any, contract: dict, token: Token
     ) -> Tuple[Any, bool]:
         """Updates or create a contract from dict."""
         # validate types
