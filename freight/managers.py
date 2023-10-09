@@ -14,7 +14,7 @@ from django.db import models, transaction
 from django.utils.timezone import now
 from esi.models import Token
 
-from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
+from allianceauth.eveonline.models import EveCharacter
 from allianceauth.eveonline.providers import ObjectNotFound
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.logging import LoggerAddTag
@@ -26,6 +26,7 @@ from .app_settings import (
     FREIGHT_DISCORDPROXY_ENABLED,
     FREIGHT_NOTIFY_ALL_CONTRACTS,
 )
+from .helpers import get_or_create_eve_character, get_or_create_eve_corporation_info
 from .providers import esi
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
@@ -344,47 +345,25 @@ class ContractManagerBase(models.Manager):
             return None, None
 
         if entity.is_character:
-            try:
-                acceptor = EveCharacter.objects.get(character_id=entity.id)
-            except EveCharacter.DoesNotExist:
-                acceptor = EveCharacter.objects.create_character(character_id=entity.id)
-            try:
-                acceptor_corporation = EveCorporationInfo.objects.get(
-                    corporation_id=acceptor.corporation_id
-                )
-            except EveCorporationInfo.DoesNotExist:
-                acceptor_corporation = EveCorporationInfo.objects.create_corporation(
-                    corp_id=acceptor.corporation_id
-                )
+            acceptor, _ = get_or_create_eve_character(entity.id)
+            acceptor_corporation, _ = get_or_create_eve_corporation_info(
+                acceptor.corporation_id
+            )
+
         elif entity.is_corporation:
             acceptor = None
-            try:
-                acceptor_corporation = EveCorporationInfo.objects.get(
-                    corporation_id=entity.id
-                )
-            except EveCorporationInfo.DoesNotExist:
-                acceptor_corporation = EveCorporationInfo.objects.create_corporation(
-                    corp_id=entity.id
-                )
+            acceptor_corporation, _ = get_or_create_eve_corporation_info(entity.id)
+
         else:
             acceptor = acceptor_corporation = None
+
         return acceptor, acceptor_corporation
 
     def _identify_contracts_issuer(self, contract) -> tuple:
-        try:
-            issuer = EveCharacter.objects.get(character_id=contract["issuer_id"])
-        except EveCharacter.DoesNotExist:
-            issuer = EveCharacter.objects.create_character(
-                character_id=contract["issuer_id"]
-            )
-        try:
-            issuer_corporation = EveCorporationInfo.objects.get(
-                corporation_id=contract["issuer_corporation_id"]
-            )
-        except EveCorporationInfo.DoesNotExist:
-            issuer_corporation = EveCorporationInfo.objects.create_corporation(
-                corp_id=contract["issuer_corporation_id"]
-            )
+        issuer, _ = get_or_create_eve_character(contract["issuer_id"])
+        issuer_corporation, _ = get_or_create_eve_corporation_info(
+            contract["issuer_corporation_id"]
+        )
         return issuer_corporation, issuer
 
     def send_notifications(

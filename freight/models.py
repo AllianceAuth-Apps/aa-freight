@@ -54,6 +54,7 @@ from .app_settings import (
     FREIGHT_OPERATION_MODES,
 )
 from .constants import AVATAR_SIZE
+from .helpers import get_or_create_eve_character
 from .managers import ContractManager, EveEntityManager, LocationManager, PricingManager
 from .providers import esi
 
@@ -810,12 +811,7 @@ class ContractHandler(models.Model):
         # 2nd filter: remove contracts not in scope due to operation mode
         contracts = []
         for contract in contracts_courier:
-            try:
-                issuer = EveCharacter.objects.get(character_id=contract["issuer_id"])
-            except EveCharacter.DoesNotExist:
-                issuer = EveCharacter.objects.create_character(
-                    character_id=contract["issuer_id"]
-                )
+            issuer, _ = get_or_create_eve_character(contract["issuer_id"])
 
             assignee_id = int(contract["assignee_id"])
             issuer_corporation_id = int(issuer.corporation_id)
