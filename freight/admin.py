@@ -2,11 +2,9 @@
 
 # pylint: disable=missing-class-docstring, missing-function-docstring
 
-from typing import Any, Optional
 
 from django.conf import settings
 from django.contrib import admin
-from django.http.request import HttpRequest
 from django.utils.translation import gettext_lazy as _
 
 from . import tasks
@@ -114,7 +112,7 @@ class ContractHandlerAdmin(admin.ModelAdmin):
         "last_sync",
     )
 
-    def get_fields(self, request: HttpRequest, obj: Optional[Any]):
+    def get_fields(self, request, obj=None):
         """Do not show some specific fields."""
         fields = super().get_fields(request, obj)
         return [name for name in fields if name != "last_error"]
@@ -129,22 +127,16 @@ class ContractHandlerAdmin(admin.ModelAdmin):
     @admin.action(description=_("Fetch contracts from Eve Online server"))
     def start_sync(self, request, queryset):
         for obj in queryset:
-            tasks.run_contracts_sync.delay(force_sync=True, user_pk=request.user.pk)
-            text = (
-                _(
-                    "Started syncing contracts for: %s "
-                    "You will receive a report once it is completed."
-                )
-                % obj
-            )
-            self.message_user(request, text)
+            tasks.run_contracts_sync.delay(force_sync=True)
+            self.message_user(request, _("Started syncing contracts for: %s") % obj)
 
     @admin.action(description=_("Send notifications for outstanding contracts"))
     def send_notifications(self, request, queryset):
         for obj in queryset:
             tasks.send_contract_notifications.delay(force_sent=True)
-            text = _("Started sending notifications for: %s ") % obj
-            self.message_user(request, text)
+            self.message_user(
+                request, _("Started sending notifications for: %s ") % obj
+            )
 
     @admin.action(description=_("Update pricing info for all contracts"))
     def update_pricing(self, request, queryset):

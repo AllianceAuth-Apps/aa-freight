@@ -1,3 +1,5 @@
+"""Contract Handler models."""
+
 import hashlib
 import json
 from datetime import timedelta
@@ -346,6 +348,7 @@ class ContractHandler(models.Model):
         else:
             logger.info("%s: Contracts are unchanged.", self)
 
+    # pylint: disable = no-member
     def _store_contract_from_esi(
         self, contracts: list, new_version_hash: str, token: Token
     ) -> None:

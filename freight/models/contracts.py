@@ -1,4 +1,4 @@
-"""Models for Freight."""
+"""Contract models."""
 
 # pylint: disable = import-outside-toplevel, ungrouped-imports
 

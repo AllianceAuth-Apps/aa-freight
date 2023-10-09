@@ -324,7 +324,7 @@ def setup_contract_handler(request, token):
                 "operation_mode": FREIGHT_OPERATION_MODE,
             },
         )[0]
-        tasks.run_contracts_sync.delay(force_sync=True, user_pk=request.user.pk)
+        tasks.run_contracts_sync.delay(force_sync=True)
         messages.success(
             request,
             _(
@@ -333,7 +333,6 @@ def setup_contract_handler(request, token):
                 "with %(character)s as sync character. "
                 "Operation mode: %(operation_mode)s. "
                 "Started syncing of courier contracts. "
-                "You will receive a report once it is completed."
             )
             % {
                 "organization": organization.name,

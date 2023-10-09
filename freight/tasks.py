@@ -31,10 +31,10 @@ def send_contract_notifications(force_sent=False, rate_limited=True) -> None:
 
 
 @shared_task
-def run_contracts_sync(force_sync=False, user_pk=None) -> None:
+def run_contracts_sync(force_sync=False) -> None:
     """main task coordinating contract sync"""
     my_chain = chain(
-        update_contracts_esi.si(force_sync, user_pk), send_contract_notifications.si()
+        update_contracts_esi.si(force_sync), send_contract_notifications.si()
     )
     my_chain.delay()
 

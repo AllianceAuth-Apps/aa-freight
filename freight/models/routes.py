@@ -1,3 +1,5 @@
+"""Pricing and location models."""
+
 from typing import List, Optional
 
 from django.core.exceptions import ValidationError
