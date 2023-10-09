@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-08 13:56+0200\n"
+"POT-Creation-Date: 2023-10-09 23:15+0200\n"
 "PO-Revision-Date: 2023-05-13 14:51+0000\n"
 "Last-Translator: Peter Pfeufer, 2023\n"
 "Language-Team: German (https://app.transifex.com/kalkoken-apps/teams/107978/de/)\n"
@@ -21,11 +21,11 @@ msgstr ""
 "Language: de\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: admin.py:43
+#: admin.py:47
 msgid "Update selected locations from ESI"
 msgstr "Ausgewählte Standorte von ESI aktualisieren"
 
-#: admin.py:54
+#: admin.py:58
 #, python-format
 msgid ""
 "Started updating %d locations. This can take a short while to complete."
@@ -33,46 +33,42 @@ msgstr ""
 "Mit der Aktualisierung von %d Standorten begonnen. Dies kann eine kurze Zeit"
 " in Anspruch nehmen."
 
-#: admin.py:116
+#: admin.py:127
 msgid "Fetch contracts from Eve Online server"
 msgstr "Verträge vom Eve Online-Server abrufen"
 
-#: admin.py:122
+#: admin.py:131
 #, python-format
-msgid ""
-"Started syncing contracts for: %s You will receive a report once it is "
-"completed."
+msgid "Started syncing contracts for: %s"
 msgstr ""
-"Synchronisierung der Verträge begonnen für: %s Du erhältst einen Bericht, "
-"sobald der Vorgang abgeschlossen ist."
 
-#: admin.py:129
+#: admin.py:133
 msgid "Send notifications for outstanding contracts"
 msgstr "Benachrichtigungen für ausstehende Verträge senden"
 
-#: admin.py:133
+#: admin.py:138
 #, python-format
 msgid "Started sending notifications for: %s "
 msgstr "Mit dem Versenden von Benachrichtigungen begonnen für: %s"
 
-#: admin.py:136
+#: admin.py:141
 msgid "Update pricing info for all contracts"
 msgstr "Preisinformationen für alle Verträge aktualisieren"
 
-#: admin.py:192
+#: admin.py:201
 msgid "Sent pilots notification for selected contracts to Discord"
 msgstr "Benachrichtigung für ausgewählte Verträge an Discord gesendet"
 
-#: admin.py:199
+#: admin.py:208
 #, python-format
 msgid "Sent pilots notification for contract %d to Discord"
 msgstr "Benachrichtigung für Vertrag %d an Discord gesendet"
 
-#: admin.py:204
+#: admin.py:213
 msgid "Sent customer notification for selected contracts to Discord"
 msgstr "Kundenbenachrichtigung für ausgewählte Verträge an Discord gesendet"
 
-#: admin.py:211
+#: admin.py:220
 #, python-format
 msgid "Sent customer notification for contract %d to Discord"
 msgstr "Kundenbenachrichtigung für Vertrag %d an Discord gesendet"
@@ -343,15 +339,10 @@ msgstr ""
 msgid ""
 "Contract Handler setup started for %(organization)s organization with "
 "%(character)s as sync character. Operation mode: %(operation_mode)s. Started"
-" syncing of courier contracts. You will receive a report once it is "
-"completed."
+" syncing of courier contracts. "
 msgstr ""
-"Die Einrichtung des Vertragshandlers wurde für %(organization)s Organisation"
-" mit %(character)s als Synchronisierungscharackter gestartet. Betriebsmodus:"
-" %(operation_mode)s. Mit der Synchronisierung von Kurier Verträgen begonnen."
-" Nach Abschluss erhältst Du einen Bericht."
 
-#: views.py:380
+#: views.py:379
 #, python-format
 msgid ""
 "Failed to add location with token from %(character)s for location ID %(id)s:"
@@ -360,10 +351,10 @@ msgstr ""
 "Der Standort konnte mit dem Token von %(character)s für die Standort-ID "
 "nicht hinzugefügt werden. %(id)s:%(error)s"
 
-#: views.py:390
+#: views.py:389
 msgid "Added:"
 msgstr "Hinzugefügt:"
 
-#: views.py:390
+#: views.py:389
 msgid "Updated:"
 msgstr "Aktualisiert:"

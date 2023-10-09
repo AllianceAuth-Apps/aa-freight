@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - Removed recording of errors. Exceptions now result in task failures
-- Refactoring
+- Big refactoring
 
 ## [1.9.0] - 2023-05-15
 

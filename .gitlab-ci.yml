@@ -29,7 +29,6 @@ pylint:
   image: python:3.10-bullseye
   script:
     - tox -e pylint
-  allow_failure: True
 
 test-38-django40:
   extends: .tox_setup
