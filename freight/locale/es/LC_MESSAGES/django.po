@@ -8,63 +8,61 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-05-13 16:48+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"POT-Creation-Date: 2023-10-09 23:15+0200\n"
+"PO-Revision-Date: 2023-05-13 14:51+0000\n"
+"Language-Team: Spanish (Spain) (https://app.transifex.com/kalkoken-apps/teams/107978/es_ES/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: es_ES\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? 1 : 2;\n"
 
-#: admin.py:39
+#: admin.py:47
 msgid "Update selected locations from ESI"
 msgstr ""
 
-#: admin.py:50
+#: admin.py:58
 #, python-format
-msgid "Started updating %d locations. This can take a short while to complete."
+msgid ""
+"Started updating %d locations. This can take a short while to complete."
 msgstr ""
 
-#: admin.py:112
+#: admin.py:127
 msgid "Fetch contracts from Eve Online server"
 msgstr ""
 
-#: admin.py:118
+#: admin.py:131
 #, python-format
-msgid ""
-"Started syncing contracts for: %s You will receive a report once it is "
-"completed."
+msgid "Started syncing contracts for: %s"
 msgstr ""
 
-#: admin.py:125
+#: admin.py:133
 msgid "Send notifications for outstanding contracts"
 msgstr ""
 
-#: admin.py:129
+#: admin.py:138
 #, python-format
 msgid "Started sending notifications for: %s "
 msgstr ""
 
-#: admin.py:132
+#: admin.py:141
 msgid "Update pricing info for all contracts"
 msgstr ""
 
-#: admin.py:188
+#: admin.py:201
 msgid "Sent pilots notification for selected contracts to Discord"
 msgstr ""
 
-#: admin.py:195
+#: admin.py:208
 #, python-format
 msgid "Sent pilots notification for contract %d to Discord"
 msgstr ""
 
-#: admin.py:200
+#: admin.py:213
 msgid "Sent customer notification for selected contracts to Discord"
 msgstr ""
 
-#: admin.py:207
+#: admin.py:220
 #, python-format
 msgid "Sent customer notification for contract %d to Discord"
 msgstr ""
@@ -294,50 +292,49 @@ msgstr ""
 #, python-format
 msgid ""
 "\n"
-"            Statistics calculated for all contracts finished withn the last "
-"%(max_days)s days\n"
+"            Statistics calculated for all contracts finished withn the last %(max_days)s days\n"
 "        "
 msgstr ""
 
-#: views.py:266
+#: views.py:276
 #, python-format
 msgid ""
 "Can not setup contract handler, because %s is not a member of any alliance"
 msgstr ""
 
-#: views.py:283
+#: views.py:293
 #, python-format
 msgid ""
 "You can only use your main or alt characters to setup the contract handler. "
 "However, character %s is neither. "
 msgstr ""
 
-#: views.py:297
+#: views.py:307
 msgid ""
 "There already is a contract handler installed for a different operation "
 "mode. You need to first delete the existing contract handler in the admin "
 "section before you can set up this app for a different operation mode."
 msgstr ""
 
-#: views.py:321
+#: views.py:331
 #, python-format
 msgid ""
 "Contract Handler setup started for %(organization)s organization with "
-"%(character)s as sync character. Operation mode: %(operation_mode)s. Started "
-"syncing of courier contracts. You will receive a report once it is completed."
+"%(character)s as sync character. Operation mode: %(operation_mode)s. Started"
+" syncing of courier contracts. "
 msgstr ""
 
-#: views.py:368
+#: views.py:379
 #, python-format
 msgid ""
-"Failed to add location with token from %(character)s for location ID %(id)s: "
-"%(error)s"
+"Failed to add location with token from %(character)s for location ID %(id)s:"
+" %(error)s"
 msgstr ""
 
-#: views.py:378
+#: views.py:389
 msgid "Added:"
 msgstr ""
 
-#: views.py:378
+#: views.py:389
 msgid "Updated:"
 msgstr ""

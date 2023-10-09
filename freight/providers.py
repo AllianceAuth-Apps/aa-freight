@@ -1,8 +1,8 @@
-from pathlib import Path
+"""ESI client provider for Freight."""
+
 
 from esi.clients import EsiClientProvider
 
 from . import __version__
 
-spec_file = Path(__file__).parent / "swagger.json"
-esi = EsiClientProvider(app_info_text=f"aa-freight v{__version__}", spec_file=spec_file)
+esi = EsiClientProvider(app_info_text=f"aa-freight v{__version__}")

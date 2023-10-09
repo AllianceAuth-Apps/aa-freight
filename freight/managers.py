@@ -1,7 +1,11 @@
+"""Managers for Freight."""
+
+# pylint: disable = missing-class-docstring, import-outside-toplevel, redefined-builtin
+
 import json
 from datetime import datetime
 from time import sleep
-from typing import Tuple
+from typing import Any, Tuple
 
 from bravado.exception import HTTPForbidden, HTTPUnauthorized
 
@@ -10,7 +14,7 @@ from django.db import models, transaction
 from django.utils.timezone import now
 from esi.models import Token
 
-from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
+from allianceauth.eveonline.models import EveCharacter
 from allianceauth.eveonline.providers import ObjectNotFound
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.logging import LoggerAddTag
@@ -22,6 +26,7 @@ from .app_settings import (
     FREIGHT_DISCORDPROXY_ENABLED,
     FREIGHT_NOTIFY_ALL_CONTRACTS,
 )
+from .helpers import get_or_create_eve_character, get_or_create_eve_corporation_info
 from .providers import esi
 
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
@@ -29,11 +34,12 @@ logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
 class PricingManager(models.Manager):
     def get_queryset(self) -> models.QuerySet:
+        """:private:"""
         return super().get_queryset().select_related("start_location", "end_location")
 
     def get_default(self):
-        """return the default pricing if defined
-        else the first pricing, which can be None if no pricing exists
+        """Return the default pricing if defined
+        else the first pricing, which can be None if no pricing exists.
         """
         pricing_qs = self.filter(is_active=True)
         pricing = pricing_qs.filter(is_default=True).first()
@@ -42,7 +48,7 @@ class PricingManager(models.Manager):
         return pricing
 
     def get_or_default(self, pk: int = None):
-        """returns the pricing for given pk if found else default pricing"""
+        """Return the pricing for given pk if found else default pricing."""
         if pk:
             try:
                 return self.filter(is_active=True).get(pk=pk)
@@ -57,7 +63,7 @@ class LocationManager(models.Manager):
 
     def get_or_create_esi(
         self, token: Token, location_id: int, add_unknown: bool = True
-    ) -> Tuple[models.Model, bool]:
+    ) -> Tuple[Any, bool]:
         """gets or creates location object with data fetched from ESI"""
         from .models import Location
 
@@ -72,11 +78,11 @@ class LocationManager(models.Manager):
 
     def update_or_create_esi(
         self, token: Token, location_id: int, add_unknown: bool = True
-    ) -> Tuple[models.Model, bool]:
+    ) -> Tuple[Any, bool]:
         """updates or creates location object with data fetched from ESI"""
         from .models import Location
 
-        if location_id >= self.STATION_ID_START and location_id <= self.STATION_ID_END:
+        if self.STATION_ID_START <= location_id <= self.STATION_ID_END:
             logger.info("%s: Fetching station from ESI", location_id)
             station = esi.client.Universe.get_universe_stations_station_id(
                 station_id=location_id
@@ -90,35 +96,36 @@ class LocationManager(models.Manager):
                     "category_id": Location.Category.STATION_ID,
                 },
             )
+
         try:
             structure = esi.client.Universe.get_universe_structures_structure_id(
                 token=token.valid_access_token(), structure_id=location_id
             ).results()
         except (HTTPUnauthorized, HTTPForbidden) as ex:
-            logger.warn("%s: No access to this structure: %s", location_id, ex)
+            logger.warning("%s: No access to this structure: %s", location_id, ex)
             if add_unknown:
                 return self.get_or_create(
                     id=location_id,
                     defaults={
-                        "name": "Unknown structure {}".format(location_id),
+                        "name": f"Unknown structure {location_id}",
                         "category_id": Location.Category.STRUCTURE_ID,
                     },
                 )
             raise ex
-        else:
-            return self.update_or_create(
-                id=location_id,
-                defaults={
-                    "name": structure["name"],
-                    "solar_system_id": structure["solar_system_id"],
-                    "type_id": structure["type_id"],
-                    "category_id": Location.Category.STRUCTURE_ID,
-                },
-            )
+
+        return self.update_or_create(
+            id=location_id,
+            defaults={
+                "name": structure["name"],
+                "solar_system_id": structure["solar_system_id"],
+                "type_id": structure["type_id"],
+                "category_id": Location.Category.STRUCTURE_ID,
+            },
+        )
 
 
 class EveEntityManager(models.Manager):
-    def get_or_create_esi(self, *, id: int) -> Tuple[models.Model, bool]:
+    def get_or_create_esi(self, *, id: int) -> Tuple[Any, bool]:
         """gets or creates entity object with data fetched from ESI"""
         from .models import EveEntity
 
@@ -128,7 +135,7 @@ class EveEntityManager(models.Manager):
         except EveEntity.DoesNotExist:
             return self.update_or_create_esi(id=id)
 
-    def update_or_create_esi(self, *, id: int) -> Tuple[models.Model, bool]:
+    def update_or_create_esi(self, *, id: int) -> Tuple[Any, bool]:
         """updates or creates entity object with data fetched from ESI"""
         response = esi.client.Universe.post_universe_names(ids=[id]).results()
         if len(response) != 1:
@@ -145,7 +152,7 @@ class EveEntityManager(models.Manager):
 
 class ContractQuerySet(models.QuerySet):
     def pending_count(self) -> int:
-        """returns the number of pending contacts for this QS"""
+        """Returns the number of pending contracts."""
         return (
             self.filter(status=self.model.Status.OUTSTANDING)
             .exclude(date_expired__lt=now())
@@ -153,10 +160,11 @@ class ContractQuerySet(models.QuerySet):
         )
 
     def filter_not_completed(self):
-        return self.exclude(status__in=self.model.Status.completed)
+        """Return contracts which are not yet completed."""
+        return self.exclude(status__in=self.model.Status.completed())
 
     def issued_by_user(self, user: User) -> models.QuerySet:
-        """returns QS of contracts issued by a character owned by given user"""
+        """Returns contracts issued by a character owned by given user."""
         return self.filter(
             issuer__in=EveCharacter.objects.filter(character_ownership__user=user)
         )
@@ -166,9 +174,9 @@ class ContractQuerySet(models.QuerySet):
         from .models import Pricing
 
         def _make_key(location_id_1: int, location_id_2: int) -> str:
-            return "{}x{}".format(int(location_id_1), int(location_id_2))
+            return f"{location_id_1}x{location_id_2}"
 
-        pricings = dict()
+        pricings = {}
         for obj in Pricing.objects.filter(is_active=True).order_by("-id"):
             pricings[_make_key(obj.start_location_id, obj.end_location_id)] = obj
             if obj.is_bidirectional:
@@ -234,11 +242,13 @@ class ContractQuerySet(models.QuerySet):
                     self.model.Status.IN_PROGRESS,
                 ]
             ).exclude(date_expired__lt=now())
-        elif category == constants.CONTRACT_LIST_ALL:
+
+        if category == constants.CONTRACT_LIST_ALL:
             if not user.has_perm("freight.view_contracts"):
                 return self.none()
             return self
-        elif category == constants.CONTRACT_LIST_USER:
+
+        if category == constants.CONTRACT_LIST_USER:
             if not user.has_perm("freight.use_calculator"):
                 return self.none()
             return self.issued_by_user(user=user).filter(
@@ -249,14 +259,15 @@ class ContractQuerySet(models.QuerySet):
                     self.model.Status.FAILED,
                 ]
             )
-        raise ValueError("Invalid category: {}".format(category))
+
+        raise ValueError(f"Invalid category: {category}")
 
 
 class ContractManagerBase(models.Manager):
     def update_or_create_from_dict(
-        self, handler: object, contract: dict, token: Token
-    ) -> Tuple[models.Model, bool]:
-        """updates or creates a contract from given dict"""
+        self, handler: Any, contract: dict, token: Token
+    ) -> Tuple[Any, bool]:
+        """Updates or create a contract from dict."""
         # validate types
         self._ensure_datetime_type_or_none(contract, "date_accepted")
         self._ensure_datetime_type_or_none(contract, "date_completed")
@@ -272,7 +283,7 @@ class ContractManagerBase(models.Manager):
         )
         title = contract["title"] if "title" in contract else None
         start_location, end_location = self._identify_locations(contract, token)
-        return self.update_or_create(
+        obj, created = self.update_or_create(
             handler=handler,
             contract_id=contract["contract_id"],
             defaults={
@@ -297,13 +308,14 @@ class ContractManagerBase(models.Manager):
                 "issues": None,
             },
         )
+        return obj, created
 
     @staticmethod
     def _ensure_datetime_type_or_none(contract: dict, property_name: str):
         if contract[property_name] and not isinstance(
             contract[property_name], datetime
         ):
-            raise TypeError("%s must be of type datetime" % property_name)
+            raise TypeError(f"{property_name} must be of type datetime")
 
     def _identify_locations(self, contract: dict, token: Token) -> tuple:
         from .models import Location
@@ -319,73 +331,39 @@ class ContractManagerBase(models.Manager):
     def _identify_contracts_acceptor(self, contract: dict) -> tuple:
         from .models import EveEntity
 
-        if int(contract["acceptor_id"]) != 0:
-            try:
-                entity, _ = EveEntity.objects.get_or_create_esi(
-                    id=contract["acceptor_id"]
-                )
-                if entity.is_character:
-                    try:
-                        acceptor = EveCharacter.objects.get(character_id=entity.id)
-                    except EveCharacter.DoesNotExist:
-                        acceptor = EveCharacter.objects.create_character(
-                            character_id=entity.id
-                        )
-                    try:
-                        acceptor_corporation = EveCorporationInfo.objects.get(
-                            corporation_id=acceptor.corporation_id
-                        )
-                    except EveCorporationInfo.DoesNotExist:
-                        acceptor_corporation = (
-                            EveCorporationInfo.objects.create_corporation(
-                                corp_id=acceptor.corporation_id
-                            )
-                        )
-                elif entity.is_corporation:
-                    acceptor = None
-                    try:
-                        acceptor_corporation = EveCorporationInfo.objects.get(
-                            corporation_id=entity.id
-                        )
-                    except EveCorporationInfo.DoesNotExist:
-                        acceptor_corporation = (
-                            EveCorporationInfo.objects.create_corporation(
-                                corp_id=entity.id
-                            )
-                        )
-                else:
-                    raise ValueError(
-                        "Acceptor has invalid category: {}".format(entity.category)
-                    )
+        acceptor_id = int(contract["acceptor_id"])
+        if acceptor_id == 0:
+            return None, None
 
-            except Exception:
-                logger.exception(
-                    "%s: Failed to identify acceptor for this contract",
-                    contract["contract_id"],
-                    exc_info=True,
-                )
-                acceptor = None
-                acceptor_corporation = None
-        else:
+        try:
+            entity: EveEntity = EveEntity.objects.get_or_create_esi(id=acceptor_id)[0]
+        except OSError:
+            logger.exception(
+                "%s: Failed to identify acceptor for this contract",
+                contract["contract_id"],
+            )
+            return None, None
+
+        if entity.is_character:
+            acceptor, _ = get_or_create_eve_character(entity.id)
+            acceptor_corporation, _ = get_or_create_eve_corporation_info(
+                acceptor.corporation_id
+            )
+
+        elif entity.is_corporation:
             acceptor = None
-            acceptor_corporation = None
+            acceptor_corporation, _ = get_or_create_eve_corporation_info(entity.id)
+
+        else:
+            acceptor = acceptor_corporation = None
+
         return acceptor, acceptor_corporation
 
     def _identify_contracts_issuer(self, contract) -> tuple:
-        try:
-            issuer = EveCharacter.objects.get(character_id=contract["issuer_id"])
-        except EveCharacter.DoesNotExist:
-            issuer = EveCharacter.objects.create_character(
-                character_id=contract["issuer_id"]
-            )
-        try:
-            issuer_corporation = EveCorporationInfo.objects.get(
-                corporation_id=contract["issuer_corporation_id"]
-            )
-        except EveCorporationInfo.DoesNotExist:
-            issuer_corporation = EveCorporationInfo.objects.create_corporation(
-                corp_id=contract["issuer_corporation_id"]
-            )
+        issuer, _ = get_or_create_eve_character(contract["issuer_id"])
+        issuer_corporation, _ = get_or_create_eve_corporation_info(
+            contract["issuer_corporation_id"]
+        )
         return issuer_corporation, issuer
 
     def send_notifications(
@@ -429,7 +407,7 @@ class ContractManagerBase(models.Manager):
     ) -> None:
         if FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL or FREIGHT_DISCORDPROXY_ENABLED:
             contracts_qs = self.filter(
-                status__in=self.model.Status.for_customer_notification
+                status__in=self.model.Status.for_customer_notification()
             )
             if not FREIGHT_NOTIFY_ALL_CONTRACTS:
                 contracts_qs = contracts_qs.exclude(pricing__exact=None)

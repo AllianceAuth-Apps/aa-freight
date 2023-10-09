@@ -18,6 +18,11 @@ from freight.app_settings import (
 from freight.models import Contract, ContractHandler, Location
 
 from .testdata.factories import create_pricing
+from .testdata.factories_2 import (
+    ContractFactory,
+    UserMainDefaultFactory,
+    UserMainManagerFactory,
+)
 from .testdata.helpers import create_contract_handler_w_contracts
 
 MODULE_PATH = "freight.views"
@@ -61,6 +66,23 @@ class TestCalculator(NoSocketsTestCase):
         request.user = AuthUtils.create_user("Lex Luthor")
         response = views.calculator(request)
         self.assertNotEqual(response.status_code, HTTPStatus.OK)
+
+
+class TestCalculator2(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.factory = RequestFactory()
+        cls.user = UserMainDefaultFactory()
+
+    def test_can_render_calculator_without_handler(self):
+        # given
+        request = self.factory.get(reverse("freight:calculator"))
+        request.user = self.user
+        # when
+        response = views.calculator(request)
+        # then
+        self.assertEqual(response.status_code, HTTPStatus.OK)
 
 
 class TestContractList(TestCase):
@@ -241,6 +263,30 @@ class TestContractList(TestCase):
                 149409064,
             },
         )
+
+
+class TestContractListData(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.factory = RequestFactory()
+        cls.user = UserMainManagerFactory()
+
+    def test_should_return_contract(self):
+        # given
+        ContractFactory(status=Contract.Status.IN_PROGRESS, contract_id=123456789)
+        request = self.factory.get(
+            reverse("freight:contract_list_data", args={constants.CONTRACT_LIST_ALL})
+        )
+        request.user = self.user
+        # when
+        response = views.contract_list_data(request, constants.CONTRACT_LIST_ALL)
+        # then
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+        data = json_response_to_python(response)["data"]
+        obj = data[0]
+        self.assertEqual(obj["contract_id"], 123456789)
+        self.assertEqual(obj["status"], "in_progress")
 
 
 class TestSetupContractHandler(NoSocketsTestCase):

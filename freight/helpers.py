@@ -1,14 +1,15 @@
-from typing import Tuple
+"""Helpers for Freight."""
 
-from allianceauth.eveonline.models import EveCharacter
+from typing import Any, Tuple
 
-from .models import EveEntity
+from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 
 
 def update_or_create_eve_entity_from_evecharacter(
     character: EveCharacter, category: str
-) -> Tuple[EveEntity, bool]:
-    """Updates or create an EveEntity object from an EveCharacter object."""
+) -> Tuple[Any, bool]:
+    """Update or create an EveEntity object from an EveCharacter object."""
+    from .models import EveEntity
 
     if category == EveEntity.CATEGORY_ALLIANCE:
         if not character.alliance_id:
@@ -20,7 +21,8 @@ def update_or_create_eve_entity_from_evecharacter(
                 "category": EveEntity.CATEGORY_ALLIANCE,
             },
         )
-    elif category == EveEntity.CATEGORY_CORPORATION:
+
+    if category == EveEntity.CATEGORY_CORPORATION:
         return EveEntity.objects.update_or_create(
             id=character.corporation_id,
             defaults={
@@ -28,7 +30,8 @@ def update_or_create_eve_entity_from_evecharacter(
                 "category": EveEntity.CATEGORY_CORPORATION,
             },
         )
-    elif category == EveEntity.CATEGORY_CHARACTER:
+
+    if category == EveEntity.CATEGORY_CHARACTER:
         return EveEntity.objects.update_or_create(
             id=character.character_id,
             defaults={
@@ -36,4 +39,27 @@ def update_or_create_eve_entity_from_evecharacter(
                 "category": EveEntity.CATEGORY_CHARACTER,
             },
         )
+
     raise ValueError(f"Invalid category: f{category}")
+
+
+def get_or_create_eve_character(character_id: int) -> Tuple[Any, bool]:
+    """Get or create EveCharacter object."""
+    try:
+        return EveCharacter.objects.get(character_id=character_id), False
+    except EveCharacter.DoesNotExist:
+        return EveCharacter.objects.create_character(character_id=character_id), True
+
+
+def get_or_create_eve_corporation_info(corporation_id: int) -> Tuple[Any, bool]:
+    """Get or create EveCorporationInfo object."""
+    try:
+        return (
+            EveCorporationInfo.objects.get(corporation_id=corporation_id),
+            False,
+        )
+    except EveCorporationInfo.DoesNotExist:
+        return (
+            EveCorporationInfo.objects.create_corporation(corp_id=corporation_id),
+            True,
+        )

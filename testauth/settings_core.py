@@ -328,3 +328,6 @@ DISCORD_SYNC_NAMES = False
 FREIGHT_OPERATION_MODE = "corp_public"
 FREIGHT_DISCORD_WEBHOOK_URL = "https://www.example.com/discord/webhook_1"
 FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL = "https://www.example.com/discord/webhook_2"
+
+# Workaround
+STATICFILES_DIRS = []

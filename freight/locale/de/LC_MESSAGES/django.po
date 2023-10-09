@@ -3,341 +3,358 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+# Translators:
+# Peter Pfeufer, 2023
+#
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-05-13 16:48+0200\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: \n"
+"POT-Creation-Date: 2023-10-09 23:15+0200\n"
+"PO-Revision-Date: 2023-05-13 14:51+0000\n"
+"Last-Translator: Peter Pfeufer, 2023\n"
+"Language-Team: German (https://app.transifex.com/kalkoken-apps/teams/107978/de/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Language: de\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: admin.py:39
+#: admin.py:47
 msgid "Update selected locations from ESI"
-msgstr ""
+msgstr "Ausgewählte Standorte von ESI aktualisieren"
 
-#: admin.py:50
-#, python-format
-msgid "Started updating %d locations. This can take a short while to complete."
-msgstr ""
-
-#: admin.py:112
-msgid "Fetch contracts from Eve Online server"
-msgstr ""
-
-#: admin.py:118
+#: admin.py:58
 #, python-format
 msgid ""
-"Started syncing contracts for: %s You will receive a report once it is "
-"completed."
+"Started updating %d locations. This can take a short while to complete."
+msgstr ""
+"Mit der Aktualisierung von %d Standorten begonnen. Dies kann eine kurze Zeit"
+" in Anspruch nehmen."
+
+#: admin.py:127
+msgid "Fetch contracts from Eve Online server"
+msgstr "Verträge vom Eve Online-Server abrufen"
+
+#: admin.py:131
+#, python-format
+msgid "Started syncing contracts for: %s"
 msgstr ""
 
-#: admin.py:125
+#: admin.py:133
 msgid "Send notifications for outstanding contracts"
-msgstr ""
+msgstr "Benachrichtigungen für ausstehende Verträge senden"
 
-#: admin.py:129
+#: admin.py:138
 #, python-format
 msgid "Started sending notifications for: %s "
-msgstr ""
+msgstr "Mit dem Versenden von Benachrichtigungen begonnen für: %s"
 
-#: admin.py:132
+#: admin.py:141
 msgid "Update pricing info for all contracts"
-msgstr ""
+msgstr "Preisinformationen für alle Verträge aktualisieren"
 
-#: admin.py:188
+#: admin.py:201
 msgid "Sent pilots notification for selected contracts to Discord"
-msgstr ""
+msgstr "Benachrichtigung für ausgewählte Verträge an Discord gesendet"
 
-#: admin.py:195
+#: admin.py:208
 #, python-format
 msgid "Sent pilots notification for contract %d to Discord"
-msgstr ""
+msgstr "Benachrichtigung für Vertrag %d an Discord gesendet"
 
-#: admin.py:200
+#: admin.py:213
 msgid "Sent customer notification for selected contracts to Discord"
-msgstr ""
+msgstr "Kundenbenachrichtigung für ausgewählte Verträge an Discord gesendet"
 
-#: admin.py:207
+#: admin.py:220
 #, python-format
 msgid "Sent customer notification for contract %d to Discord"
-msgstr ""
+msgstr "Kundenbenachrichtigung für Vertrag %d an Discord gesendet"
 
 #: templates/freight/add_location.html:11
 msgid "Add / Update Location"
-msgstr ""
+msgstr "Standort hinzufügen/aktualisieren"
 
 #: templates/freight/add_location.html:14
 #, python-format
 msgid "Accessing structures with token from %(token_char_name)s"
-msgstr ""
+msgstr "Zugriff auf Strukturen mit Token von %(token_char_name)s"
 
 #: templates/freight/calculator.html:15
 msgid "Calculator"
-msgstr ""
+msgstr "Rechner"
 
 #: templates/freight/calculator.html:21
 msgid "Reward"
-msgstr ""
+msgstr "Prämie"
 
 #: templates/freight/calculator.html:24 templates/freight/calculator.html:75
 #: templates/freight/calculator.html:86 templates/freight/calculator.html:94
 #: templates/freight/calculator.html:124 templates/freight/calculator.html:132
 #: templates/freight/calculator.html:186 templates/freight/calculator.html:195
 msgid "ISK"
-msgstr ""
+msgstr "ISK"
 
 #: templates/freight/calculator.html:31
 msgid "Click To Calculate Reward!"
-msgstr ""
+msgstr "Klicken Sie hier, um die Prämie zu berechnen!"
 
 #: templates/freight/calculator.html:35 templates/freight/calculator.html:146
 msgid "Please define a pricing/route!"
-msgstr ""
+msgstr "Bitte legen Sie einen Preis/eine Route fest!"
 
 #: templates/freight/calculator.html:46
 msgid "Pricing details"
-msgstr ""
+msgstr "Preisdetails"
 
 #: templates/freight/calculator.html:54 templates/freight/calculator.html:62
 msgid "From / To:"
-msgstr ""
+msgstr "Von/Nach:"
 
 #: templates/freight/calculator.html:56
 msgid "From:"
-msgstr ""
+msgstr "Von:"
 
 #: templates/freight/calculator.html:64
 msgid "To:"
-msgstr ""
+msgstr "Nach:"
 
 #: templates/freight/calculator.html:68
 msgid "Both directions:"
-msgstr ""
+msgstr "Beide Richtungen:"
 
 #: templates/freight/calculator.html:73
 msgid "Minimum price:"
-msgstr ""
+msgstr "Minimaler Preis:"
 
 #: templates/freight/calculator.html:81
 msgid "Fix price:"
-msgstr ""
+msgstr "Festpreis:"
 
 #: templates/freight/calculator.html:83
 msgid "Base price:"
-msgstr ""
+msgstr "Grundpreis:"
 
 #: templates/freight/calculator.html:91
 msgid "Price add-on per m3:"
-msgstr ""
+msgstr "Aufpreis pro m3:"
 
 #: templates/freight/calculator.html:99
 msgid "Price add-on collateral:"
-msgstr ""
+msgstr "Preisaufschlag als Sicherheit:"
 
 #: templates/freight/calculator.html:105
 msgid "Min Volume:"
-msgstr ""
+msgstr "Mindestvolumen:"
 
 #: templates/freight/calculator.html:108 templates/freight/calculator.html:116
 #: templates/freight/calculator.html:220
 msgid "m3"
-msgstr ""
+msgstr "m3"
 
 #: templates/freight/calculator.html:113
 msgid "Max Volume:"
-msgstr ""
+msgstr "Maximales Volumen:"
 
 #: templates/freight/calculator.html:121
 msgid "Min. Collateral:"
-msgstr ""
+msgstr "Min. Sicherheit:"
 
 #: templates/freight/calculator.html:129
 msgid "Max. Collateral:"
-msgstr ""
+msgstr "Max. Sicherheit:"
 
 #: templates/freight/calculator.html:139
 msgid "Additional Instructions:"
-msgstr ""
+msgstr "Zusätzliche Anweisungen:"
 
 #: templates/freight/calculator.html:154
 msgid "Your contract"
-msgstr ""
+msgstr "Dein Vertrag"
 
 #: templates/freight/calculator.html:159
 msgid "Contract Type:"
-msgstr ""
+msgstr "Vertragstyp:"
 
 #: templates/freight/calculator.html:160
 msgid "Courier"
-msgstr ""
+msgstr "Kurier"
 
 #: templates/freight/calculator.html:162
 msgid "Availability:"
-msgstr ""
+msgstr "Verfügbarkeit:"
 
 #: templates/freight/calculator.html:165
 msgid "Location:"
-msgstr ""
+msgstr "Standort:"
 
 #: templates/freight/calculator.html:175
 msgid "Ship To:"
-msgstr ""
+msgstr "Versenden nach:"
 
 #: templates/freight/calculator.html:183
 msgid "Reward:"
-msgstr ""
+msgstr "Prämie:"
 
 #: templates/freight/calculator.html:192
 msgid "Collateral:"
-msgstr ""
+msgstr "Sicherheit:"
 
 #: templates/freight/calculator.html:202
 msgid "Expiration:"
-msgstr ""
+msgstr "Ablauf:"
 
 #: templates/freight/calculator.html:203
 msgid "days"
-msgstr ""
+msgstr "Tage"
 
 #: templates/freight/calculator.html:207
 msgid "Days to complete:"
-msgstr ""
+msgstr "Tage zum Abschließen:"
 
 #: templates/freight/calculator.html:217
 msgid "Volume:"
-msgstr ""
+msgstr "Volumen:"
 
 #: templates/freight/calculator.html:225
 msgid ""
 "Note that this route is bidirectional, so Location and Destination can be "
 "switched."
 msgstr ""
+"Beachte, dass diese Route bidirektional ist, daher können Standort und Ziel "
+"vertauscht werden."
 
 #: templates/freight/calculator.html:229
 msgid "No price calculated yet"
-msgstr ""
+msgstr "Noch kein Preis berechnet"
 
 #: templates/freight/contracts_all.html:12
 msgid "Active"
-msgstr ""
+msgstr "Aktiv"
 
 #: templates/freight/contracts_all.html:17
 msgid "All"
-msgstr ""
+msgstr "Alle"
 
 #: templates/freight/partials/menu.html:9
 msgid "Toggle navigation"
-msgstr ""
+msgstr "Navigation umschalten"
 
 #: templates/freight/statistics.html:12
 msgid "Routes"
-msgstr ""
+msgstr "Routen"
 
 #: templates/freight/statistics.html:17 templates/freight/statistics.html:51
 msgid "Pilots"
-msgstr ""
+msgstr "Piloten"
 
 #: templates/freight/statistics.html:26
 msgid "Pilot Corporations"
-msgstr ""
+msgstr "Piloten Corporationen"
 
 #: templates/freight/statistics.html:31 templates/freight/statistics.html:52
 msgid "Customers"
-msgstr ""
+msgstr "Kunden"
 
 #: templates/freight/statistics.html:46 templates/freight/statistics.html:77
 #: templates/freight/statistics.html:108 templates/freight/statistics.html:139
 msgid "Name"
-msgstr ""
+msgstr "Name"
 
 #: templates/freight/statistics.html:47 templates/freight/statistics.html:79
 #: templates/freight/statistics.html:110 templates/freight/statistics.html:141
 msgid "Contracts"
-msgstr ""
+msgstr "Verträge"
 
 #: templates/freight/statistics.html:48 templates/freight/statistics.html:80
 #: templates/freight/statistics.html:111 templates/freight/statistics.html:142
 msgid "Rewards"
-msgstr ""
+msgstr "Prämien"
 
 #: templates/freight/statistics.html:49 templates/freight/statistics.html:81
 #: templates/freight/statistics.html:112 templates/freight/statistics.html:143
 msgid "Collaterals"
-msgstr ""
+msgstr "Sicherheiten"
 
 #: templates/freight/statistics.html:50 templates/freight/statistics.html:82
 #: templates/freight/statistics.html:113 templates/freight/statistics.html:144
 msgid "Volume"
-msgstr ""
+msgstr "Volumen"
 
 #: templates/freight/statistics.html:58 templates/freight/statistics.html:88
 #: templates/freight/statistics.html:119 templates/freight/statistics.html:150
 msgid "Totals"
-msgstr ""
+msgstr "Gesamt"
 
 #: templates/freight/statistics.html:78 templates/freight/statistics.html:140
 msgid "Corporation"
-msgstr ""
+msgstr "Corporation"
 
 #: templates/freight/statistics.html:109
 msgid "Alliance"
-msgstr ""
+msgstr "Allianz"
 
 #: templates/freight/statistics.html:166
 #, python-format
 msgid ""
 "\n"
-"            Statistics calculated for all contracts finished withn the last "
-"%(max_days)s days\n"
+"            Statistics calculated for all contracts finished withn the last %(max_days)s days\n"
 "        "
 msgstr ""
+"\n"
+"Statistiken für alle Verträge berechnet, die innerhalb der letzten %(max_days)s Tage abgeschlossen wurden"
 
-#: views.py:266
+#: views.py:276
 #, python-format
 msgid ""
 "Can not setup contract handler, because %s is not a member of any alliance"
 msgstr ""
+"Der Vertragshandler kann nicht eingerichtet werden, da %s keiner Allianz "
+"angehört"
 
-#: views.py:283
+#: views.py:293
 #, python-format
 msgid ""
 "You can only use your main or alt characters to setup the contract handler. "
 "However, character %s is neither. "
 msgstr ""
+"Du kannst zum Einrichten des Vertragshandlers nur Deinen Haupt- oder Alt-"
+"Charakter verwenden. Charakter %s ist jedoch weder das eine noch das andere."
 
-#: views.py:297
+#: views.py:307
 msgid ""
 "There already is a contract handler installed for a different operation "
 "mode. You need to first delete the existing contract handler in the admin "
 "section before you can set up this app for a different operation mode."
 msgstr ""
+"Für einen anderen Betriebsmodus ist bereits ein Vertragshandler "
+"eingerichtet.Du musst zunächst den vorhandenen Vertragshandler im Admin-"
+"Bereich löschen, bevor Du diese App für einen anderen Betriebsmodus "
+"einrichten kannst."
 
-#: views.py:321
+#: views.py:331
 #, python-format
 msgid ""
 "Contract Handler setup started for %(organization)s organization with "
-"%(character)s as sync character. Operation mode: %(operation_mode)s. Started "
-"syncing of courier contracts. You will receive a report once it is completed."
+"%(character)s as sync character. Operation mode: %(operation_mode)s. Started"
+" syncing of courier contracts. "
 msgstr ""
 
-#: views.py:368
+#: views.py:379
 #, python-format
 msgid ""
-"Failed to add location with token from %(character)s for location ID %(id)s: "
-"%(error)s"
+"Failed to add location with token from %(character)s for location ID %(id)s:"
+" %(error)s"
 msgstr ""
+"Der Standort konnte mit dem Token von %(character)s für die Standort-ID "
+"nicht hinzugefügt werden. %(id)s:%(error)s"
 
-#: views.py:378
+#: views.py:389
 msgid "Added:"
-msgstr ""
+msgstr "Hinzugefügt:"
 
-#: views.py:378
+#: views.py:389
 msgid "Updated:"
-msgstr ""
+msgstr "Aktualisiert:"

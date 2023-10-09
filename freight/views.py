@@ -1,3 +1,5 @@
+"""Views for freight."""
+
 import datetime
 
 from django.conf import settings
@@ -54,12 +56,14 @@ def add_common_context(request, context: dict) -> dict:
 @login_required
 @permission_required("freight.basic_access")
 def index(request):
+    """Index view."""
     return redirect("freight:calculator")
 
 
 @login_required
 @permission_required("freight.use_calculator")
 def contract_list_user(request):
+    """View rendering contract list with contracts of a user only."""
     try:
         user_name = request.user.profile.main_character.character_name
     except AttributeError:
@@ -77,6 +81,7 @@ def contract_list_user(request):
 @login_required
 @permission_required("freight.view_contracts")
 def contract_list_all(request):
+    """View rendering contract list with all contracts."""
     context = {"page_title": "All Contracts", "category": constants.CONTRACT_LIST_ALL}
     return render(
         request, "freight/contracts_all.html", add_common_context(request, context)
@@ -87,7 +92,7 @@ def contract_list_all(request):
 @permission_required("freight.basic_access")
 def contract_list_data(request, category: str) -> JsonResponse:
     """Return list of outstanding contracts for contract_list AJAX call."""
-    contracts_data = list()
+    contracts_data = []
     contracts_qs = Contract.objects.select_related(
         "acceptor",
         "acceptor_corporation",
@@ -99,45 +104,8 @@ def contract_list_data(request, category: str) -> JsonResponse:
         "pricing__end_location",
     ).contract_list_filter(category=category, user=request.user)
     for contract in contracts_qs:
-        if contract.has_pricing:
-            route_name = contract.pricing.name
-            if not contract.has_pricing_errors:
-                tooltip_text = route_name
-                icon_html = format_html(
-                    '<span class="{}"><i class="fas fa-check" title="{}"></i></span>',
-                    "text-success",
-                    tooltip_text,
-                )
-            else:
-                tooltip_text = "{}\n{}".format(
-                    route_name, "\n".join(contract.get_issue_list())
-                )
-                icon_html = format_html(
-                    (
-                        '<span class="{}">'
-                        '<i class="fas fa-exclamation-triangle" title="{}"></i>'
-                        "</span>"
-                    ),
-                    "text-danger",
-                    tooltip_text,
-                )
-
-            pricing_check = icon_html
-        else:
-            route_name = ""
-            pricing_check = "-"
-
-        if contract.title or settings.DEBUG:
-            if settings.DEBUG:
-                title = "{}{}".format(
-                    f"{contract.title} " if contract.title else "", contract.contract_id
-                )
-            else:
-                title = contract.title
-
-            notes = format_html('<i class="far fa-envelope" title="{}"></i>', title)
-        else:
-            notes = ""
+        route_name, pricing_check = _fetch_pricing_infos(contract)
+        notes = _calc_notes(contract)
 
         start_location_html = format_html(
             '<span class="dotted-underline" title="{}">{}</span> {}',
@@ -150,10 +118,6 @@ def contract_list_data(request, category: str) -> JsonResponse:
             contract.end_location,
             contract.end_location.solar_system_name,
         )
-        try:
-            issuer_character_name = contract.issuer.character_name
-        except AttributeError:
-            issuer_character_name = None
         contracts_data.append(
             {
                 "contract_id": contract.contract_id,
@@ -171,7 +135,7 @@ def contract_list_data(request, category: str) -> JsonResponse:
                 "volume": contract.volume,
                 "date_issued": contract.date_issued.isoformat(),
                 "date_expired": contract.date_expired.isoformat(),
-                "issuer": issuer_character_name,
+                "issuer": contract.issuer.character_name,
                 "date_accepted": contract.date_accepted.isoformat()
                 if contract.date_accepted
                 else None,
@@ -188,9 +152,54 @@ def contract_list_data(request, category: str) -> JsonResponse:
     return JsonResponse({"data": contracts_data})
 
 
+def _calc_notes(contract):
+    if contract.title or settings.DEBUG:
+        if settings.DEBUG:
+            title_first = f"{contract.title} " if contract.title else ""
+            title = f"{title_first}{contract.contract_id}"
+        else:
+            title = contract.title
+
+        notes = format_html('<i class="far fa-envelope" title="{}"></i>', title)
+    else:
+        notes = ""
+    return notes
+
+
+def _fetch_pricing_infos(contract):
+    if contract.has_pricing:
+        route_name = contract.pricing.name
+        if not contract.has_pricing_errors:
+            tooltip_text = route_name
+            icon_html = format_html(
+                '<span class="{}"><i class="fas fa-check" title="{}"></i></span>',
+                "text-success",
+                tooltip_text,
+            )
+        else:
+            issues_text = "\n".join(contract.get_issue_list())
+            tooltip_text = f"{route_name}\n{issues_text}"
+            icon_html = format_html(
+                (
+                    '<span class="{}">'
+                    '<i class="fas fa-exclamation-triangle" title="{}"></i>'
+                    "</span>"
+                ),
+                "text-danger",
+                tooltip_text,
+            )
+
+        pricing_check = icon_html
+    else:
+        route_name = ""
+        pricing_check = "-"
+    return route_name, pricing_check
+
+
 @login_required
 @permission_required("freight.use_calculator")
 def calculator(request, pricing_pk=None):
+    """Calculator view."""
     if request.method != "POST":
         pricing = Pricing.objects.get_or_default(pricing_pk)
         form = CalculatorForm(initial={"pricing": pricing})
@@ -199,7 +208,7 @@ def calculator(request, pricing_pk=None):
         collateral = None
     else:
         form = CalculatorForm(request.POST)
-        request.POST._mutable = True
+        request.POST._mutable = True  # pylint: disable=protected-access
         pricing_pk = form.data.get("pricing")
         pricing = Pricing.objects.get_or_default(pricing_pk)
         volume, collateral, price = form.get_calculated_data(pricing)
@@ -254,6 +263,7 @@ def calculator(request, pricing_pk=None):
 @permission_required("freight.setup_contract_handler")
 @token_required(scopes=ContractHandler.get_esi_scopes())
 def setup_contract_handler(request, token):
+    """View for setting up a new contract handler."""
     success = True
     token_char = get_object_or_404(EveCharacter, character_id=token.character_id)
     if (
@@ -314,7 +324,7 @@ def setup_contract_handler(request, token):
                 "operation_mode": FREIGHT_OPERATION_MODE,
             },
         )[0]
-        tasks.run_contracts_sync.delay(force_sync=True, user_pk=request.user.pk)
+        tasks.run_contracts_sync.delay(force_sync=True)
         messages.success(
             request,
             _(
@@ -323,7 +333,6 @@ def setup_contract_handler(request, token):
                 "with %(character)s as sync character. "
                 "Operation mode: %(operation_mode)s. "
                 "Started syncing of courier contracts. "
-                "You will receive a report once it is completed."
             )
             % {
                 "organization": organization.name,
@@ -338,6 +347,7 @@ def setup_contract_handler(request, token):
 @token_required(scopes=Location.get_esi_scopes())
 @permission_required("freight.add_location")
 def add_location(request, token):
+    """1st view when adding a new location."""
     request.session[ADD_LOCATION_TOKEN_TAG] = token.pk
     return redirect("freight:add_location_2")
 
@@ -345,6 +355,7 @@ def add_location(request, token):
 @login_required
 @permission_required("freight.add_location")
 def add_location_2(request):
+    """2nd view when adding a new location."""
     from .forms import AddLocationForm
 
     if ADD_LOCATION_TOKEN_TAG not in request.session:
@@ -391,6 +402,7 @@ def add_location_2(request):
 @login_required
 @permission_required("freight.view_statistics")
 def statistics(request):
+    """View for rendering the statistics page."""
     context = {
         "page_title": "Statistics",
         "max_days": FREIGHT_STATISTICS_MAX_DAYS,
@@ -403,7 +415,7 @@ def statistics(request):
 @login_required
 @permission_required("freight.view_statistics")
 def statistics_routes_data(request):
-    """returns totals for statistics as JSON"""
+    """Returns total for statistics as JSON."""
     cutoff_date = now() - datetime.timedelta(days=FREIGHT_STATISTICS_MAX_DAYS)
     finished_contracts = Q(contracts__status=Contract.Status.FINISHED) & Q(
         contracts__date_completed__gte=cutoff_date
@@ -510,7 +522,7 @@ def statistics_pilot_corporations_data(request):
             )
         )
     )
-    totals = list()
+    totals = []
     for corporation in corporation_totals:
         if corporation.contracts_count > 0:
             alliance = (
@@ -546,7 +558,7 @@ def statistics_customer_data(request):
         )
         .annotate(volume=Sum("contracts_issuer__volume", filter=finished_contracts))
     )
-    totals = list()
+    totals = []
     for customer in customer_totals:
         if customer.contracts_count > 0:
             totals.append(

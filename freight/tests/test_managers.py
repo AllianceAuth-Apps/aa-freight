@@ -36,7 +36,7 @@ class TestEveEntityManager(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        esi_data = dict()
+        esi_data = {}
         for character in characters_data:
             esi_data[character["character_id"]] = {
                 "id": character["character_id"],
@@ -60,7 +60,7 @@ class TestEveEntityManager(NoSocketsTestCase):
 
     @classmethod
     def esi_post_universe_names(cls, *args, **kwargs) -> list:
-        data = list()
+        data = []
         if "ids" not in kwargs:
             raise ValueError("missing parameter: ids")
         for id in kwargs["ids"]:
@@ -661,14 +661,12 @@ class TestContractManagerCreateFromDict(NoSocketsTestCase):
             EveCorporationInfo.objects.get(corporation_id=92000002),
         )
 
-    @patch(MANAGERS_PATH + ".EveCharacter.objects.create_character")
-    def test_sets_acceptor_to_none_if_it_cant_be_created(self, mock_create_character):
-        mock_create_character.side_effect = RuntimeError
-        EveEntity.objects.create(
-            id=90000987, name="Dummy", category=EveEntity.CATEGORY_CHARACTER
-        )
+    @patch(MANAGERS_PATH + ".EveEntityManager.get_or_create_esi")
+    def test_sets_acceptor_to_none_if_it_cant_be_created(self, mock_get_or_create_esi):
+        # given
+        mock_get_or_create_esi.side_effect = OSError
         contract_dict = {
-            "acceptor_id": 90000987,
+            "acceptor_id": 666,
             "assignee_id": 90000987,
             "availability": "personal",
             "buyout": None,
@@ -691,9 +689,11 @@ class TestContractManagerCreateFromDict(NoSocketsTestCase):
             "type": "courier",
             "volume": 115000.0,
         }
+        # when
         obj, created = Contract.objects.update_or_create_from_dict(
             self.handler, contract_dict, Mock()
         )
+        # then
         self.assertTrue(created)
         self.assertEqual(obj.contract_id, 149409014)
         self.assertIsNone(obj.acceptor)
@@ -702,8 +702,8 @@ class TestContractManagerCreateFromDict(NoSocketsTestCase):
 
 if "discord" in app_labels():
 
-    @patch(MODELS_PATH + ".FREIGHT_HOURS_UNTIL_STALE_STATUS", 48)
-    @patch(MODELS_PATH + ".dhooks_lite.Webhook.execute", autospec=True)
+    @patch(MODELS_PATH + ".contracts.FREIGHT_HOURS_UNTIL_STALE_STATUS", 48)
+    @patch(MODELS_PATH + ".contracts.dhooks_lite.Webhook.execute", autospec=True)
     class TestContractManagerNotifications(NoSocketsTestCase):
         @classmethod
         def setUpClass(cls):
@@ -719,9 +719,9 @@ if "discord" in app_labels():
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
         @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", "url")
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
         def test_send_pilot_notifications_normal(self, mock_webhook_execute):
             Contract.objects.send_notifications(rate_limited=False)
             self.assertEqual(mock_webhook_execute.call_count, 8)
@@ -729,9 +729,9 @@ if "discord" in app_labels():
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
         @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", True)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", "url")
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
         def test_send_pilot_notifications_if_invalid_route_set_but_global_option_enabled(
             self, mock_webhook_execute
         ):
@@ -746,9 +746,9 @@ if "discord" in app_labels():
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
         @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", "url")
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
         def test_send_pilot_notifications_if_invalid_route_set_and_global_option_disabled(
             self, mock_webhook_execute
         ):
@@ -763,9 +763,9 @@ if "discord" in app_labels():
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
         @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", "url")
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
         def test_dont_send_pilot_notifications_for_expired_contracts(
             self, mock_webhook_execute
         ):
@@ -779,9 +779,9 @@ if "discord" in app_labels():
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
         @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", "url")
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
         def test_send_pilot_notifications_only_once(self, mock_webhook_execute):
             x = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
             Contract.objects.all().exclude(pk=x.pk).delete()
@@ -797,10 +797,10 @@ if "discord" in app_labels():
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", None)
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
         @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", None)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
         def test_dont_send_any_notifications_when_no_url_if_set(
             self, mock_webhook_execute
         ):
@@ -810,9 +810,9 @@ if "discord" in app_labels():
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", None)
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
         @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", None)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
         def test_send_customer_notifications_normal(self, mock_webhook_execute):
             Contract.objects.send_notifications(rate_limited=False)
             self.assertEqual(mock_webhook_execute.call_count, 12)
@@ -820,9 +820,9 @@ if "discord" in app_labels():
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", None)
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
         @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", None)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
         def test_dont_send_customer_notifications_for_expired_contracts(
             self, mock_webhook_execute
         ):
@@ -836,9 +836,9 @@ if "discord" in app_labels():
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", None)
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
         @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", None)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
         def test_send_customer_notifications_only_once_per_state(
             self, mock_webhook_execute
         ):
@@ -856,9 +856,9 @@ if "discord" in app_labels():
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
         @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", True)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", "url")
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
         def test_send_customer_notification_if_invalid_route_set_but_global_option_enabled(
             self, mock_webhook_execute
         ):
@@ -873,9 +873,9 @@ if "discord" in app_labels():
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
         @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
         @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", "url")
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
+        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
         def test_send_customer_notification_if_invalid_route_set_and_global_option_disabled(
             self, mock_webhook_execute
         ):

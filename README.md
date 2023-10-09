@@ -42,6 +42,7 @@ Freight offers the following main features:
 - Automatic notifications to contract issuers on Discord informing them about the developing status of their contract or potentially issues
 - Contract issuer can always check the current status of his courier contracts
 - Statistics page showing key performance metrics for routes, pilots, customers
+- Language support for English 🇺🇸 and German 🇩🇪
 
 ## Screenshots
 

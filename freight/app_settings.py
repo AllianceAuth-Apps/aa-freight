@@ -1,4 +1,6 @@
-from app_utils.django import clean_setting
+"""Settings for Freight."""
+
+from app_utils.app_settings import clean_setting
 
 # Name of this app as shown in the Auth sidebar, page titles
 # and as default avatar name for notifications
