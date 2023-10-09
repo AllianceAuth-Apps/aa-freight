@@ -330,56 +330,44 @@ class ContractManagerBase(models.Manager):
     def _identify_contracts_acceptor(self, contract: dict) -> tuple:
         from .models import EveEntity
 
-        if int(contract["acceptor_id"]) != 0:
-            try:
-                entity, _ = EveEntity.objects.get_or_create_esi(
-                    id=contract["acceptor_id"]
-                )
-                if entity.is_character:
-                    try:
-                        acceptor = EveCharacter.objects.get(character_id=entity.id)
-                    except EveCharacter.DoesNotExist:
-                        acceptor = EveCharacter.objects.create_character(
-                            character_id=entity.id
-                        )
-                    try:
-                        acceptor_corporation = EveCorporationInfo.objects.get(
-                            corporation_id=acceptor.corporation_id
-                        )
-                    except EveCorporationInfo.DoesNotExist:
-                        acceptor_corporation = (
-                            EveCorporationInfo.objects.create_corporation(
-                                corp_id=acceptor.corporation_id
-                            )
-                        )
-                elif entity.is_corporation:
-                    acceptor = None
-                    try:
-                        acceptor_corporation = EveCorporationInfo.objects.get(
-                            corporation_id=entity.id
-                        )
-                    except EveCorporationInfo.DoesNotExist:
-                        acceptor_corporation = (
-                            EveCorporationInfo.objects.create_corporation(
-                                corp_id=entity.id
-                            )
-                        )
-                else:
-                    raise ValueError(
-                        f"Acceptor has invalid category: {entity.category}"
-                    )
+        acceptor_id = int(contract["acceptor_id"])
+        if acceptor_id == 0:
+            return None, None
 
-            except Exception:
-                logger.exception(
-                    "%s: Failed to identify acceptor for this contract",
-                    contract["contract_id"],
-                    exc_info=True,
+        try:
+            entity: EveEntity = EveEntity.objects.get_or_create_esi(id=acceptor_id)[0]
+        except OSError:
+            logger.exception(
+                "%s: Failed to identify acceptor for this contract",
+                contract["contract_id"],
+            )
+            return None, None
+
+        if entity.is_character:
+            try:
+                acceptor = EveCharacter.objects.get(character_id=entity.id)
+            except EveCharacter.DoesNotExist:
+                acceptor = EveCharacter.objects.create_character(character_id=entity.id)
+            try:
+                acceptor_corporation = EveCorporationInfo.objects.get(
+                    corporation_id=acceptor.corporation_id
                 )
-                acceptor = None
-                acceptor_corporation = None
-        else:
+            except EveCorporationInfo.DoesNotExist:
+                acceptor_corporation = EveCorporationInfo.objects.create_corporation(
+                    corp_id=acceptor.corporation_id
+                )
+        elif entity.is_corporation:
             acceptor = None
-            acceptor_corporation = None
+            try:
+                acceptor_corporation = EveCorporationInfo.objects.get(
+                    corporation_id=entity.id
+                )
+            except EveCorporationInfo.DoesNotExist:
+                acceptor_corporation = EveCorporationInfo.objects.create_corporation(
+                    corp_id=entity.id
+                )
+        else:
+            acceptor = acceptor_corporation = None
         return acceptor, acceptor_corporation
 
     def _identify_contracts_issuer(self, contract) -> tuple:

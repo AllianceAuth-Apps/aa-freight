@@ -661,14 +661,12 @@ class TestContractManagerCreateFromDict(NoSocketsTestCase):
             EveCorporationInfo.objects.get(corporation_id=92000002),
         )
 
-    @patch(MANAGERS_PATH + ".EveCharacter.objects.create_character")
-    def test_sets_acceptor_to_none_if_it_cant_be_created(self, mock_create_character):
-        mock_create_character.side_effect = RuntimeError
-        EveEntity.objects.create(
-            id=90000987, name="Dummy", category=EveEntity.CATEGORY_CHARACTER
-        )
+    @patch(MANAGERS_PATH + ".EveEntityManager.get_or_create_esi")
+    def test_sets_acceptor_to_none_if_it_cant_be_created(self, mock_get_or_create_esi):
+        # given
+        mock_get_or_create_esi.side_effect = OSError
         contract_dict = {
-            "acceptor_id": 90000987,
+            "acceptor_id": 666,
             "assignee_id": 90000987,
             "availability": "personal",
             "buyout": None,
@@ -691,9 +689,11 @@ class TestContractManagerCreateFromDict(NoSocketsTestCase):
             "type": "courier",
             "volume": 115000.0,
         }
+        # when
         obj, created = Contract.objects.update_or_create_from_dict(
             self.handler, contract_dict, Mock()
         )
+        # then
         self.assertTrue(created)
         self.assertEqual(obj.contract_id, 149409014)
         self.assertIsNone(obj.acceptor)
