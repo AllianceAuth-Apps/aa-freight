@@ -1,11 +1,8 @@
 from unittest.mock import patch
 
-from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
 from django.test import override_settings
-from esi.errors import TokenInvalidError
 
-from app_utils.testing import NoSocketsTestCase, generate_invalid_pk
+from app_utils.testing import NoSocketsTestCase
 
 from freight.tasks import (
     run_contracts_sync,
@@ -30,35 +27,13 @@ class TestUpdateContractsEsi(NoSocketsTestCase):
     @patch(MODULE_PATH + ".ContractHandler.update_contracts_esi")
     def test_exception_when_no_contract_handler(self, mock_update_contracts_esi):
         self.handler.delete()
-        with self.assertRaises(ObjectDoesNotExist):
+        with self.assertRaises(RuntimeError):
             update_contracts_esi()
 
     @patch(MODULE_PATH + ".ContractHandler.update_contracts_esi")
     def test_minimal_run(self, mock_update_contracts_esi):
         update_contracts_esi()
         self.assertTrue(mock_update_contracts_esi.called)
-
-    @patch(MODULE_PATH + ".ContractHandler.update_contracts_esi")
-    def test_run_with_user_mocked(self, mock_update_contracts_esi):
-        update_contracts_esi(user_pk=self.user.pk)
-        self.assertTrue(mock_update_contracts_esi.called)
-        _, kwargs = mock_update_contracts_esi.call_args
-        self.assertEqual(kwargs["user"], self.user)
-
-    @patch("freight.models.Token")
-    def test_run_with_user_full(self, mock_Token):
-        """tests that the task can successfully call the model method.
-        Uses TokenInvalidError as a shortcut to avoid more mocking
-        """
-        mock_Token.objects.filter.side_effect = TokenInvalidError()
-        self.assertFalse(update_contracts_esi(user_pk=self.user.pk))
-
-    @patch(MODULE_PATH + ".ContractHandler.update_contracts_esi")
-    def test_run_with_invalid_user(self, mock_update_contracts_esi):
-        update_contracts_esi(user_pk=generate_invalid_pk(User))
-        self.assertTrue(mock_update_contracts_esi.called)
-        _, kwargs = mock_update_contracts_esi.call_args
-        self.assertIsNone(kwargs["user"])
 
 
 @patch(MODULE_PATH + ".Contract.objects.send_notifications")

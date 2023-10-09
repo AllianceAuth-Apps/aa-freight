@@ -2,9 +2,6 @@
 
 from celery import chain, shared_task
 
-from django.contrib.auth.models import User
-from django.core.exceptions import ObjectDoesNotExist
-
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.logging import LoggerAddTag
 
@@ -14,29 +11,17 @@ from .models import Contract, ContractHandler, Location
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
 
-def _get_user(user_pk) -> User:
-    """returns the user or None. Logs if user is requested but can't be found."""
-    user = None
-    if user_pk:
-        try:
-            user = User.objects.get(pk=user_pk)
-        except User.DoesNotExist:
-            logger.warning("Ignoring non-existing user with pk %s", user_pk)
-    return user
-
-
 def _get_contract_handler() -> ContractHandler:
     handler = ContractHandler.objects.first()
     if not handler:
-        logger.warning("No contract handler was found")
-        raise ObjectDoesNotExist()
+        raise RuntimeError("No contract handler was found.")
     return handler
 
 
 @shared_task
-def update_contracts_esi(force_sync=False, user_pk=None) -> None:
+def update_contracts_esi(force_sync=False) -> None:
     """start syncing contracts"""
-    _get_contract_handler().update_contracts_esi(force_sync, user=_get_user(user_pk))
+    _get_contract_handler().update_contracts_esi(force_sync)
 
 
 @shared_task

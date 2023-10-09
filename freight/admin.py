@@ -2,8 +2,11 @@
 
 # pylint: disable=missing-class-docstring, missing-function-docstring
 
+from typing import Any, Optional
+
 from django.conf import settings
 from django.contrib import admin
+from django.http.request import HttpRequest
 from django.utils.translation import gettext_lazy as _
 
 from . import tasks
@@ -31,16 +34,19 @@ class LocationAdmin(admin.ModelAdmin):
     def _category(self, obj):
         return obj.get_category_id_display()
 
+    @admin.display()
     def _solar_system(self, obj):
         return obj.solar_system_name
 
+    @admin.display()
     def has_add_permission(self, *args, **kwargs):
         return False
 
+    @admin.display()
     def has_change_permission(self, *args, **kwargs):
         return False
 
-    @admin.display(description=_("Update selected locations from ESI"))
+    @admin.action(description=_("Update selected locations from ESI"))
     def update_location(self, request, queryset):
         location_ids = []
         for obj in queryset:
@@ -106,14 +112,21 @@ class ContractHandlerAdmin(admin.ModelAdmin):
         "operation_mode",
         "version_hash",
         "last_sync",
-        "last_error",
     )
+
+    def get_fields(self, request: HttpRequest, obj: Optional[Any]):
+        """Do not show some specific fields."""
+        fields = super().get_fields(request, obj)
+        return [name for name in fields if name != "last_error"]
+
+    def has_add_permission(self, *args, **kwargs):
+        return False
 
     @admin.display(boolean=True, description="sync ok")
     def _is_sync_ok(self, obj):
         return obj.is_sync_ok
 
-    @admin.display(description=_("Fetch contracts from Eve Online server"))
+    @admin.action(description=_("Fetch contracts from Eve Online server"))
     def start_sync(self, request, queryset):
         for obj in queryset:
             tasks.run_contracts_sync.delay(force_sync=True, user_pk=request.user.pk)
@@ -126,23 +139,20 @@ class ContractHandlerAdmin(admin.ModelAdmin):
             )
             self.message_user(request, text)
 
-    @admin.display(description=_("Send notifications for outstanding contracts"))
+    @admin.action(description=_("Send notifications for outstanding contracts"))
     def send_notifications(self, request, queryset):
         for obj in queryset:
             tasks.send_contract_notifications.delay(force_sent=True)
             text = _("Started sending notifications for: %s ") % obj
             self.message_user(request, text)
 
-    @admin.display(description=_("Update pricing info for all contracts"))
+    @admin.action(description=_("Update pricing info for all contracts"))
     def update_pricing(self, request, queryset):
         del queryset
         tasks.update_contracts_pricing.delay()
         self.message_user(
             request, "Started updating pricing relations for all contracts"
         )
-
-    def has_add_permission(self, *args, **kwargs):
-        return False
 
 
 @admin.register(Contract)
@@ -174,12 +184,19 @@ class ContractAdmin(admin.ModelAdmin):
         qs = super().get_queryset(request)
         return qs.prefetch_related("customer_notifications")
 
+    def has_add_permission(self, *args, **kwargs):
+        return False
+
+    def has_change_permission(self, *args, **kwargs):
+        return False
+
     @admin.display(boolean=True)
     def _pilots_notified(self, contract):
         if contract.pricing_id is None:
             return None
         return contract.date_notified is not None
 
+    @admin.display()
     def _customer_notified(self, contract):
         if contract.pricing_id is None:
             return "?"
@@ -188,7 +205,7 @@ class ContractAdmin(admin.ModelAdmin):
             return None
         return ", ".join(sorted(notifications, reverse=True))
 
-    @admin.display(
+    @admin.action(
         description=_("Sent pilots notification for selected contracts to Discord")
     )
     def send_pilots_notification(self, request, queryset):
@@ -200,7 +217,7 @@ class ContractAdmin(admin.ModelAdmin):
                 % obj.contract_id,
             )
 
-    @admin.display(
+    @admin.action(
         description=_("Sent customer notification for selected contracts to Discord")
     )
     def send_customer_notification(self, request, queryset):
@@ -211,12 +228,6 @@ class ContractAdmin(admin.ModelAdmin):
                 _("Sent customer notification for contract %d to Discord")
                 % obj.contract_id,
             )
-
-    def has_add_permission(self, *args, **kwargs):
-        return False
-
-    def has_change_permission(self, *args, **kwargs):
-        return False
 
 
 if settings.DEBUG:

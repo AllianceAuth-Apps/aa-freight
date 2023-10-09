@@ -17,7 +17,7 @@ from django.core.validators import MinValueValidator
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils.timezone import now
-from esi.errors import TokenExpiredError, TokenInvalidError
+from esi.errors import TokenError
 from esi.models import Token
 
 from allianceauth.authentication.models import CharacterOwnership, User
@@ -26,7 +26,6 @@ from allianceauth.eveonline.models import (
     EveCharacter,
     EveCorporationInfo,
 )
-from allianceauth.notifications import notify
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.datetime import DATETIME_FORMAT
 from app_utils.django import app_labels
@@ -630,7 +629,7 @@ class ContractHandler(models.Model):
         choices=ERRORS_LIST,
         default=ERROR_NONE,
         help_text="error that occurred at the last sync attempt (if any)",
-    )
+    )  # TODO: Remove with next migration - no longer used
 
     def __str__(self):
         return str(self.organization.name)
@@ -664,12 +663,8 @@ class ContractHandler(models.Model):
         """returns true if they have been no errors
         and last syncing occurred within alloted time
         """
-        return (
-            self.last_error == self.ERROR_NONE
-            and self.last_sync
-            and self.last_sync
-            > (now() - timedelta(minutes=FREIGHT_CONTRACT_SYNC_GRACE_MINUTES))
-        )
+        grace_deadline = now() - timedelta(minutes=FREIGHT_CONTRACT_SYNC_GRACE_MINUTES)
+        return self.last_sync and self.last_sync > grace_deadline
 
     class Meta:
         verbose_name_plural = verbose_name = "Contract Handler"
@@ -688,109 +683,51 @@ class ContractHandler(models.Model):
 
         return f"Private ({self.organization.name}) {extra_text}"
 
-    def set_sync_status(self, error: int = None) -> None:
-        """sets the sync status incl. sync time and saves the object.
-
-        Will set to no error if no error is provided as argument.
-        """
-        if not error:
-            error = self.ERROR_NONE
-
-        self.last_error = error
-        self.last_sync = now()
-        self.save()
-
     def token(self) -> Token:
-        """returns an esi token for the contract handler
+        """Returns an valid esi token for the contract handler.
 
-        raises exception on error
+        Raises exception on any error
         """
-        try:
-            token = (
-                Token.objects.filter(
-                    user=self.character.user,
-                    character_id=self.character.character.character_id,
-                )
-                .require_scopes(self.get_esi_scopes())
-                .require_valid()
-                .first()
+        token = (
+            Token.objects.filter(
+                user=self.character.user,
+                character_id=self.character.character.character_id,
             )
-
-        except TokenInvalidError:
-            logger.error("%s: Invalid token for fetching contracts", self)
-            self.set_sync_status(self.ERROR_TOKEN_INVALID)
-            raise TokenInvalidError() from None
-
-        except TokenExpiredError:
-            logger.error("%s: Token expired for fetching contracts", self)
-            self.set_sync_status(self.ERROR_TOKEN_EXPIRED)
-            raise TokenExpiredError() from None
-
+            .require_scopes(self.get_esi_scopes())
+            .require_valid()
+            .first()
+        )
         if not token:
-            logger.error("%s: No valid token found", self)
-            self.set_sync_status(self.ERROR_TOKEN_INVALID)
-            raise TokenInvalidError() from None
+            raise TokenError(f"{self}: No valid token found")
 
         return token
 
-    def update_contracts_esi(self, force_sync=False, user=None) -> bool:
+    def update_contracts_esi(self, force_sync=False) -> bool:
         """Update contracts from ESI."""
-        try:
-            self._validate_update_readiness()
-            token = self.token()
-            try:
-                # fetching data from ESI
-                contracts = (
-                    esi.client.Contracts.get_corporations_corporation_id_contracts(
-                        token=token.valid_access_token(),
-                        corporation_id=self.character.character.corporation_id,
-                    ).results()
-                )
-                if settings.DEBUG:
-                    self._save_contract_to_file(contracts)
+        self._validate_update_readiness()
+        token = self.token()
+        contracts = esi.client.Contracts.get_corporations_corporation_id_contracts(
+            token=token.valid_access_token(),
+            corporation_id=self.character.character.corporation_id,
+        ).results()
+        if settings.DEBUG:
+            self._save_contract_to_file(contracts)
 
-                self._process_contracts_from_esi(contracts, token, force_sync)
-
-            except Exception as ex:
-                logger.exception("%s: An unexpected error ocurred %s", self, ex)
-                self.set_sync_status(self.ERROR_UNKNOWN)
-                raise ex
-
-        except Exception as ex:
-            success = False
-            error_code = type(ex).__name__
-
-        else:
-            success = True
-            error_code = None
-
-        if user:
-            self._report_to_user(user, success, error_code)
-
-        return success
+        self._process_contracts_from_esi(contracts, token, force_sync)
+        self.last_sync = now()
+        self.save(update_fields=["last_sync"])
 
     def _validate_update_readiness(self):
-        # abort if operation mode from settings is different
         if self.operation_mode != FREIGHT_OPERATION_MODE:
-            logger.error("%s: Current operation mode not matching the handler", self)
+            raise ValueError(f"{self}: Current operation mode not matching the handler")
 
-            self.set_sync_status(self.ERROR_OPERATION_MODE_MISMATCH)
-            raise ValueError()
-
-        # abort if character is not configured
         if self.character is None:
-            logger.error("%s: No character configured to sync", self)
-            self.set_sync_status(self.ERROR_NO_CHARACTER)
-            raise ValueError()
+            raise ValueError(f"{self}: No character configured to sync")
 
-        # abort if character does not have sufficient permissions
         if not self.character.user.has_perm("freight.setup_contract_handler"):
-            logger.error(
-                "%s: Character does not have sufficient permission to sync contracts",
-                self,
+            raise ValueError(
+                f"{self}: Character does not have sufficient permission to sync"
             )
-            self.set_sync_status(self.ERROR_INSUFFICIENT_PERMISSIONS)
-            raise ValueError()
 
     def _save_contract_to_file(self, contracts):
         """saves raw contracts to file for debugging"""
@@ -844,25 +781,21 @@ class ContractHandler(models.Model):
         ).hexdigest()
         if force_sync or new_version_hash != self.version_hash:
             self._store_contract_from_esi(contracts, new_version_hash, token)
-
         else:
             logger.info("%s: Contracts are unchanged.", self)
-            self.set_sync_status(ContractHandler.ERROR_NONE)
 
     def _store_contract_from_esi(
         self, contracts: list, new_version_hash: str, token: Token
     ) -> None:
         logger.info("%s: Storing update with %d contracts", self, len(contracts))
-        # update contracts in local DB
         with transaction.atomic():
             self.version_hash = new_version_hash
-            no_errors = True
             for contract in contracts:
                 try:
                     Contract.objects.update_or_create_from_dict(
                         handler=self, contract=contract, token=token
                     )
-                except Exception:
+                except OSError:
                     logger.exception(
                         "%s: An unexpected error ocurred while trying to load contract "
                         "%s",
@@ -870,45 +803,9 @@ class ContractHandler(models.Model):
                         contract["contract_id"]
                         if "contract_id" in contract
                         else "Unknown",
-                        exc_info=True,
                     )
-                    no_errors = False
-
-            if no_errors:
-                last_error = self.ERROR_NONE
-            else:
-                last_error = self.ERROR_UNKNOWN
-            self.set_sync_status(last_error)
 
         Contract.objects.update_pricing()
-
-    def _report_to_user(self, user, success, error_code):
-        try:
-            status_text = "completed successfully" if success else "has failed"
-            message = (
-                f'Syncing of contracts for "{self.organization.name}"'
-                f' in operation mode "{self.operation_mode_friendly}" {status_text}.\n'
-            )
-            if success:
-                message += f"{self.contracts.count():,} contracts synced."
-            else:
-                message += f"Error code: {error_code}"
-
-            notify(
-                user=user,
-                title=(
-                    f"Freight: Contracts sync for {self.organization.name}: "
-                    f'{"OK" if success else "FAILED"}'
-                ),
-                message=message,
-                level="success" if success else "danger",
-            )
-        except Exception:
-            logger.exception(
-                "%s: An unexpected error ocurred while trying to report to user",
-                self,
-                exc_info=True,
-            )
 
 
 class Contract(models.Model):

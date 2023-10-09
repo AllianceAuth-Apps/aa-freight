@@ -6,12 +6,11 @@ from dhooks_lite import Embed
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils.timezone import now
-from esi.errors import TokenExpiredError, TokenInvalidError
+from esi.errors import TokenError, TokenExpiredError, TokenInvalidError
 from esi.models import Token
 
 from allianceauth.authentication.models import CharacterOwnership
 from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
-from allianceauth.eveonline.providers import ObjectNotFound
 from allianceauth.tests.auth_utils import AuthUtils
 from app_utils.django import app_labels
 from app_utils.testing import BravadoOperationStub, NoSocketsTestCase
@@ -982,43 +981,17 @@ class TestContractHandler(NoSocketsTestCase):
 
     @patch(MODULE_PATH + ".FREIGHT_CONTRACT_SYNC_GRACE_MINUTES", 30)
     def test_is_sync_ok(self):
-        # no errors and recent sync
-        self.handler.last_error = ContractHandler.ERROR_NONE
+        # recent sync
         self.handler.last_sync = now()
         self.assertTrue(self.handler.is_sync_ok)
 
-        # no errors and sync within grace period
-        self.handler.last_error = ContractHandler.ERROR_NONE
+        # sync within grace period
         self.handler.last_sync = now() - dt.timedelta(minutes=29)
         self.assertTrue(self.handler.is_sync_ok)
 
-        # recent sync error
-        self.handler.last_error = ContractHandler.ERROR_INSUFFICIENT_PERMISSIONS
-        self.handler.last_sync = now()
-        self.assertFalse(self.handler.is_sync_ok)
-
-        # no error, but no sync within grace period
-        self.handler.last_error = ContractHandler.ERROR_NONE
+        # no sync within grace period
         self.handler.last_sync = now() - dt.timedelta(minutes=31)
         self.assertFalse(self.handler.is_sync_ok)
-
-    def test_set_sync_status_1(self):
-        self.handler.last_error = ContractHandler.ERROR_UNKNOWN
-        self.handler.last_sync = None
-        self.handler.save()
-
-        self.handler.set_sync_status(ContractHandler.ERROR_TOKEN_EXPIRED)
-        self.assertEqual(self.handler.last_error, ContractHandler.ERROR_TOKEN_EXPIRED)
-        self.assertGreater(self.handler.last_sync, now() - dt.timedelta(minutes=1))
-
-    def test_set_sync_status_2(self):
-        self.handler.last_error = ContractHandler.ERROR_UNKNOWN
-        self.handler.last_sync = None
-        self.handler.save()
-
-        self.handler.set_sync_status()
-        self.assertEqual(self.handler.last_error, ContractHandler.ERROR_NONE)
-        self.assertGreater(self.handler.last_sync, now() - dt.timedelta(minutes=1))
 
 
 class TestContractsSync(NoSocketsTestCase):
@@ -1038,29 +1011,28 @@ class TestContractsSync(NoSocketsTestCase):
         )
         create_locations()
 
-    # identify wrong operation mode
     @patch(PATCH_FREIGHT_OPERATION_MODE, FREIGHT_OPERATION_MODE_MY_CORPORATION)
     def test_abort_on_wrong_operation_mode(self):
+        # given
         handler = ContractHandler.objects.create(
             organization=self.alliance,
             operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
             character=self.main_ownership,
         )
-        self.assertFalse(handler.update_contracts_esi())
-        handler.refresh_from_db()
-        self.assertEqual(
-            handler.last_error, ContractHandler.ERROR_OPERATION_MODE_MISMATCH
-        )
+        # when/then
+        with self.assertRaises(ValueError):
+            handler.update_contracts_esi()
 
     @patch(PATCH_FREIGHT_OPERATION_MODE, FREIGHT_OPERATION_MODE_MY_ALLIANCE)
     def test_abort_when_no_sync_char(self):
+        # given
         handler = ContractHandler.objects.create(
             organization=self.alliance,
             operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
         )
-        self.assertFalse(handler.update_contracts_esi())
-        handler.refresh_from_db()
-        self.assertEqual(handler.last_error, ContractHandler.ERROR_NO_CHARACTER)
+        # when/Then
+        with self.assertRaises(ValueError):
+            handler.update_contracts_esi()
 
     # test expired token
     @patch(PATCH_FREIGHT_OPERATION_MODE, FREIGHT_OPERATION_MODE_MY_ALLIANCE)
@@ -1076,12 +1048,9 @@ class TestContractsSync(NoSocketsTestCase):
             character=self.main_ownership,
             operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
         )
-        # when
-        result = handler.update_contracts_esi()
-        # then
-        self.assertFalse(result)
-        handler.refresh_from_db()
-        self.assertEqual(handler.last_error, ContractHandler.ERROR_TOKEN_EXPIRED)
+        # when/then
+        with self.assertRaises(TokenExpiredError):
+            handler.update_contracts_esi()
 
     @patch(PATCH_FREIGHT_OPERATION_MODE, FREIGHT_OPERATION_MODE_MY_ALLIANCE)
     @patch(MODULE_PATH + ".Token")
@@ -1096,10 +1065,9 @@ class TestContractsSync(NoSocketsTestCase):
             operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
         )
 
-        self.assertFalse(handler.update_contracts_esi())
-
-        handler.refresh_from_db()
-        self.assertEqual(handler.last_error, ContractHandler.ERROR_TOKEN_INVALID)
+        # when/then
+        with self.assertRaises(TokenInvalidError):
+            handler.update_contracts_esi()
 
     @patch(PATCH_FREIGHT_OPERATION_MODE, FREIGHT_OPERATION_MODE_MY_ALLIANCE)
     @patch(MODULE_PATH + ".Token")
@@ -1115,10 +1083,8 @@ class TestContractsSync(NoSocketsTestCase):
             character=self.main_ownership,
             operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
         )
-        self.assertFalse(handler.update_contracts_esi())
-
-        handler.refresh_from_db()
-        self.assertEqual(handler.last_error, ContractHandler.ERROR_TOKEN_INVALID)
+        with self.assertRaises(TokenError):
+            handler.update_contracts_esi()
 
     @staticmethod
     def esi_get_corporations_corporation_id_contracts(**kwargs):
@@ -1128,14 +1094,14 @@ class TestContractsSync(NoSocketsTestCase):
     @patch(MODULE_PATH + ".Contract.objects.update_or_create_from_dict")
     @patch(MODULE_PATH + ".Token")
     @patch(MODULE_PATH + ".esi")
-    def test_abort_when_exception_occurs_during_contract_creation(
+    def test_continue_when_exception_occurs_during_contract_creation(
         self,
         mock_esi,
         mock_Token,
         mock_Contracts_objects_update_or_create_from_dict,
     ):
         def func_Contracts_objects_update_or_create_from_dict(*args, **kwargs):
-            raise RuntimeError("Test exception")
+            raise OSError("Test exception")
 
         mock_Contracts_objects_update_or_create_from_dict.side_effect = (
             func_Contracts_objects_update_or_create_from_dict
@@ -1156,11 +1122,8 @@ class TestContractsSync(NoSocketsTestCase):
             operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
         )
 
-        # run manager sync
-        self.assertTrue(handler.update_contracts_esi())
-
-        handler.refresh_from_db()
-        self.assertEqual(handler.last_error, ContractHandler.ERROR_UNKNOWN)
+        # when
+        handler.update_contracts_esi()
 
     @patch(PATCH_FREIGHT_OPERATION_MODE, FREIGHT_OPERATION_MODE_MY_ALLIANCE)
     @patch(MODULE_PATH + ".Token")
@@ -1182,11 +1145,7 @@ class TestContractsSync(NoSocketsTestCase):
             operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
         )
 
-        self.assertTrue(handler.update_contracts_esi())
-
-        # no errors reported
-        handler.refresh_from_db()
-        self.assertEqual(handler.last_error, ContractHandler.ERROR_NONE)
+        handler.update_contracts_esi()
 
         # should only contain the right contracts
         contract_ids = [
@@ -1202,21 +1161,16 @@ class TestContractsSync(NoSocketsTestCase):
         # 2nd run should not update anything, but reset last_sync
         Contract.objects.all().delete()
         handler.last_sync = None
-        handler.last_error = ContractHandler.ERROR_UNKNOWN
         handler.save()
-        self.assertTrue(handler.update_contracts_esi())
+        handler.update_contracts_esi()
         self.assertEqual(Contract.objects.count(), 0)
         handler.refresh_from_db()
-        self.assertEqual(handler.last_error, ContractHandler.ERROR_NONE)
         self.assertIsNotNone(handler.last_sync)
 
     @patch(PATCH_FREIGHT_OPERATION_MODE, FREIGHT_OPERATION_MODE_MY_CORPORATION)
-    @patch(MODULE_PATH + ".notify")
     @patch(MODULE_PATH + ".Token")
     @patch(MODULE_PATH + ".esi")
-    def test_sync_contracts_for_my_corporation_and_ignore_notify_exception(
-        self, mock_esi, mock_Token, mock_notify
-    ):
+    def test_sync_contracts_for_my_corporation(self, mock_esi, mock_Token):
         mock_Contracts = mock_esi.client.Contracts
         mock_Contracts.get_corporations_corporation_id_contracts.side_effect = (
             self.esi_get_corporations_corporation_id_contracts
@@ -1224,7 +1178,6 @@ class TestContractsSync(NoSocketsTestCase):
         mock_Token.objects.filter.return_value.require_scopes.return_value.require_valid.return_value.first.return_value = Mock(
             spec=Token
         )
-        mock_notify.side_effect = RuntimeError
         self.user = AuthUtils.add_permission_to_user_by_name(
             "freight.setup_contract_handler", self.user
         )
@@ -1235,9 +1188,8 @@ class TestContractsSync(NoSocketsTestCase):
         )
 
         # run manager sync
-        self.assertTrue(handler.update_contracts_esi(user=self.user))
+        handler.update_contracts_esi()
         handler.refresh_from_db()
-        self.assertEqual(handler.last_error, ContractHandler.ERROR_NONE)
 
         # should only contain the right contracts
         contract_ids = [
@@ -1257,16 +1209,10 @@ class TestContractsSync(NoSocketsTestCase):
             ],
         )
 
-        # should have tried to notify user
-        self.assertTrue(mock_notify.called)
-
     @patch(PATCH_FREIGHT_OPERATION_MODE, FREIGHT_OPERATION_MODE_CORP_IN_ALLIANCE)
-    @patch(MODULE_PATH + ".notify")
     @patch(MODULE_PATH + ".Token")
     @patch(MODULE_PATH + ".esi")
-    def test_sync_contracts_for_corp_in_alliance_and_report_to_user(
-        self, mock_esi, mock_Token, mock_notify
-    ):
+    def test_sync_contracts_for_corp_in_alliance(self, mock_esi, mock_Token):
         mock_Contracts = mock_esi.client.Contracts
         mock_Contracts.get_corporations_corporation_id_contracts.side_effect = (
             self.esi_get_corporations_corporation_id_contracts
@@ -1284,10 +1230,7 @@ class TestContractsSync(NoSocketsTestCase):
         )
 
         # run manager sync
-        self.assertTrue(handler.update_contracts_esi(user=self.user))
-
-        handler.refresh_from_db()
-        self.assertEqual(handler.last_error, ContractHandler.ERROR_NONE)
+        handler.update_contracts_esi()
 
         # should only contain the right contracts
         contract_ids = [
@@ -1298,39 +1241,13 @@ class TestContractsSync(NoSocketsTestCase):
         ]
         self.assertCountEqual(
             contract_ids,
-            [
-                149409016,
-                149409017,
-                149409061,
-                149409062,
-                149409063,
-                149409064,
-            ],
+            [149409016, 149409017, 149409061, 149409062, 149409063, 149409064],
         )
-
-        # should have notified user with success
-        self.assertTrue(mock_notify.called)
-        args, kwargs = mock_notify.call_args
-        self.assertEqual(kwargs["level"], "success")
 
     @patch(PATCH_FREIGHT_OPERATION_MODE, FREIGHT_OPERATION_MODE_CORP_PUBLIC)
     @patch(MODULE_PATH + ".Token")
-    @patch(
-        "freight.managers.EveCorporationInfo.objects.create_corporation",
-        side_effect=ObjectNotFound(9999999, "corporation"),
-    )
-    @patch(
-        "freight.managers.EveCharacter.objects.create_character",
-        side_effect=ObjectNotFound(9999999, "character"),
-    )
     @patch(MODULE_PATH + ".esi")
-    def test_can_sync_contracts_for_corp_public(
-        self,
-        mock_esi,
-        mock_EveCharacter_objects_create_character,
-        mock_EveCorporationInfo_objects_create_corporation,
-        mock_Token,
-    ):
+    def test_can_sync_contracts_for_corp_public(self, mock_esi, mock_Token):
         # create mocks
         mock_Contracts = mock_esi.client.Contracts
         mock_Contracts.get_corporations_corporation_id_contracts.side_effect = (
@@ -1349,9 +1266,7 @@ class TestContractsSync(NoSocketsTestCase):
         )
 
         # run manager sync
-        self.assertTrue(handler.update_contracts_esi())
-        handler.refresh_from_db()
-        self.assertEqual(handler.last_error, ContractHandler.ERROR_NONE)
+        handler.update_contracts_esi()
 
         # should only contain the right contracts
         contract_ids = [
@@ -1389,12 +1304,9 @@ class TestContractsSync(NoSocketsTestCase):
             character=self.main_ownership,
             operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
         )
-        # when
-        result = handler.update_contracts_esi()
-        # then
-        self.assertFalse(result)
-        handler.refresh_from_db()
-        self.assertEqual(handler.last_error, ContractHandler.ERROR_UNKNOWN)
+        # when/then
+        with self.assertRaises(RuntimeError):
+            handler.update_contracts_esi()
 
     @patch(PATCH_FREIGHT_OPERATION_MODE, FREIGHT_OPERATION_MODE_MY_ALLIANCE)
     def test_operation_mode_friendly(self):
@@ -1413,17 +1325,6 @@ class TestContractsSync(NoSocketsTestCase):
 
         handler.operation_mode = FREIGHT_OPERATION_MODE_CORP_PUBLIC
         self.assertEqual(handler.operation_mode_friendly, FREIGHT_OPERATION_MODES[3][1])
-
-    # def test_last_error_message_friendly(self):
-    #     handler = ContractHandler.objects.create(
-    #         organization=self.alliance,
-    #         operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
-    #         character=self.main_ownership,
-    #         last_error=ContractHandler.ERROR_UNKNOWN,
-    #     )
-    #     self.assertEqual(
-    #         handler.last_error_message_friendly, ContractHandler.ERRORS_LIST[7][1]
-    #     )
 
 
 class TestEveEntity(NoSocketsTestCase):

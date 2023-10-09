@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
-## [1.10.0] - 2023-05-15
+## [1.10.0] - TBD
 
 ### Added
 
@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Removed recording of errors. Exceptions now result in task failures
 - Refactoring
 
 ## [1.9.0] - 2023-05-15
