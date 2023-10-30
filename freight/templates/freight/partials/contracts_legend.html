@@ -1,15 +1,20 @@
+{% load i18n %}
+
 <p class="text-muted">
-    Contract check:&nbsp;&nbsp;
-    <span class="glyphicon glyphicon-ok" aria-hidden="true"></span> = OK &nbsp;&nbsp;
-    <span class="glyphicon glyphicon-warning-sign" aria-hidden="true"></span> = Errors &nbsp;&nbsp;
-    If they are errors you find them in the tooltip of icon &nbsp;&nbsp;
-    <strong>-</strong> = No contract check performed
+    {% translate "Contract check:" %}
+    <span class="glyphicon glyphicon-ok" aria-hidden="true"></span> {% translate "OK" %} |
+    <span class="glyphicon glyphicon-warning-sign" aria-hidden="true"></span> {% translate "Errors" %} |
+    {% translate "If they are errors you find them in the tooltip of icon" %} |
+    <strong>-</strong> {% translate "No contract check performed" %}
 </p>
 <p class="text-muted">
-    Notes:&nbsp;&nbsp;
-    <span class="glyphicon glyphicon-envelope" aria-hidden="true"></span> &nbsp;&nbsp;
-    If icon is shown you can hover with the mouse over it to see the notes.
+    {% translate "Notes:" %}
+    <span class="glyphicon glyphicon-envelope" aria-hidden="true"></span>
+    {% translate "If icon is shown you can hover with the mouse over it to see the notes." %}
 </p>
 <p class="text-muted">
-    Color code: <span class="text-info">In Progress</span> | <span class="text-warning">failed</span> | <span class="text-success">completed</span>
+    {% translate "Color code:" %}
+    <span class="text-info">{% translate "In Progress" %}</span> |
+    <span class="text-warning">{% translate "failed" %}</span> |
+    <span class="text-success">{% translate "completed" %}</span>
 </p>

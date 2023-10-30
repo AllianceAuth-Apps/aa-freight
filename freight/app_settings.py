@@ -1,5 +1,7 @@
 """Settings for Freight."""
 
+from django.utils.translation import gettext_lazy as _
+
 from app_utils.app_settings import clean_setting
 
 # Name of this app as shown in the Auth sidebar, page titles
@@ -60,10 +62,10 @@ FREIGHT_OPERATION_MODE_CORP_IN_ALLIANCE = "corp_in_alliance"
 FREIGHT_OPERATION_MODE_CORP_PUBLIC = "corp_public"
 
 FREIGHT_OPERATION_MODES = [
-    (FREIGHT_OPERATION_MODE_MY_ALLIANCE, "My Alliance"),
-    (FREIGHT_OPERATION_MODE_MY_CORPORATION, "My Corporation"),
-    (FREIGHT_OPERATION_MODE_CORP_IN_ALLIANCE, "Corporation in my Alliance"),
-    (FREIGHT_OPERATION_MODE_CORP_PUBLIC, "Corporation public"),
+    (FREIGHT_OPERATION_MODE_MY_ALLIANCE, _("My Alliance")),
+    (FREIGHT_OPERATION_MODE_MY_CORPORATION, _("My Corporation")),
+    (FREIGHT_OPERATION_MODE_CORP_IN_ALLIANCE, _("Corporation in my Alliance")),
+    (FREIGHT_OPERATION_MODE_CORP_PUBLIC, _("Corporation public")),
 ]
 
 # whether ESI requests have a timeout
