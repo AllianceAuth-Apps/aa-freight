@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-30 22:34+0100\n"
+"POT-Creation-Date: 2023-10-30 23:13+0100\n"
 "PO-Revision-Date: 2023-05-13 14:51+0000\n"
 "Language-Team: Ukrainian (https://app.transifex.com/kalkoken-apps/"
 "teams/107978/uk/)\n"
@@ -21,7 +21,7 @@ msgstr ""
 "100 > 14) ? 1 : n % 1 == 0 && (n % 10 ==0 || (n % 10 >=5 && n % 10 <=9) || "
 "(n % 100 >=11 && n % 100 <=14 )) ? 2: 3);\n"
 
-#: admin.py:37
+#: admin.py:37 models/contract_handlers.py:92
 msgid "category"
 msgstr ""
 
@@ -116,6 +116,376 @@ msgstr ""
 
 #: app_settings.py:68
 msgid "Corporation public"
+msgstr ""
+
+#: models/contract_handlers.py:89 models/routes.py:35
+msgid "id"
+msgstr ""
+
+#: models/contract_handlers.py:94 models/routes.py:48
+msgid "name"
+msgstr ""
+
+#: models/contract_handlers.py:169
+msgid "organization"
+msgstr ""
+
+#: models/contract_handlers.py:176
+msgid "character"
+msgstr ""
+
+#: models/contract_handlers.py:178
+msgid "Character used for syncing contracts"
+msgstr ""
+
+#: models/contract_handlers.py:183
+msgid "operation mode"
+msgstr ""
+
+#: models/contract_handlers.py:184
+msgid "Defines what kind of contracts are synced"
+msgstr ""
+
+#: models/contract_handlers.py:190
+msgid "price per volume modifier"
+msgstr ""
+
+#: models/contract_handlers.py:192
+msgid "Global modifier for price per volume in percent, e.g. 2.5 = +2.5%"
+msgstr ""
+
+#: models/contract_handlers.py:200
+msgid "version hash"
+msgstr ""
+
+#: models/contract_handlers.py:201
+msgid "hash to identify changes to contracts"
+msgstr ""
+
+#: models/contract_handlers.py:207
+msgid "last sync at"
+msgstr ""
+
+#: models/contract_handlers.py:208
+msgid "when the last sync happened"
+msgstr ""
+
+#: models/contract_handlers.py:217 models/contract_handlers.py:218
+msgid "contract handler"
+msgstr ""
+
+#: models/contracts.py:64
+msgid "outstanding"
+msgstr ""
+
+#: models/contracts.py:65
+msgid "in progress"
+msgstr ""
+
+#: models/contracts.py:66
+msgid "finished issuer"
+msgstr ""
+
+#: models/contracts.py:67
+msgid "finished contractor"
+msgstr ""
+
+#: models/contracts.py:68
+msgid "finished"
+msgstr ""
+
+#: models/contracts.py:69
+msgid "canceled"
+msgstr ""
+
+#: models/contracts.py:70
+msgid "rejected"
+msgstr ""
+
+#: models/contracts.py:71 templates/freight/partials/contracts_legend.html:18
+msgid "failed"
+msgstr ""
+
+#: models/contracts.py:72
+msgid "deleted"
+msgstr ""
+
+#: models/contracts.py:73
+msgid "reversed"
+msgstr ""
+
+#: models/contracts.py:100
+msgid "contract ID"
+msgstr ""
+
+#: models/contracts.py:108
+msgid "acceptor"
+msgstr ""
+
+#: models/contracts.py:110
+msgid "Character of acceptor or None if accepted by corp"
+msgstr ""
+
+#: models/contracts.py:118
+msgid "acceptor corporation"
+msgstr ""
+
+#: models/contracts.py:120
+msgid "Corporation of acceptor"
+msgstr ""
+
+#: models/contracts.py:122
+msgid "collateral"
+msgstr ""
+
+#: models/contracts.py:127
+msgid "date accepted"
+msgstr ""
+
+#: models/contracts.py:133
+msgid "date completed"
+msgstr ""
+
+#: models/contracts.py:135
+msgid "date expired"
+msgstr ""
+
+#: models/contracts.py:137
+msgid "date issues"
+msgstr ""
+
+#: models/contracts.py:144 models/contracts.py:583
+msgid "date notified"
+msgstr ""
+
+#: models/contracts.py:145
+msgid "Datetime of latest notification, None = none has been sent"
+msgstr ""
+
+#: models/contracts.py:148 models/routes.py:138
+msgid "days to complete"
+msgstr ""
+
+#: models/contracts.py:153 models/routes.py:104
+msgid "end location"
+msgstr ""
+
+#: models/contracts.py:156
+msgid "for corporation"
+msgstr ""
+
+#: models/contracts.py:160
+msgid "issuer corporation"
+msgstr ""
+
+#: models/contracts.py:166
+msgid "issuer"
+msgstr ""
+
+#: models/contracts.py:173
+msgid "issues"
+msgstr ""
+
+#: models/contracts.py:174
+msgid "List or price check issues as JSON array of strings or None"
+msgstr ""
+
+#: models/contracts.py:182 models/routes.py:227
+msgid "pricing"
+msgstr ""
+
+#: models/contracts.py:185
+msgid "reward"
+msgstr ""
+
+#: models/contracts.py:189 models/routes.py:97
+msgid "start location"
+msgstr ""
+
+#: models/contracts.py:196 models/contracts.py:580
+msgid "status"
+msgstr ""
+
+#: models/contracts.py:203
+msgid "title"
+msgstr ""
+
+#: models/contracts.py:205
+msgid "volume"
+msgstr ""
+
+#: models/contracts.py:212 models/contracts.py:573
+msgid "contract"
+msgstr ""
+
+#: models/contracts.py:213
+msgid "contracts"
+msgstr ""
+
+#: models/contracts.py:588
+msgid "contract customer notification"
+msgstr ""
+
+#: models/contracts.py:589
+msgid "contract customer notifications"
+msgstr ""
+
+#: models/routes.py:61
+msgid "location"
+msgstr ""
+
+#: models/routes.py:62
+msgid "locations"
+msgstr ""
+
+#: models/routes.py:99
+msgid "Starting station or structure for courier route"
+msgstr ""
+
+#: models/routes.py:106
+msgid "Destination station or structure for courier route"
+msgstr ""
+
+#: models/routes.py:114
+msgid "collateral minimum"
+msgstr ""
+
+#: models/routes.py:115
+msgid "Minimum required collateral in ISK"
+msgstr ""
+
+#: models/routes.py:122
+msgid "collateral maximum"
+msgstr ""
+
+#: models/routes.py:123
+msgid "Maximum allowed collateral in ISK"
+msgstr ""
+
+#: models/routes.py:130
+msgid "days to expire"
+msgstr ""
+
+#: models/routes.py:131
+msgid "Recommended days for contracts to expire"
+msgstr ""
+
+#: models/routes.py:139
+msgid "Recommended days for contract completion"
+msgstr ""
+
+#: models/routes.py:145
+msgid "details"
+msgstr ""
+
+#: models/routes.py:146
+msgid "Text with additional instructions for using this pricing"
+msgstr ""
+
+#: models/routes.py:150
+msgid "is active"
+msgstr ""
+
+#: models/routes.py:151
+msgid "Disabled pricings will not be used or shown"
+msgstr ""
+
+#: models/routes.py:155
+msgid "is default"
+msgstr ""
+
+#: models/routes.py:157
+msgid ""
+"The default pricing will be preselected in the calculator. Please make sure "
+"to only mark one pricing as default."
+msgstr ""
+
+#: models/routes.py:163
+msgid "is bidirectional"
+msgstr ""
+
+#: models/routes.py:165
+msgid ""
+"Whether this pricing is valid for contracts in either direction or only the "
+"one specified"
+msgstr ""
+
+#: models/routes.py:174
+msgid "price base"
+msgstr ""
+
+#: models/routes.py:175
+msgid "Base price in ISK"
+msgstr ""
+
+#: models/routes.py:182
+msgid "price minimum"
+msgstr ""
+
+#: models/routes.py:183
+msgid "Minimum total price in ISK"
+msgstr ""
+
+#: models/routes.py:190
+msgid "price markup from volume"
+msgstr ""
+
+#: models/routes.py:191
+msgid "Add-on price per m3 volume in ISK"
+msgstr ""
+
+#: models/routes.py:198
+msgid "price markup from collateral"
+msgstr ""
+
+#: models/routes.py:199
+#, python-format
+msgid "Add-on price in %% of collateral"
+msgstr ""
+
+#: models/routes.py:206
+msgid "volume maximum"
+msgstr ""
+
+#: models/routes.py:207
+msgid "Maximum allowed volume in m3"
+msgstr ""
+
+#: models/routes.py:214
+msgid "volume minimum"
+msgstr ""
+
+#: models/routes.py:215
+msgid "Minimum allowed volume in m3"
+msgstr ""
+
+#: models/routes.py:219
+msgid "price per volume modifier enabled"
+msgstr ""
+
+#: models/routes.py:220
+msgid "Whether the global price per volume modifier is used"
+msgstr ""
+
+#: models/routes.py:228
+msgid "pricings"
+msgstr ""
+
+#: models/routes.py:254
+msgid "You must specify at least one price component"
+msgstr ""
+
+#: models/routes.py:267
+msgid ""
+"There already exists a bidirectional pricing for this route. Please set this "
+"pricing to non-bidirectional to save it. And after you must also set the "
+"other pricing to non-bidirectional."
+msgstr ""
+
+#: models/routes.py:284
+msgid ""
+"There already exists a non bidirectional pricing for this route. You need to "
+"mark this pricing as non-bidirectional too to continue."
 msgstr ""
 
 #: templates/freight/add_location.html:11 views.py:401
@@ -363,10 +733,6 @@ msgstr ""
 
 #: templates/freight/partials/contracts_legend.html:17
 msgid "In Progress"
-msgstr ""
-
-#: templates/freight/partials/contracts_legend.html:18
-msgid "failed"
 msgstr ""
 
 #: templates/freight/partials/contracts_legend.html:19
