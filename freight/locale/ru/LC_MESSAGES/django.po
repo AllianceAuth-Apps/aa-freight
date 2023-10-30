@@ -3,6 +3,9 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+# Translators:
+# - -, 2023
+#
 #, fuzzy
 msgid ""
 msgstr ""
@@ -10,300 +13,304 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2023-10-30 00:05+0100\n"
 "PO-Revision-Date: 2023-05-13 14:51+0000\n"
-"Language-Team: Russian (Russia) (https://app.transifex.com/kalkoken-apps/"
-"teams/107978/ru_RU/)\n"
-"Language: ru_RU\n"
+"Last-Translator: - -, 2023\n"
+"Language-Team: Russian (https://app.transifex.com/kalkoken-apps/teams/107978/ru/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
-"n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
-"(n%100>=11 && n%100<=14)? 2 : 3);\n"
+"Language: ru\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);\n"
 
 #: admin.py:47
 msgid "Update selected locations from ESI"
-msgstr ""
+msgstr "Обновить выбранные локации через ESI"
 
 #: admin.py:58
 #, python-format
-msgid "Started updating %d locations. This can take a short while to complete."
-msgstr ""
+msgid ""
+"Started updating %d locations. This can take a short while to complete."
+msgstr "Началось обновление %d локаций. Это может занять некоторое время."
 
 #: admin.py:127
 msgid "Fetch contracts from Eve Online server"
-msgstr ""
+msgstr "Получаю контракты с сервера Eve Online"
 
 #: admin.py:131
 #, python-format
 msgid "Started syncing contracts for: %s"
-msgstr ""
+msgstr "Началась синхронизация контрактов для: %s"
 
 #: admin.py:133
 msgid "Send notifications for outstanding contracts"
-msgstr ""
+msgstr "Отправить оповещения о просроченных контрактах"
 
 #: admin.py:138
 #, python-format
 msgid "Started sending notifications for: %s "
-msgstr ""
+msgstr "Началась отправка оповещений для: %s"
 
 #: admin.py:141
 msgid "Update pricing info for all contracts"
-msgstr ""
+msgstr "Обновление стоимости всех контрактов"
 
 #: admin.py:201
 msgid "Sent pilots notification for selected contracts to Discord"
-msgstr ""
+msgstr "Отправить пилотам оповещения о выбранных контрактах в Дискорд"
 
 #: admin.py:208
 #, python-format
 msgid "Sent pilots notification for contract %d to Discord"
-msgstr ""
+msgstr "Отправить пилотам оповещения о контракте %d в Дискорд"
 
 #: admin.py:213
 msgid "Sent customer notification for selected contracts to Discord"
-msgstr ""
+msgstr "Отправить клиенту оповещение о выбранных контрактах в Дискорд"
 
 #: admin.py:220
 #, python-format
 msgid "Sent customer notification for contract %d to Discord"
-msgstr ""
+msgstr "Отправить клиенту оповещение о контракте %d в Дискорд"
 
 #: templates/freight/add_location.html:11
 msgid "Add / Update Location"
-msgstr ""
+msgstr "Добавить / обновить локацию"
 
 #: templates/freight/add_location.html:14
 #, python-format
 msgid "Accessing structures with token from %(token_char_name)s"
-msgstr ""
+msgstr "Получение структур по токену от %(token_char_name)s"
 
 #: templates/freight/calculator.html:15
 msgid "Calculator"
-msgstr ""
+msgstr "Калькулятор"
 
 #: templates/freight/calculator.html:21
 msgid "Reward"
-msgstr ""
+msgstr "Награда"
 
 #: templates/freight/calculator.html:24 templates/freight/calculator.html:75
 #: templates/freight/calculator.html:86 templates/freight/calculator.html:94
 #: templates/freight/calculator.html:124 templates/freight/calculator.html:132
 #: templates/freight/calculator.html:186 templates/freight/calculator.html:195
 msgid "ISK"
-msgstr ""
+msgstr "ISK"
 
 #: templates/freight/calculator.html:31
 msgid "Click To Calculate Reward!"
-msgstr ""
+msgstr "Нажмите чтобы подсчитать награду!"
 
 #: templates/freight/calculator.html:35 templates/freight/calculator.html:146
 msgid "Please define a pricing/route!"
-msgstr ""
+msgstr "Пожалуйста определите цену/маршрут!"
 
 #: templates/freight/calculator.html:46
 msgid "Pricing details"
-msgstr ""
+msgstr "Подробности о ценах"
 
 #: templates/freight/calculator.html:54 templates/freight/calculator.html:62
 msgid "From / To:"
-msgstr ""
+msgstr "От / Кому:"
 
 #: templates/freight/calculator.html:56
 msgid "From:"
-msgstr ""
+msgstr "От:"
 
 #: templates/freight/calculator.html:64
 msgid "To:"
-msgstr ""
+msgstr "Кому:"
 
 #: templates/freight/calculator.html:68
 msgid "Both directions:"
-msgstr ""
+msgstr "Оба направления:"
 
 #: templates/freight/calculator.html:73
 msgid "Minimum price:"
-msgstr ""
+msgstr "Минимальная цена:"
 
 #: templates/freight/calculator.html:81
 msgid "Fix price:"
-msgstr ""
+msgstr "Фиксированная цена:"
 
 #: templates/freight/calculator.html:83
 msgid "Base price:"
-msgstr ""
+msgstr "Базовая стоимость:"
 
 #: templates/freight/calculator.html:91
 msgid "Price add-on per m3:"
-msgstr ""
+msgstr "Надбавка к цене за m3:"
 
 #: templates/freight/calculator.html:99
 msgid "Price add-on collateral:"
-msgstr ""
+msgstr "Надбавка к цене за залог:"
 
 #: templates/freight/calculator.html:105
 msgid "Min Volume:"
-msgstr ""
+msgstr "Мин объём:"
 
 #: templates/freight/calculator.html:108 templates/freight/calculator.html:116
 #: templates/freight/calculator.html:220
 msgid "m3"
-msgstr ""
+msgstr "m3"
 
 #: templates/freight/calculator.html:113
 msgid "Max Volume:"
-msgstr ""
+msgstr "Макс объём:"
 
 #: templates/freight/calculator.html:121
 msgid "Min. Collateral:"
-msgstr ""
+msgstr "Мин залог:"
 
 #: templates/freight/calculator.html:129
 msgid "Max. Collateral:"
-msgstr ""
+msgstr "Макс залог:"
 
 #: templates/freight/calculator.html:139
 msgid "Additional Instructions:"
-msgstr ""
+msgstr "Дополнительные инструкции:"
 
 #: templates/freight/calculator.html:154
 msgid "Your contract"
-msgstr ""
+msgstr "Ваши контракты"
 
 #: templates/freight/calculator.html:159
 msgid "Contract Type:"
-msgstr ""
+msgstr "Тип контракта:"
 
 #: templates/freight/calculator.html:160
 msgid "Courier"
-msgstr ""
+msgstr "Курьер"
 
 #: templates/freight/calculator.html:162
 msgid "Availability:"
-msgstr ""
+msgstr "Доступность:"
 
 #: templates/freight/calculator.html:165
 msgid "Location:"
-msgstr ""
+msgstr "Местоположение:"
 
 #: templates/freight/calculator.html:175
 msgid "Ship To:"
-msgstr ""
+msgstr "Доставить в:"
 
 #: templates/freight/calculator.html:183
 msgid "Reward:"
-msgstr ""
+msgstr "Награда:"
 
 #: templates/freight/calculator.html:192
 msgid "Collateral:"
-msgstr ""
+msgstr "Залог:"
 
 #: templates/freight/calculator.html:202
 msgid "Expiration:"
-msgstr ""
+msgstr "Срок действия:"
 
 #: templates/freight/calculator.html:203
 msgid "days"
-msgstr ""
+msgstr "дней"
 
 #: templates/freight/calculator.html:207
 msgid "Days to complete:"
-msgstr ""
+msgstr "Дней для завершения:"
 
 #: templates/freight/calculator.html:217
 msgid "Volume:"
-msgstr ""
+msgstr "Объём:"
 
 #: templates/freight/calculator.html:225
 msgid ""
 "Note that this route is bidirectional, so Location and Destination can be "
 "switched."
 msgstr ""
+"Обратите внимание, что этот маршрут является двунаправленным, поэтому "
+"местоположение и пункт назначения можно переключать."
 
 #: templates/freight/calculator.html:229
 msgid "No price calculated yet"
-msgstr ""
+msgstr "Цена пока не подсчитана"
 
 #: templates/freight/contracts_all.html:12
 msgid "Active"
-msgstr ""
+msgstr "Активно"
 
 #: templates/freight/contracts_all.html:17
 msgid "All"
-msgstr ""
+msgstr "Все"
 
 #: templates/freight/partials/menu.html:9
 msgid "Toggle navigation"
-msgstr ""
+msgstr "Включить навигацию"
 
 #: templates/freight/statistics.html:12
 msgid "Routes"
-msgstr ""
+msgstr "Маршруты"
 
 #: templates/freight/statistics.html:17 templates/freight/statistics.html:51
 msgid "Pilots"
-msgstr ""
+msgstr "Пилоты"
 
 #: templates/freight/statistics.html:26
 msgid "Pilot Corporations"
-msgstr ""
+msgstr "Корпорация пилота"
 
 #: templates/freight/statistics.html:31 templates/freight/statistics.html:52
 msgid "Customers"
-msgstr ""
+msgstr "Клиенты"
 
 #: templates/freight/statistics.html:46 templates/freight/statistics.html:77
 #: templates/freight/statistics.html:108 templates/freight/statistics.html:139
 msgid "Name"
-msgstr ""
+msgstr "Имя"
 
 #: templates/freight/statistics.html:47 templates/freight/statistics.html:79
 #: templates/freight/statistics.html:110 templates/freight/statistics.html:141
 msgid "Contracts"
-msgstr ""
+msgstr "Контракты"
 
 #: templates/freight/statistics.html:48 templates/freight/statistics.html:80
 #: templates/freight/statistics.html:111 templates/freight/statistics.html:142
 msgid "Rewards"
-msgstr ""
+msgstr "Награды"
 
 #: templates/freight/statistics.html:49 templates/freight/statistics.html:81
 #: templates/freight/statistics.html:112 templates/freight/statistics.html:143
 msgid "Collaterals"
-msgstr ""
+msgstr "Залоги"
 
 #: templates/freight/statistics.html:50 templates/freight/statistics.html:82
 #: templates/freight/statistics.html:113 templates/freight/statistics.html:144
 msgid "Volume"
-msgstr ""
+msgstr "Объём"
 
 #: templates/freight/statistics.html:58 templates/freight/statistics.html:88
 #: templates/freight/statistics.html:119 templates/freight/statistics.html:150
 msgid "Totals"
-msgstr ""
+msgstr "Всего"
 
 #: templates/freight/statistics.html:78 templates/freight/statistics.html:140
 msgid "Corporation"
-msgstr ""
+msgstr "Корпорация"
 
 #: templates/freight/statistics.html:109
 msgid "Alliance"
-msgstr ""
+msgstr "Альянс"
 
 #: templates/freight/statistics.html:166
 #, python-format
 msgid ""
 "\n"
-"            Statistics calculated for all contracts finished withn the last "
-"%(max_days)s days\n"
+"            Statistics calculated for all contracts finished withn the last %(max_days)s days\n"
 "        "
 msgstr ""
+"\n"
+"Статистика подсчитана для всех контрактов, завершенных за последние %(max_days)s дней\n"
+"    "
 
 #: views.py:276
 #, python-format
 msgid ""
 "Can not setup contract handler, because %s is not a member of any alliance"
 msgstr ""
+"Невозможно добавить обработчика контрактов потому, что %s не член альянса"
 
 #: views.py:293
 #, python-format
@@ -311,6 +318,8 @@ msgid ""
 "You can only use your main or alt characters to setup the contract handler. "
 "However, character %s is neither. "
 msgstr ""
+"Вы можете использовать вашего основного или альт персонажа для добавления "
+"обработчика контрактов. Однако, персонаж %s ни то, ни другое."
 
 #: views.py:307
 msgid ""
@@ -318,26 +327,35 @@ msgid ""
 "mode. You need to first delete the existing contract handler in the admin "
 "section before you can set up this app for a different operation mode."
 msgstr ""
+"Для другого режима работы уже установлен обработчик контрактов. Вам "
+"необходимо сначала удалить существующий обработчик контрактов в админ-"
+"панели, прежде чем вы сможете настроить это приложение для другого режима "
+"работы."
 
 #: views.py:331
 #, python-format
 msgid ""
 "Contract Handler setup started for %(organization)s organization with "
-"%(character)s as sync character. Operation mode: %(operation_mode)s. Started "
-"syncing of courier contracts. "
+"%(character)s as sync character. Operation mode: %(operation_mode)s. Started"
+" syncing of courier contracts. "
 msgstr ""
+"Обработчик контрактов добавлен синхронизирующим персонажем %(character)s для"
+" организации %(organization)s. Режим работы: %(operation_mode)s. Началась "
+"синхронизация курьерских контрактов."
 
 #: views.py:379
 #, python-format
 msgid ""
-"Failed to add location with token from %(character)s for location ID %(id)s: "
-"%(error)s"
+"Failed to add location with token from %(character)s for location ID %(id)s:"
+" %(error)s"
 msgstr ""
+"Не удалось добавить локацию с токеном от %(character)s для ID локации "
+"%(id)s: %(error)s"
 
 #: views.py:389
 msgid "Added:"
-msgstr ""
+msgstr "Добавлено:"
 
 #: views.py:389
 msgid "Updated:"
-msgstr ""
+msgstr "Обновлено:"

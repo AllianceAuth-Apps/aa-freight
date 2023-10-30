@@ -14,12 +14,11 @@ msgstr ""
 "POT-Creation-Date: 2023-10-30 00:05+0100\n"
 "PO-Revision-Date: 2023-05-13 14:51+0000\n"
 "Last-Translator: Peter Pfeufer, 2023\n"
-"Language-Team: German (https://app.transifex.com/kalkoken-apps/teams/107978/"
-"de/)\n"
-"Language: de\n"
+"Language-Team: German (https://app.transifex.com/kalkoken-apps/teams/107978/de/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Language: de\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: admin.py:47
@@ -28,10 +27,11 @@ msgstr "Ausgewählte Standorte von ESI aktualisieren"
 
 #: admin.py:58
 #, python-format
-msgid "Started updating %d locations. This can take a short while to complete."
+msgid ""
+"Started updating %d locations. This can take a short while to complete."
 msgstr ""
-"Mit der Aktualisierung von %d Standorten begonnen. Dies kann eine kurze Zeit "
-"in Anspruch nehmen."
+"Mit der Aktualisierung von %d Standorten begonnen. Dies kann eine kurze Zeit"
+" in Anspruch nehmen."
 
 #: admin.py:127
 msgid "Fetch contracts from Eve Online server"
@@ -300,13 +300,11 @@ msgstr "Allianz"
 #, python-format
 msgid ""
 "\n"
-"            Statistics calculated for all contracts finished withn the last "
-"%(max_days)s days\n"
+"            Statistics calculated for all contracts finished withn the last %(max_days)s days\n"
 "        "
 msgstr ""
 "\n"
-"Statistiken für alle Verträge berechnet, die innerhalb der letzten "
-"%(max_days)s Tage abgeschlossen wurden"
+"Statistiken für alle Verträge berechnet, die innerhalb der letzten %(max_days)s Tage abgeschlossen wurden"
 
 #: views.py:276
 #, python-format
@@ -331,23 +329,24 @@ msgid ""
 "mode. You need to first delete the existing contract handler in the admin "
 "section before you can set up this app for a different operation mode."
 msgstr ""
-"Für einen anderen Betriebsmodus ist bereits ein Vertragshandler eingerichtet."
-"Du musst zunächst den vorhandenen Vertragshandler im Admin-Bereich löschen, "
-"bevor Du diese App für einen anderen Betriebsmodus einrichten kannst."
+"Für einen anderen Betriebsmodus ist bereits ein Vertragshandler "
+"eingerichtet.Du musst zunächst den vorhandenen Vertragshandler im Admin-"
+"Bereich löschen, bevor Du diese App für einen anderen Betriebsmodus "
+"einrichten kannst."
 
 #: views.py:331
 #, python-format
 msgid ""
 "Contract Handler setup started for %(organization)s organization with "
-"%(character)s as sync character. Operation mode: %(operation_mode)s. Started "
-"syncing of courier contracts. "
+"%(character)s as sync character. Operation mode: %(operation_mode)s. Started"
+" syncing of courier contracts. "
 msgstr ""
 
 #: views.py:379
 #, python-format
 msgid ""
-"Failed to add location with token from %(character)s for location ID %(id)s: "
-"%(error)s"
+"Failed to add location with token from %(character)s for location ID %(id)s:"
+" %(error)s"
 msgstr ""
 "Der Standort konnte mit dem Token von %(character)s für die Standort-ID "
 "nicht hinzugefügt werden. %(id)s:%(error)s"
