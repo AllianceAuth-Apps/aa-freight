@@ -11,67 +11,127 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-30 00:05+0100\n"
+"POT-Creation-Date: 2023-10-30 22:34+0100\n"
 "PO-Revision-Date: 2023-05-13 14:51+0000\n"
 "Last-Translator: - -, 2023\n"
-"Language-Team: Russian (https://app.transifex.com/kalkoken-apps/teams/107978/ru/)\n"
+"Language-Team: Russian (https://app.transifex.com/kalkoken-apps/teams/107978/"
+"ru/)\n"
+"Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: ru\n"
-"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
+"(n%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: admin.py:47
+#: admin.py:37
+msgid "category"
+msgstr ""
+
+#: admin.py:41
+msgid "solar system"
+msgstr ""
+
+#: admin.py:45
 msgid "Update selected locations from ESI"
 msgstr "Обновить выбранные локации через ESI"
 
-#: admin.py:58
+#: admin.py:56
 #, python-format
-msgid ""
-"Started updating %d locations. This can take a short while to complete."
+msgid "Started updating %d locations. This can take a short while to complete."
 msgstr "Началось обновление %d локаций. Это может занять некоторое время."
 
-#: admin.py:127
+#: admin.py:82
+#, fuzzy
+#| msgid "Both directions:"
+msgid "bidirectional"
+msgstr "Оба направления:"
+
+#: admin.py:86
+#, fuzzy
+#| msgid "Active"
+msgid "active"
+msgstr "Активно"
+
+#: admin.py:90
+msgid "default"
+msgstr ""
+
+#: admin.py:121
+msgid "sync ok"
+msgstr ""
+
+#: admin.py:125
 msgid "Fetch contracts from Eve Online server"
 msgstr "Получаю контракты с сервера Eve Online"
 
-#: admin.py:131
+#: admin.py:129
 #, python-format
 msgid "Started syncing contracts for: %s"
 msgstr "Началась синхронизация контрактов для: %s"
 
-#: admin.py:133
+#: admin.py:131
 msgid "Send notifications for outstanding contracts"
 msgstr "Отправить оповещения о просроченных контрактах"
 
-#: admin.py:138
+#: admin.py:136
 #, python-format
 msgid "Started sending notifications for: %s "
 msgstr "Началась отправка оповещений для: %s"
 
-#: admin.py:141
+#: admin.py:139
 msgid "Update pricing info for all contracts"
 msgstr "Обновление стоимости всех контрактов"
 
-#: admin.py:201
+#: admin.py:183
+msgid "pilots notified"
+msgstr ""
+
+#: admin.py:189
+msgid "customer notified"
+msgstr ""
+
+#: admin.py:199
 msgid "Sent pilots notification for selected contracts to Discord"
 msgstr "Отправить пилотам оповещения о выбранных контрактах в Дискорд"
 
-#: admin.py:208
+#: admin.py:206
 #, python-format
 msgid "Sent pilots notification for contract %d to Discord"
 msgstr "Отправить пилотам оповещения о контракте %d в Дискорд"
 
-#: admin.py:213
+#: admin.py:211
 msgid "Sent customer notification for selected contracts to Discord"
 msgstr "Отправить клиенту оповещение о выбранных контрактах в Дискорд"
 
-#: admin.py:220
+#: admin.py:218
 #, python-format
 msgid "Sent customer notification for contract %d to Discord"
 msgstr "Отправить клиенту оповещение о контракте %d в Дискорд"
 
-#: templates/freight/add_location.html:11
+#: app_settings.py:65
+#, fuzzy
+#| msgid "Alliance"
+msgid "My Alliance"
+msgstr "Альянс"
+
+#: app_settings.py:66
+#, fuzzy
+#| msgid "Corporation"
+msgid "My Corporation"
+msgstr "Корпорация"
+
+#: app_settings.py:67
+msgid "Corporation in my Alliance"
+msgstr ""
+
+#: app_settings.py:68
+#, fuzzy
+#| msgid "Corporation"
+msgid "Corporation public"
+msgstr "Корпорация"
+
+#: templates/freight/add_location.html:11 views.py:401
 msgid "Add / Update Location"
 msgstr "Добавить / обновить локацию"
 
@@ -236,9 +296,141 @@ msgstr "Активно"
 msgid "All"
 msgstr "Все"
 
+#: templates/freight/partials/contract_table.html:7
+msgid "Status"
+msgstr ""
+
+#: templates/freight/partials/contract_table.html:8
+msgid "Start"
+msgstr ""
+
+#: templates/freight/partials/contract_table.html:9
+msgid "Destination"
+msgstr ""
+
+#: templates/freight/partials/contract_table.html:10
+#, fuzzy
+#| msgid "Reward"
+msgid "Reward ISK"
+msgstr "Награда"
+
+#: templates/freight/partials/contract_table.html:11
+#, fuzzy
+#| msgid "Collateral:"
+msgid "Collateral ISK"
+msgstr "Залог:"
+
+#: templates/freight/partials/contract_table.html:12
+#, fuzzy
+#| msgid "Volume"
+msgid "Volume m3"
+msgstr "Объём"
+
+#: templates/freight/partials/contract_table.html:13
+#, fuzzy
+#| msgid "Contract Type:"
+msgid "Contract Check"
+msgstr "Тип контракта:"
+
+#: templates/freight/partials/contract_table.html:14
+msgid "Issued On"
+msgstr ""
+
+#: templates/freight/partials/contract_table.html:15
+msgid "Expires On"
+msgstr ""
+
+#: templates/freight/partials/contract_table.html:16
+msgid "Issued By"
+msgstr ""
+
+#: templates/freight/partials/contract_table.html:17
+msgid "Accepted On"
+msgstr ""
+
+#: templates/freight/partials/contract_table.html:18
+msgid "Accepted By"
+msgstr ""
+
+#: templates/freight/partials/contracts_legend.html:4
+#, fuzzy
+#| msgid "Contract Type:"
+msgid "Contract check:"
+msgstr "Тип контракта:"
+
+#: templates/freight/partials/contracts_legend.html:5
+msgid "OK"
+msgstr ""
+
+#: templates/freight/partials/contracts_legend.html:6
+msgid "Errors"
+msgstr ""
+
+#: templates/freight/partials/contracts_legend.html:7
+msgid "If they are errors you find them in the tooltip of icon"
+msgstr ""
+
+#: templates/freight/partials/contracts_legend.html:8
+msgid "No contract check performed"
+msgstr ""
+
+#: templates/freight/partials/contracts_legend.html:11
+msgid "Notes:"
+msgstr ""
+
+#: templates/freight/partials/contracts_legend.html:13
+msgid "If icon is shown you can hover with the mouse over it to see the notes."
+msgstr ""
+
+#: templates/freight/partials/contracts_legend.html:16
+msgid "Color code:"
+msgstr ""
+
+#: templates/freight/partials/contracts_legend.html:17
+msgid "In Progress"
+msgstr ""
+
+#: templates/freight/partials/contracts_legend.html:18
+msgid "failed"
+msgstr ""
+
+#: templates/freight/partials/contracts_legend.html:19
+#, fuzzy
+#| msgid "Days to complete:"
+msgid "completed"
+msgstr "Дней для завершения:"
+
 #: templates/freight/partials/menu.html:9
 msgid "Toggle navigation"
 msgstr "Включить навигацию"
+
+#: templates/freight/partials/menu.html:21 views.py:253
+#, fuzzy
+#| msgid "Calculator"
+msgid "Reward Calculator"
+msgstr "Калькулятор"
+
+#: templates/freight/partials/menu.html:27
+#, fuzzy
+#| msgid "Contracts"
+msgid "My Contract"
+msgstr "Контракты"
+
+#: templates/freight/partials/menu.html:38 views.py:91
+#, fuzzy
+#| msgid "Contracts"
+msgid "All Contracts"
+msgstr "Контракты"
+
+#: templates/freight/partials/menu.html:49
+msgid "Statistics"
+msgstr ""
+
+#: templates/freight/partials/menu.html:58
+#, fuzzy
+#| msgid "Location:"
+msgid "Add Location"
+msgstr "Местоположение:"
 
 #: templates/freight/statistics.html:12
 msgid "Routes"
@@ -298,21 +490,33 @@ msgstr "Альянс"
 #, python-format
 msgid ""
 "\n"
-"            Statistics calculated for all contracts finished withn the last %(max_days)s days\n"
+"            Statistics calculated for all contracts finished withn the last "
+"%(max_days)s days\n"
 "        "
 msgstr ""
 "\n"
-"Статистика подсчитана для всех контрактов, завершенных за последние %(max_days)s дней\n"
+"Статистика подсчитана для всех контрактов, завершенных за последние "
+"%(max_days)s дней\n"
 "    "
 
-#: views.py:276
+#: views.py:45
+msgid "Setup"
+msgstr ""
+
+#: views.py:77
+#, fuzzy
+#| msgid "Contracts"
+msgid "My Contracts"
+msgstr "Контракты"
+
+#: views.py:284
 #, python-format
 msgid ""
 "Can not setup contract handler, because %s is not a member of any alliance"
 msgstr ""
 "Невозможно добавить обработчика контрактов потому, что %s не член альянса"
 
-#: views.py:293
+#: views.py:301
 #, python-format
 msgid ""
 "You can only use your main or alt characters to setup the contract handler. "
@@ -321,7 +525,7 @@ msgstr ""
 "Вы можете использовать вашего основного или альт персонажа для добавления "
 "обработчика контрактов. Однако, персонаж %s ни то, ни другое."
 
-#: views.py:307
+#: views.py:315
 msgid ""
 "There already is a contract handler installed for a different operation "
 "mode. You need to first delete the existing contract handler in the admin "
@@ -332,30 +536,30 @@ msgstr ""
 "панели, прежде чем вы сможете настроить это приложение для другого режима "
 "работы."
 
-#: views.py:331
+#: views.py:339
 #, python-format
 msgid ""
 "Contract Handler setup started for %(organization)s organization with "
-"%(character)s as sync character. Operation mode: %(operation_mode)s. Started"
-" syncing of courier contracts. "
+"%(character)s as sync character. Operation mode: %(operation_mode)s. Started "
+"syncing of courier contracts. "
 msgstr ""
-"Обработчик контрактов добавлен синхронизирующим персонажем %(character)s для"
-" организации %(organization)s. Режим работы: %(operation_mode)s. Началась "
+"Обработчик контрактов добавлен синхронизирующим персонажем %(character)s для "
+"организации %(organization)s. Режим работы: %(operation_mode)s. Началась "
 "синхронизация курьерских контрактов."
 
-#: views.py:379
+#: views.py:387
 #, python-format
 msgid ""
-"Failed to add location with token from %(character)s for location ID %(id)s:"
-" %(error)s"
+"Failed to add location with token from %(character)s for location ID %(id)s: "
+"%(error)s"
 msgstr ""
 "Не удалось добавить локацию с токеном от %(character)s для ID локации "
 "%(id)s: %(error)s"
 
-#: views.py:389
+#: views.py:397
 msgid "Added:"
 msgstr "Добавлено:"
 
-#: views.py:389
+#: views.py:397
 msgid "Updated:"
 msgstr "Обновлено:"
