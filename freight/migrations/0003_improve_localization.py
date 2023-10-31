@@ -511,7 +511,7 @@ class Migration(migrations.Migration):
             field=models.FloatField(
                 blank=True,
                 default=None,
-                help_text="Add-on price in %% of collateral",
+                help_text="Add-on price in percent of collateral",
                 null=True,
                 validators=[django.core.validators.MinValueValidator(0)],
                 verbose_name="price markup from collateral",

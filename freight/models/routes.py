@@ -196,7 +196,7 @@ class Pricing(models.Model):
         blank=True,
         validators=[MinValueValidator(0)],
         verbose_name=_("price markup from collateral"),
-        help_text=_("Add-on price in %% of collateral"),
+        help_text=_("Add-on price in percent of collateral"),
     )
     volume_max = models.FloatField(
         default=None,
