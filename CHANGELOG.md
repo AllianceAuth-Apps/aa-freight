@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for AA4
 
+### Changed
+
+- Local tests can now run in parallel
+
 ## [1.10.0] - 2023-10-09
 
 ### Added

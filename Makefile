@@ -1,5 +1,6 @@
 appname = aa-freight
 package = freight
+myauth_path =
 
 help:
 	@echo "Makefile for $(appname)"
@@ -42,16 +43,7 @@ compilemessages:
 		-l zh_Hans
 
 coverage:
-	coverage run ../myauth/manage.py test --keepdb --failfast && coverage html && coverage report -m
-
-pylint:
-	pylint --load-plugins pylint_django $(package)
-
-check_complexity:
-	flake8 $(package) --max-complexity=10
-
-flake8:
-	flake8 $(package) --count
+	coverage run --concurrency=multiprocessing ../myauth/manage.py test --keepdb --failfast --timing --parallel && coverage combine && coverage html && coverage report -m
 
 graph_models:
 	python ../myauth/manage.py graph_models $(package) --arrow-shape normal -o $(appname)_models.png
