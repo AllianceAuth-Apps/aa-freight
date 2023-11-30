@@ -33,7 +33,7 @@ try:
     from discordproxy.tests.factories import create_rpc_error
 
 except ImportError:
-    pass
+    DiscordClient = None
 
 
 MODULE_PATH = "freight.models.contracts"
