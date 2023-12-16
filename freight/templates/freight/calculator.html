@@ -23,7 +23,7 @@
                                 <span id="text_price_2">{{ price|formatnumber:"0"|default_if_none:"-" }}
                                     &nbsp;{% translate "ISK" %}
                                 </span>
-                                <span class="copy_to_clipboard" data-text="{{ price }}">
+                                <span class="copy_to_clipboard" data-clipboard-text="{{ price }}">
                                     &nbsp;&nbsp;<i class="far fa-copy"></i></span>
                                 </span>
                             </h2>
@@ -165,7 +165,7 @@
                                 <dt>{% translate "Location:" %}</dt>
                                 <dd>
                                     {{ pricing.start_location }}
-                                    <span class="copy_to_clipboard" data-text="{{ pricing.start_location }}">
+                                    <span class="copy_to_clipboard" data-clipboard-text="{{ pricing.start_location }}">
                                         &nbsp;&nbsp;<i class="far fa-copy"></i></span>
                                     </span>
                                 </dd>
@@ -175,7 +175,7 @@
                                 <dt>{% translate "Ship To:" %}</dt>
                                 <dd>
                                     {{ pricing.end_location }}
-                                    <span class="copy_to_clipboard" data-text="{{ pricing.end_location }}">
+                                    <span class="copy_to_clipboard" data-clipboard-text="{{ pricing.end_location }}">
                                         &nbsp;&nbsp;<i class="far fa-copy"></i></span>
                                     </span>
                                 </dd>
@@ -184,7 +184,7 @@
                                 <dd>
                                     {{ price|formatnumber:"0"|default_if_none:"???" }}
                                     &nbsp;{% translate "ISK" %}
-                                    <span class="copy_to_clipboard" data-text="{{ price }}">
+                                    <span class="copy_to_clipboard" data-clipboard-text="{{ price }}">
                                         &nbsp;&nbsp;<i class="far fa-copy"></i></span>
                                     </span>
                                 </dd>
@@ -193,7 +193,7 @@
                                 <dd>
                                     {{ collateral|formatnumber:"0"|default_if_none:"???" }}
                                     &nbsp;{% translate "ISK" %}
-                                    <span class="copy_to_clipboard" data-text="{{ collateral }}">
+                                    <span class="copy_to_clipboard" data-clipboard-text="{{ collateral }}">
                                         &nbsp;&nbsp;<i class="far fa-copy"></i></span>
                                     </span>
                                 </dd>
@@ -207,7 +207,7 @@
                                     <dt>{% translate "Days to complete:" %}</dt>
                                     <dd>
                                         {{ pricing.days_to_complete|default_if_none:"-" }}
-                                        <span class="copy_to_clipboard" data-text="{{ pricing.days_to_complete }}">
+                                        <span class="copy_to_clipboard" data-clipboard-text="{{ pricing.days_to_complete }}">
                                             &nbsp;&nbsp;<i class="far fa-copy"></i></span>
                                         </span>
                                     </dd>
@@ -240,27 +240,19 @@
 {% endblock %}
 
 {% block extra_javascript %}
+    {% include 'bundles/clipboard-js.html' %}
+
     <script type="application/javascript">
-        function copyToClipboard(text) {
-            if (window.clipboardData && window.clipboardData.setData) {
-                // IE specific code path to prevent textarea being shown while dialog is visible.
-                return clipboardData.setData("Text", text);
-            } else if (document.queryCommandSupported && document.queryCommandSupported("copy")) {
-                const textarea = document.createElement("textarea");
-                textarea.textContent = text;
-                textarea.style.position = "fixed";  // Prevent scrolling to bottom of page in MS Edge.
-                document.body.appendChild(textarea);
-                textarea.select();
-                try {
-                    return document.execCommand("copy");  // Security exception may be thrown by some browsers.
-                } catch (ex) {
-                    console.warn("Copy to clipboard failed.", ex);
-                    return false;
-                } finally {
-                    document.body.removeChild(textarea);
-                }
-            }
-        }
+        const clipboard = new ClipboardJS('.copy_to_clipboard');
+
+        clipboard.on('success', function (e) {
+            e.clearSelection();
+        });
+
+        clipboard.on('error', function (e) {
+            console.error('Action:', e.action);
+            console.error('Trigger:', e.trigger);
+        });
 
         $(document).ready(function(){
             /* redirecting to updated calculator view with chosen pricing */
@@ -274,10 +266,6 @@
                 );
             });
 
-            $('.copy_to_clipboard').on('click', function (event) {
-                const text = event.currentTarget.getAttribute("data-text")
-                copyToClipboard(text)
-            });
         });
     </script>
 {% endblock %}

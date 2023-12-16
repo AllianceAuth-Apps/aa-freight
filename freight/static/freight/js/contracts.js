@@ -1,4 +1,6 @@
-/* creates a dataTable object for a contracts table*/
+"use strict";
+
+/** Create a dataTable object for a contracts table. */
 function createContractsDataTable(tab_name, view_url) {
     const DATETIME_FORMAT_2 = "YYYY-MMM-DD HH:mm";
     const columns = [
@@ -32,16 +34,25 @@ function createContractsDataTable(tab_name, view_url) {
         { data: "pricing_check" },
         {
             data: "date_issued",
-            render: $.fn.dataTable.render.moment(moment.ISO_8601, DATETIME_FORMAT_2),
+            render: $.fn.dataTable.render.moment(
+                moment.ISO_8601,
+                DATETIME_FORMAT_2
+            ),
         },
         {
             data: "date_expired",
-            render: $.fn.dataTable.render.moment(moment.ISO_8601, DATETIME_FORMAT_2),
+            render: $.fn.dataTable.render.moment(
+                moment.ISO_8601,
+                DATETIME_FORMAT_2
+            ),
         },
         { data: "issuer" },
         {
             data: "date_accepted",
-            render: $.fn.dataTable.render.moment(moment.ISO_8601, DATETIME_FORMAT_2),
+            render: $.fn.dataTable.render.moment(
+                moment.ISO_8601,
+                DATETIME_FORMAT_2
+            ),
         },
         { data: "acceptor" },
 
