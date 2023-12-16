@@ -8,7 +8,7 @@ from esi.models import Token
 
 from allianceauth.eveonline.models import EveCharacter
 from allianceauth.tests.auth_utils import AuthUtils
-from app_utils.testing import NoSocketsTestCase, add_new_token, json_response_to_python
+from app_utils.testing import add_new_token, json_response_to_python
 
 from freight import constants, views
 from freight.app_settings import (
@@ -32,7 +32,7 @@ def json_response_to_python_dict(response) -> dict:
     return {x["id"]: x for x in json_response_to_python(response)["data"]}
 
 
-class TestCalculator(NoSocketsTestCase):
+class TestCalculator(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -289,7 +289,7 @@ class TestContractListData(TestCase):
         self.assertEqual(obj["status"], "in_progress")
 
 
-class TestSetupContractHandler(NoSocketsTestCase):
+class TestSetupContractHandler(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -396,7 +396,7 @@ class TestSetupContractHandler(NoSocketsTestCase):
         self.assertEqual(response.url, reverse("freight:index"))
 
 
-class TestStatistics(NoSocketsTestCase):
+class TestStatistics(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
