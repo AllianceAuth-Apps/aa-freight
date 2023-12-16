@@ -28,21 +28,19 @@ class LocationAdmin(admin.ModelAdmin):
     list_display_links = None
     actions = ["update_location"]
 
-    @admin.display(ordering="category_id")
-    def _category(self, obj):
-        return obj.get_category_id_display()
-
-    @admin.display()
-    def _solar_system(self, obj):
-        return obj.solar_system_name
-
-    @admin.display()
     def has_add_permission(self, *args, **kwargs):
         return False
 
-    @admin.display()
     def has_change_permission(self, *args, **kwargs):
         return False
+
+    @admin.display(ordering="category_id", description=_("category"))
+    def _category(self, obj):
+        return obj.get_category_id_display()
+
+    @admin.display(description=_("solar system"))
+    def _solar_system(self, obj):
+        return obj.solar_system_name
 
     @admin.action(description=_("Update selected locations from ESI"))
     def update_location(self, request, queryset):
@@ -81,15 +79,15 @@ class PricingAdmin(admin.ModelAdmin):
     )
     list_select_related = True
 
-    @admin.display(boolean=True)
+    @admin.display(boolean=True, description=_("bidirectional"))
     def _bidirectional(self, obj):
         return obj.is_bidirectional
 
-    @admin.display(boolean=True)
+    @admin.display(boolean=True, description=_("active"))
     def _active(self, obj):
         return obj.is_active
 
-    @admin.display(boolean=True)
+    @admin.display(boolean=True, description=_("default"))
     def _default(self, obj):
         return obj.is_default
 
@@ -120,7 +118,7 @@ class ContractHandlerAdmin(admin.ModelAdmin):
     def has_add_permission(self, *args, **kwargs):
         return False
 
-    @admin.display(boolean=True, description="sync ok")
+    @admin.display(boolean=True, description=_("sync ok"))
     def _is_sync_ok(self, obj):
         return obj.is_sync_ok
 
@@ -182,13 +180,13 @@ class ContractAdmin(admin.ModelAdmin):
     def has_change_permission(self, *args, **kwargs):
         return False
 
-    @admin.display(boolean=True)
+    @admin.display(boolean=True, description=_("pilots notified"))
     def _pilots_notified(self, contract):
         if contract.pricing_id is None:
             return None
         return contract.date_notified is not None
 
-    @admin.display()
+    @admin.display(description=_("customer notified"))
     def _customer_notified(self, contract):
         if contract.pricing_id is None:
             return "?"

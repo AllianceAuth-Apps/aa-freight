@@ -10,6 +10,7 @@ from django.forms import HiddenInput
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.html import format_html
+from django.utils.text import format_lazy
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from esi.decorators import token_required
@@ -40,13 +41,17 @@ def add_common_context(request, context: dict) -> dict:
     pending_user_count = (
         Contract.objects.all().issued_by_user(request.user).pending_count()
     )
-    operation_mode = Freight.operation_mode_friendly(FREIGHT_OPERATION_MODE)
+    my_mode = Freight.operation_mode_friendly(FREIGHT_OPERATION_MODE)
+    setup_str = _("Setup")
+    button_label = format_lazy(
+        "{setup} {operation_mode}", setup=setup_str, operation_mode=my_mode
+    )
     new_context = {
         **{
             "app_title": FREIGHT_APP_NAME,
             "pending_all_count": Contract.objects.all().pending_count(),
             "pending_user_count": pending_user_count,
-            "setup_contract_handler_label": f"Setup {operation_mode}",
+            "setup_contract_handler_label": button_label,
         },
         **context,
     }
@@ -69,7 +74,7 @@ def contract_list_user(request):
     except AttributeError:
         user_name = request.user.username
     context = {
-        "page_title": "My Contracts",
+        "page_title": _("My Contracts"),
         "category": constants.CONTRACT_LIST_USER,
         "user_name": user_name,
     }
@@ -82,7 +87,10 @@ def contract_list_user(request):
 @permission_required("freight.view_contracts")
 def contract_list_all(request):
     """View rendering contract list with all contracts."""
-    context = {"page_title": "All Contracts", "category": constants.CONTRACT_LIST_ALL}
+    context = {
+        "page_title": _("All Contracts"),
+        "category": constants.CONTRACT_LIST_ALL,
+    }
     return render(
         request, "freight/contracts_all.html", add_common_context(request, context)
     )
@@ -242,7 +250,7 @@ def calculator(request, pricing_pk=None):
         organization_name = None
         availability = None
     context = {
-        "page_title": "Reward Calculator",
+        "page_title": _("Reward Calculator"),
         "form": form,
         "pricing": pricing,
         "has_pricing": Pricing.objects.exists(),
@@ -390,7 +398,7 @@ def add_location_2(request):
                 messages.success(request, f"{action_txt} {location.name}")
                 return redirect("freight:add_location_2")
     context = {
-        "page_title": "Add / Update Location",
+        "page_title": _("Add / Update Location"),
         "form": form,
         "token_char_name": token.character_name,
     }

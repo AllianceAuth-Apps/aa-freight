@@ -17,12 +17,14 @@
             <ul class="nav navbar-nav">
                 {% if perms.freight.use_calculator %}
                     <li class="{% navactive request 'freight:calculator' %}">
-                        <a href="{% url 'freight:calculator' %}">Reward Calculator</a>
+                        <a href="{% url 'freight:calculator' %}">
+                            {% translate "Reward Calculator" %}
+                        </a>
                     </li>
 
                     <li class="{% navactive request 'freight:contract_list_user' %}">
                         <a href="{% url 'freight:contract_list_user' %}">
-                            My Contracts&nbsp;
+                            {% translate "My Contract" %}s&nbsp;
                             {% if pending_user_count > 0 %}
                                 <span class="badge badge-nav">{{ pending_user_count }}</span>
                             {% endif %}
@@ -33,7 +35,7 @@
                 {% if perms.freight.view_contracts %}
                     <li class="{% navactive request 'freight:contract_list_all' %}">
                         <a href="{% url 'freight:contract_list_all' %}">
-                            All Contracts&nbsp;
+                            {% translate "All Contracts" %}&nbsp;
                             {% if pending_all_count > 0 %}
                                 <span class="badge badge-nav">{{ pending_all_count }}</span>
                             {% endif %}
@@ -44,7 +46,7 @@
                 {% if perms.freight.view_statistics %}
                     <li class="{% navactive request 'freight:statistics' %}">
                         <a href="{% url 'freight:statistics' %}">
-                            Statistics
+                            {% translate "Statistics" %}
                         </a>
                     </li>
                 {% endif %}
@@ -53,7 +55,7 @@
             <ul class="nav navbar-nav navbar-right">
                 {% if perms.freight.add_location %}
                     <a class="btn btn-default navbar-btn" href="{% url 'freight:add_location' %}">
-                        Add Location
+                        {% translate "Add Location" %}
                     </a>
                 {% endif %}
 

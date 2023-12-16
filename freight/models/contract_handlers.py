@@ -10,6 +10,7 @@ from django.core.serializers.json import DjangoJSONEncoder
 from django.core.validators import MinValueValidator
 from django.db import models, transaction
 from django.utils.timezone import now
+from django.utils.translation import gettext_lazy as _
 from esi.errors import TokenError
 from esi.models import Token
 
@@ -84,9 +85,13 @@ class EveEntity(models.Model):
         (CATEGORY_CHARACTER, "Character"),
     )
 
-    id = models.IntegerField(primary_key=True, validators=[MinValueValidator(0)])
-    category = models.CharField(max_length=32, choices=CATEGORY_CHOICES)
-    name = models.CharField(max_length=254)
+    id = models.IntegerField(
+        primary_key=True, validators=[MinValueValidator(0)], verbose_name=_("id")
+    )
+    category = models.CharField(
+        max_length=32, choices=CATEGORY_CHOICES, verbose_name=_("category")
+    )
+    name = models.CharField(max_length=254, verbose_name=_("name"))
 
     objects = EveEntityManager()
 
@@ -131,7 +136,7 @@ class EveEntity(models.Model):
 
 
 class ContractHandler(models.Model):
-    """Handler for syncing of contracts belonging to an alliance or corporation"""
+    """Handler for syncing of contracts belonging to an alliance or corporation."""
 
     # errors
     ERROR_NONE = 0
@@ -158,42 +163,59 @@ class ContractHandler(models.Model):
     ]
 
     organization = models.OneToOneField(
-        EveEntity, on_delete=models.CASCADE, primary_key=True
+        EveEntity,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        verbose_name=_("organization"),
     )
     character = models.ForeignKey(
         CharacterOwnership,
         on_delete=models.SET_DEFAULT,
         default=None,
         null=True,
+        verbose_name=_("character"),
         related_name="+",
-        help_text="character used for syncing contracts",
+        help_text=_("Character used for syncing contracts"),
     )
     operation_mode = models.CharField(
         max_length=32,
         default=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
-        help_text="defines what kind of contracts are synced",
+        verbose_name=_("operation mode"),
+        help_text=_("Defines what kind of contracts are synced"),
     )
     price_per_volume_modifier = models.FloatField(
         default=None,
         null=True,
         blank=True,
-        help_text="global modifier for price per volume in percent, e.g. 2.5 = +2.5%",
+        verbose_name=_("price per volume modifier"),
+        help_text=_(
+            "Global modifier for price per volume in percent, e.g. 2.5 = +2.5%"
+        ),
     )
     version_hash = models.CharField(
         max_length=32,
         null=True,
         default=None,
         blank=True,
-        help_text="hash to identify changes to contracts",
+        verbose_name=_("version hash"),
+        help_text=_("hash to identify changes to contracts"),
     )
     last_sync = models.DateTimeField(
-        null=True, default=None, blank=True, help_text="when the last sync happened"
+        null=True,
+        default=None,
+        blank=True,
+        verbose_name=_("last sync at"),
+        help_text=_("when the last sync happened"),
     )
     last_error = models.IntegerField(
         choices=ERRORS_LIST,
         default=ERROR_NONE,
         help_text="error that occurred at the last sync attempt (if any)",
     )  # TODO: Remove with next migration - no longer used
+
+    class Meta:
+        verbose_name = _("contract handler")
+        verbose_name_plural = _("contract handler")
 
     def __str__(self):
         return str(self.organization.name)
@@ -229,9 +251,6 @@ class ContractHandler(models.Model):
         """
         grace_deadline = now() - timedelta(minutes=FREIGHT_CONTRACT_SYNC_GRACE_MINUTES)
         return self.last_sync and self.last_sync > grace_deadline
-
-    class Meta:
-        verbose_name_plural = verbose_name = "Contract Handler"
 
     def get_availability_text_for_contracts(self) -> str:
         """returns a text detailing the availability choice for this setup"""

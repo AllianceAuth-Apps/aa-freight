@@ -12,6 +12,7 @@ import dhooks_lite
 from django.db import models, transaction
 from django.urls import reverse
 from django.utils.timezone import now
+from django.utils.translation import gettext_lazy as _
 
 from allianceauth.authentication.models import User
 from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
@@ -61,16 +62,16 @@ class Contract(models.Model):
     class Status(models.TextChoices):
         """A contract status."""
 
-        OUTSTANDING = "outstanding", "outstanding"
-        IN_PROGRESS = "in_progress", "in progress"
-        FINISHED_ISSUER = "finished_issuer", "finished issuer"
-        FINISHED_CONTRACTOR = "finished_contractor", "finished contractor"
-        FINISHED = "finished", "finished"
-        CANCELED = "canceled", "canceled"
-        REJECTED = "rejected", "rejected"
-        FAILED = "failed", "failed"
-        DELETED = "deleted", "deleted"
-        REVERSED = "reversed", "reversed"
+        OUTSTANDING = "outstanding", _("outstanding")
+        IN_PROGRESS = "in_progress", _("in progress")
+        FINISHED_ISSUER = "finished_issuer", _("finished issuer")
+        FINISHED_CONTRACTOR = "finished_contractor", _("finished contractor")
+        FINISHED = "finished", _("finished")
+        CANCELED = "canceled", _("canceled")
+        REJECTED = "rejected", _("rejected")
+        FAILED = "failed", _("failed")
+        DELETED = "deleted", _("deleted")
+        REVERSED = "reversed", _("reversed")
 
         @classmethod
         def completed(cls) -> Set["Contract.Status"]:
@@ -97,7 +98,7 @@ class Contract(models.Model):
     handler = models.ForeignKey(
         ContractHandler, on_delete=models.CASCADE, related_name="contracts"
     )
-    contract_id = models.IntegerField()
+    contract_id = models.IntegerField(verbose_name=_("contract ID"))
 
     acceptor = models.ForeignKey(
         EveCharacter,
@@ -105,8 +106,9 @@ class Contract(models.Model):
         default=None,
         null=True,
         blank=True,
+        verbose_name=_("acceptor"),
         related_name="contracts_acceptor",
-        help_text="character of acceptor or None if accepted by corp",
+        help_text=_("Character of acceptor or None if accepted by corp"),
     )
     acceptor_corporation = models.ForeignKey(
         EveCorporationInfo,
@@ -114,39 +116,63 @@ class Contract(models.Model):
         default=None,
         null=True,
         blank=True,
+        verbose_name=_("acceptor corporation"),
         related_name="contracts_acceptor_corporation",
-        help_text="corporation of acceptor",
+        help_text=_("Corporation of acceptor"),
     )
-    collateral = models.FloatField()
-    date_accepted = models.DateTimeField(default=None, null=True, blank=True)
-    date_completed = models.DateTimeField(default=None, null=True, blank=True)
-    date_expired = models.DateTimeField()
-    date_issued = models.DateTimeField()
+    collateral = models.FloatField(verbose_name=_("collateral"))
+    date_accepted = models.DateTimeField(
+        default=None,
+        null=True,
+        blank=True,
+        verbose_name=_("date accepted"),
+    )
+    date_completed = models.DateTimeField(
+        default=None,
+        null=True,
+        blank=True,
+        verbose_name=_("date completed"),
+    )
+    date_expired = models.DateTimeField(verbose_name=_("date expired"))
+    date_issued = models.DateTimeField(
+        verbose_name=_("date issues"),
+    )
     date_notified = models.DateTimeField(
         default=None,
         null=True,
         blank=True,
         db_index=True,
-        help_text="datetime of latest notification, None = none has been sent",
+        verbose_name=_("date notified"),
+        help_text=_("Datetime of latest notification, None = none has been sent"),
     )
-    days_to_complete = models.IntegerField()
+    days_to_complete = models.IntegerField(
+        verbose_name=_("days to complete"),
+    )
     end_location = models.ForeignKey(
-        Location, on_delete=models.CASCADE, related_name="contracts_end_location"
+        Location,
+        on_delete=models.CASCADE,
+        verbose_name=_("end location"),
+        related_name="contracts_end_location",
     )
-    for_corporation = models.BooleanField()
+    for_corporation = models.BooleanField(verbose_name=_("for corporation"))
     issuer_corporation = models.ForeignKey(
         EveCorporationInfo,
         on_delete=models.CASCADE,
+        verbose_name=_("issuer corporation"),
         related_name="contracts_issuer_corporation",
     )
     issuer = models.ForeignKey(
-        EveCharacter, on_delete=models.CASCADE, related_name="contracts_issuer"
+        EveCharacter,
+        on_delete=models.CASCADE,
+        verbose_name=_("issuer"),
+        related_name="contracts_issuer",
     )
     issues = models.TextField(
         default=None,
         null=True,
         blank=True,
-        help_text="List or price check issues as JSON array of strings or None",
+        verbose_name=_("issues"),
+        help_text=_("List or price check issues as JSON array of strings or None"),
     )
     pricing = models.ForeignKey(
         Pricing,
@@ -154,23 +180,38 @@ class Contract(models.Model):
         default=None,
         null=True,
         blank=True,
+        verbose_name=_("pricing"),
         related_name="contracts",
     )
-    reward = models.FloatField()
+    reward = models.FloatField(verbose_name=_("reward"))
     start_location = models.ForeignKey(
-        Location, on_delete=models.CASCADE, related_name="contracts_start_location"
+        Location,
+        on_delete=models.CASCADE,
+        verbose_name=_("start location"),
+        related_name="contracts_start_location",
     )
-    status = models.CharField(max_length=32, choices=Status.choices, db_index=True)
-    title = models.CharField(max_length=100, default=None, null=True, blank=True)
-    volume = models.FloatField()
+    status = models.CharField(
+        max_length=32,
+        choices=Status.choices,
+        db_index=True,
+        verbose_name=_("status"),
+    )
+    title = models.CharField(
+        max_length=100,
+        default=None,
+        null=True,
+        blank=True,
+        verbose_name=_("title"),
+    )
+    volume = models.FloatField(verbose_name=_("volume"))
 
     objects = ContractManager()
 
     class Meta:
+        indexes = [models.Index(fields=["status"])]
         unique_together = (("handler", "contract_id"),)
-        indexes = [
-            models.Index(fields=["status"]),
-        ]
+        verbose_name = _("contract")
+        verbose_name_plural = _("contracts")
 
     def __str__(self) -> str:
         return (
@@ -528,15 +569,25 @@ class ContractCustomerNotification(models.Model):
     """record of contract notification to customer about state"""
 
     contract = models.ForeignKey(
-        Contract, on_delete=models.CASCADE, related_name="customer_notifications"
+        Contract,
+        on_delete=models.CASCADE,
+        verbose_name=_("contract"),
+        related_name="customer_notifications",
     )
     status = models.CharField(
-        max_length=32, choices=Contract.Status.choices, db_index=True
+        max_length=32,
+        choices=Contract.Status.choices,
+        db_index=True,
+        verbose_name=_("status"),
     )
-    date_notified = models.DateTimeField(help_text="datetime of notification")
+    date_notified = models.DateTimeField(
+        verbose_name=_("date notified"), help_text="datetime of notification"
+    )
 
     class Meta:
         unique_together = (("contract", "status"),)
+        verbose_name = _("contract customer notification")
+        verbose_name_plural = _("contract customer notifications")
 
     def __str__(self):
         return f"{self.contract.contract_id} - {self.status}"

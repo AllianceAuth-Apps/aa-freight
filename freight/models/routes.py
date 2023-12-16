@@ -5,6 +5,7 @@ from typing import List, Optional
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from allianceauth.services.hooks import get_extension_logger
 from app_utils.logging import LoggerAddTag
@@ -31,6 +32,7 @@ class Location(models.Model):
     id = models.BigIntegerField(
         primary_key=True,
         validators=[MinValueValidator(0)],
+        verbose_name=_("id"),
         help_text="Eve Online location ID, "
         "either item ID for stations or structure ID for structures",
     )
@@ -43,6 +45,7 @@ class Location(models.Model):
     name = models.CharField(
         max_length=100,
         db_index=True,
+        verbose_name=_("name"),
         help_text="In-game name of this station or structure",
     )
     solar_system_id = models.PositiveIntegerField(
@@ -53,6 +56,10 @@ class Location(models.Model):
     )
 
     objects = LocationManager()
+
+    class Meta:
+        verbose_name = _("location")
+        verbose_name_plural = _("locations")
 
     def __str__(self):
         return self.name
@@ -87,14 +94,16 @@ class Pricing(models.Model):
     start_location = models.ForeignKey(
         Location,
         on_delete=models.CASCADE,
+        verbose_name=_("start location"),
         related_name="+",
-        help_text="Starting station or structure for courier route",
+        help_text=_("Starting station or structure for courier route"),
     )
     end_location = models.ForeignKey(
         Location,
         on_delete=models.CASCADE,
+        verbose_name=_("end location"),
         related_name="+",
-        help_text="Destination station or structure for courier route",
+        help_text=_("Destination station or structure for courier route"),
     )
 
     collateral_min = models.BigIntegerField(
@@ -102,100 +111,121 @@ class Pricing(models.Model):
         null=True,
         blank=True,
         validators=[MinValueValidator(0)],
-        help_text="Minimum required collateral in ISK",
+        verbose_name=_("collateral minimum"),
+        help_text=_("Minimum required collateral in ISK"),
     )
     collateral_max = models.BigIntegerField(
         default=None,
         null=True,
         blank=True,
         validators=[MinValueValidator(0)],
-        help_text="Maximum allowed collateral in ISK",
+        verbose_name=_("collateral maximum"),
+        help_text=_("Maximum allowed collateral in ISK"),
     )
     days_to_expire = models.PositiveIntegerField(
         default=None,
         null=True,
         blank=True,
         validators=[MinValueValidator(1)],
-        help_text="Recommended days for contracts to expire",
+        verbose_name=_("days to expire"),
+        help_text=_("Recommended days for contracts to expire"),
     )
     days_to_complete = models.PositiveIntegerField(
         default=None,
         null=True,
         blank=True,
         validators=[MinValueValidator(1)],
-        help_text="Recommended days for contract completion",
+        verbose_name=_("days to complete"),
+        help_text=_("Recommended days for contract completion"),
     )
     details = models.TextField(
         default=None,
         null=True,
         blank=True,
-        help_text="Text with additional instructions for using this pricing",
+        verbose_name=_("details"),
+        help_text=_("Text with additional instructions for using this pricing"),
     )
     is_active = models.BooleanField(
-        default=True, help_text="Non active pricings will not be used or shown"
+        default=True,
+        verbose_name=_("is active"),
+        help_text=_("Disabled pricings will not be used or shown"),
     )
     is_default = models.BooleanField(
         default=False,
-        help_text=(
+        verbose_name=_("is default"),
+        help_text=_(
             "The default pricing will be preselected in the calculator. "
             "Please make sure to only mark one pricing as default."
         ),
     )
     is_bidirectional = models.BooleanField(
         default=True,
-        help_text="Whether this pricing is valid for contracts "
-        "in either direction or only the one specified",
+        verbose_name=_("is bidirectional"),
+        help_text=_(
+            "Whether this pricing is valid for contracts "
+            "in either direction or only the one specified"
+        ),
     )
     price_base = models.FloatField(
         default=None,
         null=True,
         blank=True,
         validators=[MinValueValidator(0)],
-        help_text="Base price in ISK",
+        verbose_name=_("price base"),
+        help_text=_("Base price in ISK"),
     )
     price_min = models.FloatField(
         default=None,
         null=True,
         blank=True,
         validators=[MinValueValidator(0)],
-        help_text="Minimum total price in ISK",
+        verbose_name=_("price minimum"),
+        help_text=_("Minimum total price in ISK"),
     )
     price_per_volume = models.FloatField(
         default=None,
         null=True,
         blank=True,
         validators=[MinValueValidator(0)],
-        help_text="Add-on price per m3 volume in ISK",
+        verbose_name=_("price markup from volume"),
+        help_text=_("Add-on price per m3 volume in ISK"),
     )
     price_per_collateral_percent = models.FloatField(
         default=None,
         null=True,
         blank=True,
         validators=[MinValueValidator(0)],
-        help_text="Add-on price in % of collateral",
+        verbose_name=_("price markup from collateral"),
+        help_text=_("Add-on price in percent of collateral"),
     )
     volume_max = models.FloatField(
         default=None,
         null=True,
         blank=True,
         validators=[MinValueValidator(0)],
-        help_text="Maximum allowed volume in m3",
+        verbose_name=_("volume maximum"),
+        help_text=_("Maximum allowed volume in m3"),
     )
     volume_min = models.FloatField(
         default=None,
         null=True,
         blank=True,
         validators=[MinValueValidator(0)],
-        help_text="Minimum allowed volume in m3",
+        verbose_name=_("volume minimum"),
+        help_text=_("Minimum allowed volume in m3"),
     )
     use_price_per_volume_modifier = models.BooleanField(
-        default=False, help_text="Whether the global price per volume modifier is used"
+        default=False,
+        verbose_name=_("price per volume modifier enabled"),
+        help_text=_("Whether the global price per volume modifier is used"),
     )
 
     objects = PricingManager()
 
     class Meta:
         unique_together = (("start_location", "end_location"),)
+        verbose_name = _("pricing")
+        verbose_name_plural = _("pricings")
 
     def save(self, *args, **kwargs) -> None:
         update_contracts = kwargs.pop("update_contracts", True)
@@ -221,7 +251,7 @@ class Pricing(models.Model):
             and self.price_per_volume is None
             and self.price_per_collateral_percent is None
         ):
-            raise ValidationError("You must specify at least one price component")
+            raise ValidationError(_("You must specify at least one price component"))
 
         if self.start_location_id and self.end_location_id:
             if (
@@ -233,10 +263,12 @@ class Pricing(models.Model):
                 and self.is_bidirectional
             ):
                 raise ValidationError(
-                    "There already exists a bidirectional pricing for this route. "
-                    "Please set this pricing to non-bidirectional to save it. "
-                    "And after you must also set the other pricing to "
-                    "non-bidirectional."
+                    _(
+                        "There already exists a bidirectional pricing for this route. "
+                        "Please set this pricing to non-bidirectional to save it. "
+                        "And after you must also set the other pricing to "
+                        "non-bidirectional."
+                    )
                 )
 
             if (
@@ -248,9 +280,11 @@ class Pricing(models.Model):
                 and self.is_bidirectional
             ):
                 raise ValidationError(
-                    "There already exists a non bidirectional pricing for "
-                    "this route. You need to mark this pricing as "
-                    "non-bidirectional too to continue."
+                    _(
+                        "There already exists a non bidirectional pricing for "
+                        "this route. You need to mark this pricing as "
+                        "non-bidirectional too to continue."
+                    )
                 )
 
     @property
@@ -382,6 +416,7 @@ class Pricing(models.Model):
             raise ValueError("collateral can not be negative")
         if reward and reward < 0:
             raise ValueError("reward can not be negative")
+
         issues = []
         if volume is not None and self.volume_min and volume < self.volume_min:
             issues.append(
