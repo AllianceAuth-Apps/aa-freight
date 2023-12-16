@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-31 20:27+0100\n"
+"POT-Creation-Date: 2023-12-16 17:01+0100\n"
 "PO-Revision-Date: 2023-05-13 14:51+0000\n"
 "Last-Translator: Peter Pfeufer, 2023\n"
 "Language-Team: German (https://app.transifex.com/kalkoken-apps/teams/107978/"
@@ -42,16 +42,12 @@ msgstr ""
 "in Anspruch nehmen."
 
 #: admin.py:82
-#, fuzzy
-#| msgid "Both directions:"
 msgid "bidirectional"
-msgstr "Beide Richtungen:"
+msgstr ""
 
 #: admin.py:86
-#, fuzzy
-#| msgid "Active"
 msgid "active"
-msgstr "Aktiv"
+msgstr ""
 
 #: admin.py:90
 msgid "default"
@@ -110,40 +106,32 @@ msgid "Sent customer notification for contract %d to Discord"
 msgstr "Kundenbenachrichtigung für Vertrag %d an Discord gesendet"
 
 #: app_settings.py:65
-#, fuzzy
-#| msgid "Alliance"
 msgid "My Alliance"
-msgstr "Allianz"
+msgstr ""
 
 #: app_settings.py:66
-#, fuzzy
-#| msgid "Corporation"
 msgid "My Corporation"
-msgstr "Corporation"
+msgstr ""
 
 #: app_settings.py:67
 msgid "Corporation in my Alliance"
 msgstr ""
 
 #: app_settings.py:68
-#, fuzzy
-#| msgid "Corporation"
 msgid "Corporation public"
-msgstr "Corporation"
+msgstr ""
 
-#: models/contract_handlers.py:89 models/routes.py:33
+#: models/contract_handlers.py:89 models/routes.py:35
 msgid "id"
 msgstr ""
 
-#: models/contract_handlers.py:94 models/routes.py:46
+#: models/contract_handlers.py:94 models/routes.py:48
 msgid "name"
 msgstr ""
 
 #: models/contract_handlers.py:169
-#, fuzzy
-#| msgid "Toggle navigation"
 msgid "organization"
-msgstr "Navigation umschalten"
+msgstr ""
 
 #: models/contract_handlers.py:176
 msgid "character"
@@ -154,10 +142,8 @@ msgid "Character used for syncing contracts"
 msgstr ""
 
 #: models/contract_handlers.py:183
-#, fuzzy
-#| msgid "Corporation"
 msgid "operation mode"
-msgstr "Corporation"
+msgstr ""
 
 #: models/contract_handlers.py:184
 msgid "Defines what kind of contracts are synced"
@@ -188,10 +174,8 @@ msgid "when the last sync happened"
 msgstr ""
 
 #: models/contract_handlers.py:217 models/contract_handlers.py:218
-#, fuzzy
-#| msgid "Contract Type:"
 msgid "contract handler"
-msgstr "Vertragstyp:"
+msgstr ""
 
 #: models/contracts.py:65
 msgid "outstanding"
@@ -226,20 +210,16 @@ msgid "failed"
 msgstr ""
 
 #: models/contracts.py:73
-#, fuzzy
-#| msgid "Days to complete:"
 msgid "deleted"
-msgstr "Tage zum Abschließen:"
+msgstr ""
 
 #: models/contracts.py:74
 msgid "reversed"
 msgstr ""
 
 #: models/contracts.py:101
-#, fuzzy
-#| msgid "Contracts"
 msgid "contract ID"
-msgstr "Verträge"
+msgstr ""
 
 #: models/contracts.py:109
 msgid "acceptor"
@@ -250,32 +230,24 @@ msgid "Character of acceptor or None if accepted by corp"
 msgstr ""
 
 #: models/contracts.py:119
-#, fuzzy
-#| msgid "Corporation"
 msgid "acceptor corporation"
-msgstr "Corporation"
+msgstr ""
 
 #: models/contracts.py:121
-#, fuzzy
-#| msgid "Corporation"
 msgid "Corporation of acceptor"
-msgstr "Corporation"
+msgstr ""
 
 #: models/contracts.py:123
-#, fuzzy
-#| msgid "Collateral:"
 msgid "collateral"
-msgstr "Sicherheit:"
+msgstr ""
 
 #: models/contracts.py:128
 msgid "date accepted"
 msgstr ""
 
 #: models/contracts.py:134
-#, fuzzy
-#| msgid "Days to complete:"
 msgid "date completed"
-msgstr "Tage zum Abschließen:"
+msgstr ""
 
 #: models/contracts.py:136
 msgid "date expired"
@@ -293,29 +265,21 @@ msgstr ""
 msgid "Datetime of latest notification, None = none has been sent"
 msgstr ""
 
-#: models/contracts.py:149 models/routes.py:136
-#, fuzzy
-#| msgid "Days to complete:"
+#: models/contracts.py:149 models/routes.py:138
 msgid "days to complete"
-msgstr "Tage zum Abschließen:"
+msgstr ""
 
-#: models/contracts.py:154 models/routes.py:102
-#, fuzzy
-#| msgid "Location:"
+#: models/contracts.py:154 models/routes.py:104
 msgid "end location"
-msgstr "Standort:"
+msgstr ""
 
 #: models/contracts.py:157
-#, fuzzy
-#| msgid "Corporation"
 msgid "for corporation"
-msgstr "Corporation"
+msgstr ""
 
 #: models/contracts.py:161
-#, fuzzy
-#| msgid "Corporation"
 msgid "issuer corporation"
-msgstr "Corporation"
+msgstr ""
 
 #: models/contracts.py:167
 msgid "issuer"
@@ -329,21 +293,17 @@ msgstr ""
 msgid "List or price check issues as JSON array of strings or None"
 msgstr ""
 
-#: models/contracts.py:183 models/routes.py:225
+#: models/contracts.py:183 models/routes.py:227
 msgid "pricing"
 msgstr ""
 
 #: models/contracts.py:186
-#, fuzzy
-#| msgid "Reward"
 msgid "reward"
-msgstr "Prämie"
+msgstr ""
 
-#: models/contracts.py:190 models/routes.py:95
-#, fuzzy
-#| msgid "Location:"
+#: models/contracts.py:190 models/routes.py:97
 msgid "start location"
-msgstr "Standort:"
+msgstr ""
 
 #: models/contracts.py:197 models/contracts.py:581
 msgid "status"
@@ -354,22 +314,16 @@ msgid "title"
 msgstr ""
 
 #: models/contracts.py:206
-#, fuzzy
-#| msgid "Volume"
 msgid "volume"
-msgstr "Volumen"
+msgstr ""
 
 #: models/contracts.py:213 models/contracts.py:574
-#, fuzzy
-#| msgid "Contracts"
 msgid "contract"
-msgstr "Verträge"
+msgstr ""
 
 #: models/contracts.py:214
-#, fuzzy
-#| msgid "Contracts"
 msgid "contracts"
-msgstr "Verträge"
+msgstr ""
 
 #: models/contracts.py:589
 msgid "contract customer notification"
@@ -379,186 +333,158 @@ msgstr ""
 msgid "contract customer notifications"
 msgstr ""
 
-#: models/routes.py:59
-#, fuzzy
-#| msgid "Location:"
+#: models/routes.py:61
 msgid "location"
-msgstr "Standort:"
+msgstr ""
 
-#: models/routes.py:60
-#, fuzzy
-#| msgid "Location:"
+#: models/routes.py:62
 msgid "locations"
-msgstr "Standort:"
+msgstr ""
 
-#: models/routes.py:97
+#: models/routes.py:99
 msgid "Starting station or structure for courier route"
 msgstr ""
 
-#: models/routes.py:104
+#: models/routes.py:106
 msgid "Destination station or structure for courier route"
 msgstr ""
 
-#: models/routes.py:112
-#, fuzzy
-#| msgid "Collateral:"
+#: models/routes.py:114
 msgid "collateral minimum"
-msgstr "Sicherheit:"
+msgstr ""
 
-#: models/routes.py:113
+#: models/routes.py:115
 msgid "Minimum required collateral in ISK"
 msgstr ""
 
-#: models/routes.py:120
-#, fuzzy
-#| msgid "Collateral:"
+#: models/routes.py:122
 msgid "collateral maximum"
-msgstr "Sicherheit:"
+msgstr ""
 
-#: models/routes.py:121
+#: models/routes.py:123
 msgid "Maximum allowed collateral in ISK"
 msgstr ""
 
-#: models/routes.py:128
+#: models/routes.py:130
 msgid "days to expire"
 msgstr ""
 
-#: models/routes.py:129
+#: models/routes.py:131
 msgid "Recommended days for contracts to expire"
 msgstr ""
 
-#: models/routes.py:137
+#: models/routes.py:139
 msgid "Recommended days for contract completion"
 msgstr ""
 
-#: models/routes.py:143
-#, fuzzy
-#| msgid "Pricing details"
+#: models/routes.py:145
 msgid "details"
-msgstr "Preisdetails"
+msgstr ""
 
-#: models/routes.py:144
+#: models/routes.py:146
 msgid "Text with additional instructions for using this pricing"
 msgstr ""
 
-#: models/routes.py:148
-#, fuzzy
-#| msgid "Active"
+#: models/routes.py:150
 msgid "is active"
-msgstr "Aktiv"
+msgstr ""
 
-#: models/routes.py:149
+#: models/routes.py:151
 msgid "Disabled pricings will not be used or shown"
 msgstr ""
 
-#: models/routes.py:153
+#: models/routes.py:155
 msgid "is default"
 msgstr ""
 
-#: models/routes.py:155
+#: models/routes.py:157
 msgid ""
 "The default pricing will be preselected in the calculator. Please make sure "
 "to only mark one pricing as default."
 msgstr ""
 
-#: models/routes.py:161
-#, fuzzy
-#| msgid "Both directions:"
-msgid "is bidirectional"
-msgstr "Beide Richtungen:"
-
 #: models/routes.py:163
+msgid "is bidirectional"
+msgstr ""
+
+#: models/routes.py:165
 msgid ""
 "Whether this pricing is valid for contracts in either direction or only the "
 "one specified"
 msgstr ""
 
-#: models/routes.py:172
+#: models/routes.py:174
 msgid "price base"
 msgstr ""
 
-#: models/routes.py:173
-#, fuzzy
-#| msgid "Base price:"
+#: models/routes.py:175
 msgid "Base price in ISK"
-msgstr "Grundpreis:"
+msgstr ""
 
-#: models/routes.py:180
+#: models/routes.py:182
 msgid "price minimum"
 msgstr ""
 
-#: models/routes.py:181
-#, fuzzy
-#| msgid "Minimum price:"
+#: models/routes.py:183
 msgid "Minimum total price in ISK"
-msgstr "Minimaler Preis:"
+msgstr ""
 
-#: models/routes.py:188
+#: models/routes.py:190
 msgid "price markup from volume"
 msgstr ""
 
-#: models/routes.py:189
+#: models/routes.py:191
 msgid "Add-on price per m3 volume in ISK"
 msgstr ""
 
-#: models/routes.py:196
-#, fuzzy
-#| msgid "Price add-on collateral:"
+#: models/routes.py:198
 msgid "price markup from collateral"
-msgstr "Preisaufschlag als Sicherheit:"
+msgstr ""
 
-#: models/routes.py:197
-#, fuzzy
-#| msgid "Price add-on collateral:"
+#: models/routes.py:199
 msgid "Add-on price in percent of collateral"
-msgstr "Preisaufschlag als Sicherheit:"
+msgstr ""
 
-#: models/routes.py:204
-#, fuzzy
-#| msgid "Volume"
+#: models/routes.py:206
 msgid "volume maximum"
-msgstr "Volumen"
+msgstr ""
 
-#: models/routes.py:205
+#: models/routes.py:207
 msgid "Maximum allowed volume in m3"
 msgstr ""
 
-#: models/routes.py:212
-#, fuzzy
-#| msgid "Volume"
+#: models/routes.py:214
 msgid "volume minimum"
-msgstr "Volumen"
+msgstr ""
 
-#: models/routes.py:213
+#: models/routes.py:215
 msgid "Minimum allowed volume in m3"
 msgstr ""
 
-#: models/routes.py:217
+#: models/routes.py:219
 msgid "price per volume modifier enabled"
 msgstr ""
 
-#: models/routes.py:218
+#: models/routes.py:220
 msgid "Whether the global price per volume modifier is used"
 msgstr ""
 
-#: models/routes.py:226
-#, fuzzy
-#| msgid "Pricing details"
+#: models/routes.py:228
 msgid "pricings"
-msgstr "Preisdetails"
+msgstr ""
 
-#: models/routes.py:252
+#: models/routes.py:254
 msgid "You must specify at least one price component"
 msgstr ""
 
-#: models/routes.py:265
+#: models/routes.py:267
 msgid ""
 "There already exists a bidirectional pricing for this route. Please set this "
 "pricing to non-bidirectional to save it. And after you must also set the "
 "other pricing to non-bidirectional."
 msgstr ""
 
-#: models/routes.py:282
+#: models/routes.py:284
 msgid ""
 "There already exists a non bidirectional pricing for this route. You need to "
 "mark this pricing as non-bidirectional too to continue."
@@ -742,28 +668,20 @@ msgid "Destination"
 msgstr ""
 
 #: templates/freight/partials/contract_table.html:10
-#, fuzzy
-#| msgid "Reward"
 msgid "Reward ISK"
-msgstr "Prämie"
+msgstr ""
 
 #: templates/freight/partials/contract_table.html:11
-#, fuzzy
-#| msgid "Collateral:"
 msgid "Collateral ISK"
-msgstr "Sicherheit:"
+msgstr ""
 
 #: templates/freight/partials/contract_table.html:12
-#, fuzzy
-#| msgid "Volume"
 msgid "Volume m3"
-msgstr "Volumen"
+msgstr ""
 
 #: templates/freight/partials/contract_table.html:13
-#, fuzzy
-#| msgid "Contract Type:"
 msgid "Contract Check"
-msgstr "Vertragstyp:"
+msgstr ""
 
 #: templates/freight/partials/contract_table.html:14
 msgid "Issued On"
@@ -786,10 +704,8 @@ msgid "Accepted By"
 msgstr ""
 
 #: templates/freight/partials/contracts_legend.html:4
-#, fuzzy
-#| msgid "Contract Type:"
 msgid "Contract check:"
-msgstr "Vertragstyp:"
+msgstr ""
 
 #: templates/freight/partials/contracts_legend.html:5
 msgid "OK"
@@ -824,42 +740,32 @@ msgid "In Progress"
 msgstr ""
 
 #: templates/freight/partials/contracts_legend.html:19
-#, fuzzy
-#| msgid "Days to complete:"
 msgid "completed"
-msgstr "Tage zum Abschließen:"
+msgstr ""
 
 #: templates/freight/partials/menu.html:9
 msgid "Toggle navigation"
 msgstr "Navigation umschalten"
 
 #: templates/freight/partials/menu.html:21 views.py:253
-#, fuzzy
-#| msgid "Calculator"
 msgid "Reward Calculator"
-msgstr "Rechner"
+msgstr ""
 
 #: templates/freight/partials/menu.html:27
-#, fuzzy
-#| msgid "Contracts"
 msgid "My Contract"
-msgstr "Verträge"
+msgstr ""
 
 #: templates/freight/partials/menu.html:38 views.py:91
-#, fuzzy
-#| msgid "Contracts"
 msgid "All Contracts"
-msgstr "Verträge"
+msgstr ""
 
 #: templates/freight/partials/menu.html:49
 msgid "Statistics"
 msgstr ""
 
 #: templates/freight/partials/menu.html:58
-#, fuzzy
-#| msgid "Location:"
 msgid "Add Location"
-msgstr "Standort:"
+msgstr ""
 
 #: templates/freight/statistics.html:12
 msgid "Routes"
@@ -932,10 +838,8 @@ msgid "Setup"
 msgstr ""
 
 #: views.py:77
-#, fuzzy
-#| msgid "Contracts"
 msgid "My Contracts"
-msgstr "Verträge"
+msgstr ""
 
 #: views.py:284
 #, python-format

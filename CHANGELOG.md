@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.11.1] - 2023-12-16
+
+### Changed
+
+- Improved translation strings
+- Replaced deprecated JS clipboard API
+- Update translations
+
 ## [1.11.0] - 2023-11-30
 
 ### Added

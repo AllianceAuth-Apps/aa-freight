@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-10-31 20:27+0100\n"
+"POT-Creation-Date: 2023-12-16 17:01+0100\n"
 "PO-Revision-Date: 2023-05-13 14:51+0000\n"
 "Language-Team: Spanish (Spain) (https://app.transifex.com/kalkoken-apps/"
 "teams/107978/es_ES/)\n"
@@ -116,11 +116,11 @@ msgstr ""
 msgid "Corporation public"
 msgstr ""
 
-#: models/contract_handlers.py:89 models/routes.py:33
+#: models/contract_handlers.py:89 models/routes.py:35
 msgid "id"
 msgstr ""
 
-#: models/contract_handlers.py:94 models/routes.py:46
+#: models/contract_handlers.py:94 models/routes.py:48
 msgid "name"
 msgstr ""
 
@@ -260,11 +260,11 @@ msgstr ""
 msgid "Datetime of latest notification, None = none has been sent"
 msgstr ""
 
-#: models/contracts.py:149 models/routes.py:136
+#: models/contracts.py:149 models/routes.py:138
 msgid "days to complete"
 msgstr ""
 
-#: models/contracts.py:154 models/routes.py:102
+#: models/contracts.py:154 models/routes.py:104
 msgid "end location"
 msgstr ""
 
@@ -288,7 +288,7 @@ msgstr ""
 msgid "List or price check issues as JSON array of strings or None"
 msgstr ""
 
-#: models/contracts.py:183 models/routes.py:225
+#: models/contracts.py:183 models/routes.py:227
 msgid "pricing"
 msgstr ""
 
@@ -296,7 +296,7 @@ msgstr ""
 msgid "reward"
 msgstr ""
 
-#: models/contracts.py:190 models/routes.py:95
+#: models/contracts.py:190 models/routes.py:97
 msgid "start location"
 msgstr ""
 
@@ -328,158 +328,158 @@ msgstr ""
 msgid "contract customer notifications"
 msgstr ""
 
-#: models/routes.py:59
+#: models/routes.py:61
 msgid "location"
 msgstr ""
 
-#: models/routes.py:60
+#: models/routes.py:62
 msgid "locations"
 msgstr ""
 
-#: models/routes.py:97
+#: models/routes.py:99
 msgid "Starting station or structure for courier route"
 msgstr ""
 
-#: models/routes.py:104
+#: models/routes.py:106
 msgid "Destination station or structure for courier route"
 msgstr ""
 
-#: models/routes.py:112
+#: models/routes.py:114
 msgid "collateral minimum"
 msgstr ""
 
-#: models/routes.py:113
+#: models/routes.py:115
 msgid "Minimum required collateral in ISK"
 msgstr ""
 
-#: models/routes.py:120
+#: models/routes.py:122
 msgid "collateral maximum"
 msgstr ""
 
-#: models/routes.py:121
+#: models/routes.py:123
 msgid "Maximum allowed collateral in ISK"
 msgstr ""
 
-#: models/routes.py:128
+#: models/routes.py:130
 msgid "days to expire"
 msgstr ""
 
-#: models/routes.py:129
+#: models/routes.py:131
 msgid "Recommended days for contracts to expire"
 msgstr ""
 
-#: models/routes.py:137
+#: models/routes.py:139
 msgid "Recommended days for contract completion"
 msgstr ""
 
-#: models/routes.py:143
+#: models/routes.py:145
 msgid "details"
 msgstr ""
 
-#: models/routes.py:144
+#: models/routes.py:146
 msgid "Text with additional instructions for using this pricing"
 msgstr ""
 
-#: models/routes.py:148
+#: models/routes.py:150
 msgid "is active"
 msgstr ""
 
-#: models/routes.py:149
+#: models/routes.py:151
 msgid "Disabled pricings will not be used or shown"
 msgstr ""
 
-#: models/routes.py:153
+#: models/routes.py:155
 msgid "is default"
 msgstr ""
 
-#: models/routes.py:155
+#: models/routes.py:157
 msgid ""
 "The default pricing will be preselected in the calculator. Please make sure "
 "to only mark one pricing as default."
 msgstr ""
 
-#: models/routes.py:161
+#: models/routes.py:163
 msgid "is bidirectional"
 msgstr ""
 
-#: models/routes.py:163
+#: models/routes.py:165
 msgid ""
 "Whether this pricing is valid for contracts in either direction or only the "
 "one specified"
 msgstr ""
 
-#: models/routes.py:172
+#: models/routes.py:174
 msgid "price base"
 msgstr ""
 
-#: models/routes.py:173
+#: models/routes.py:175
 msgid "Base price in ISK"
 msgstr ""
 
-#: models/routes.py:180
+#: models/routes.py:182
 msgid "price minimum"
 msgstr ""
 
-#: models/routes.py:181
+#: models/routes.py:183
 msgid "Minimum total price in ISK"
 msgstr ""
 
-#: models/routes.py:188
+#: models/routes.py:190
 msgid "price markup from volume"
 msgstr ""
 
-#: models/routes.py:189
+#: models/routes.py:191
 msgid "Add-on price per m3 volume in ISK"
 msgstr ""
 
-#: models/routes.py:196
+#: models/routes.py:198
 msgid "price markup from collateral"
 msgstr ""
 
-#: models/routes.py:197
+#: models/routes.py:199
 msgid "Add-on price in percent of collateral"
 msgstr ""
 
-#: models/routes.py:204
+#: models/routes.py:206
 msgid "volume maximum"
 msgstr ""
 
-#: models/routes.py:205
+#: models/routes.py:207
 msgid "Maximum allowed volume in m3"
 msgstr ""
 
-#: models/routes.py:212
+#: models/routes.py:214
 msgid "volume minimum"
 msgstr ""
 
-#: models/routes.py:213
+#: models/routes.py:215
 msgid "Minimum allowed volume in m3"
 msgstr ""
 
-#: models/routes.py:217
+#: models/routes.py:219
 msgid "price per volume modifier enabled"
 msgstr ""
 
-#: models/routes.py:218
+#: models/routes.py:220
 msgid "Whether the global price per volume modifier is used"
 msgstr ""
 
-#: models/routes.py:226
+#: models/routes.py:228
 msgid "pricings"
 msgstr ""
 
-#: models/routes.py:252
+#: models/routes.py:254
 msgid "You must specify at least one price component"
 msgstr ""
 
-#: models/routes.py:265
+#: models/routes.py:267
 msgid ""
 "There already exists a bidirectional pricing for this route. Please set this "
 "pricing to non-bidirectional to save it. And after you must also set the "
 "other pricing to non-bidirectional."
 msgstr ""
 
-#: models/routes.py:282
+#: models/routes.py:284
 msgid ""
 "There already exists a non bidirectional pricing for this route. You need to "
 "mark this pricing as non-bidirectional too to continue."
