@@ -197,6 +197,8 @@ Name | Description | Default
 
 The operation mode defines which contracts are processed by the Freight. For example you can define that only contracts assigned to your alliance are processed. Any courier contract that is  not in scope of the configured operation mode will be ignored by the freight app and e.g. not show up in the contract list or generate notifications.
 
+### Overview
+
 The following operation modes are available:
 
 Name | Description
@@ -205,6 +207,15 @@ Name | Description
 `'my_corporation'`| courier contracts assigned to configured corporation by a corp member
 `'corp_in_alliance'`| courier contracts assigned to configured corporation by an alliance member
 `'corp_public'`| any courier contract assigned to the configured corporation
+
+### Switching operation modes
+
+You can switch to a different operation mode with the following process. Please note that this will delete your current contract statistics:
+
+- Delete the current contract handler. This can be done on the admin site with the delete action.
+- Change the operation mode in your local settings
+- Restart your AA instance
+- Create a new contract handler with the "Setup My Corporation/Alliance" button
 
 ## Permissions
 
