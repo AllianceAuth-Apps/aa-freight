@@ -1,6 +1,5 @@
 """ESI client provider for Freight."""
 
-
 from esi.clients import EsiClientProvider
 
 from . import __version__

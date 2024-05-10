@@ -384,9 +384,11 @@ class ContractHandler(models.Model):
                         "%s: An unexpected error ocurred while trying to load contract "
                         "%s",
                         self,
-                        contract["contract_id"]
-                        if "contract_id" in contract
-                        else "Unknown",
+                        (
+                            contract["contract_id"]
+                            if "contract_id" in contract
+                            else "Unknown"
+                        ),
                     )
 
         self.contracts.update_pricing()

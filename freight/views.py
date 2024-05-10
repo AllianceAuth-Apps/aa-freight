@@ -144,9 +144,11 @@ def contract_list_data(request, category: str) -> JsonResponse:
                 "date_issued": contract.date_issued.isoformat(),
                 "date_expired": contract.date_expired.isoformat(),
                 "issuer": contract.issuer.character_name,
-                "date_accepted": contract.date_accepted.isoformat()
-                if contract.date_accepted
-                else None,
+                "date_accepted": (
+                    contract.date_accepted.isoformat()
+                    if contract.date_accepted
+                    else None
+                ),
                 "acceptor": contract.acceptor_name,
                 "has_pricing": contract.has_pricing,
                 "has_pricing_errors": contract.has_pricing_errors,
