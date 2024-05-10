@@ -25,13 +25,14 @@ from app_utils.urls import site_absolute_url
 
 from freight import __title__
 from freight.app_settings import (
+    DISCORDPROXY_HOST,
+    DISCORDPROXY_PORT,
     FREIGHT_APP_NAME,
     FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL,
     FREIGHT_DISCORD_DISABLE_BRANDING,
     FREIGHT_DISCORD_MENTIONS,
     FREIGHT_DISCORD_WEBHOOK_URL,
     FREIGHT_DISCORDPROXY_ENABLED,
-    FREIGHT_DISCORDPROXY_PORT,
     FREIGHT_HOURS_UNTIL_STALE_STATUS,
 )
 from freight.constants import AVATAR_SIZE
@@ -510,7 +511,7 @@ class Contract(models.Model):
         contents = self._generate_contents(
             discord_user_id, status_to_report, include_mention=False
         )
-        client = DiscordClient(target=f"localhost:{FREIGHT_DISCORDPROXY_PORT}")
+        client = DiscordClient(target=f"{DISCORDPROXY_HOST}:{DISCORDPROXY_PORT}")
         try:
             client.create_direct_message(
                 user_id=discord_user_id, content=contents, embed=embed

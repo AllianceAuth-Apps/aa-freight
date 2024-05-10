@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [1.12.0] - 2024-05-10
+
+### Added
+
+- New setting `DISCORDPROXY_HOST` to configure a different host address for discordproxy, which is needed e.g. for the new AA4 docker setup.
+
+### Changed
+
+- Setting `FREIGHT_DISCORDPROXY_PORT` renamed to `DISCORDPROXY_PORT`. The default is unchanged, so if you did not change this setting you do not have to do anything.
+
 ## [1.11.1] - 2023-12-16
 
 ### Changed

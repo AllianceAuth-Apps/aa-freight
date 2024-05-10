@@ -472,6 +472,21 @@ if DiscordUser and DiscordClient:
                 mock_DiscordClient.return_value.create_direct_message.called
             )
 
+        @patch(MODULE_PATH + ".DISCORDPROXY_HOST", "1.2.3.4")
+        @patch(MODULE_PATH + ".DISCORDPROXY_PORT", 56789)
+        @patch(MODULE_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", True)
+        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
+        @patch(MODULE_PATH + ".DiscordClient", spec=True)
+        def test_can_use_custom_config_for_discordproxy(self, mock_DiscordClient):
+            # when
+            self.contract_1.send_customer_notification()
+            # then
+            self.assertTrue(
+                mock_DiscordClient.return_value.create_direct_message.called
+            )
+            _, kwargs = mock_DiscordClient.call_args
+            self.assertEqual(kwargs["target"], "1.2.3.4:56789")
+
 
 class TestContractCustomerNotification(NoSocketsTestCase):
     @classmethod
