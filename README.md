@@ -20,10 +20,8 @@ Freight is an [Alliance Auth](https://gitlab.com/allianceauth/allianceauth) (AA)
 - [Installation](#installation)
 - [Updating](#updating)
 - [Settings](#settings)
-- [Operation Mode](#operation-mode)
 - [Permissions](#permissions)
-- [Pricing](#pricing)
-- [Contract Check](#contract-check)
+- [User Guide](#user-guide)
 - [Change Log](CHANGELOG.md)
 
 ## Overview
@@ -196,30 +194,6 @@ Name|Description|Default
 `FREIGHT_OPERATION_MODE`|Operation mode to use.  Note that switching operation modes requires you to remove the existing contract handler with all its contracts and then setup a new contract handler.|`my_alliance`
 `FREIGHT_STATISTICS_MAX_DAYS`|Sets the number of days that are considered for creating the statistics.|`90`
 
-## Operation Mode
-
-The operation mode defines which contracts are processed by the Freight. For example you can define that only contracts assigned to your alliance are processed. Any courier contract that is  not in scope of the configured operation mode will be ignored by the freight app and e.g. not show up in the contract list or generate notifications.
-
-### Overview
-
-The following operation modes are available:
-
-Name | Description
--- | --
-`'my_alliance'`| courier contracts assigned to configured alliance by an alliance member
-`'my_corporation'`| courier contracts assigned to configured corporation by a corp member
-`'corp_in_alliance'`| courier contracts assigned to configured corporation by an alliance member
-`'corp_public'`| any courier contract assigned to the configured corporation
-
-### Switching operation modes
-
-You can switch to a different operation mode with the following process. Please note that this will delete your current contract statistics:
-
-- Delete the current contract handler. This can be done on the admin site with the delete action.
-- Change the operation mode in your local settings
-- Restart your AA instance
-- Create a new contract handler with the "Setup My Corporation/Alliance" button
-
 ## Permissions
 
 This is an overview of all permissions used by this app:
@@ -233,7 +207,16 @@ Can use the calculator | Enables using the calculator page and the "My Contracts
 Can view the contracts list | Enables viewing the page with all outstanding courier contracts  |  `view_contracts`
 Can see statistics | User with this permission can view the statistics page  |  `view_statistics`
 
-## Pricing
+## User Guide
+
+This chapter explains how to use Freight and some key concepts:
+
+- [Pricing](#pricing)
+- [Adding locations](#adding-locations)
+- [Contract Check](#contract-check)
+- [Operation Mode](#operation-mode)
+
+### Pricing
 
 A pricing defines a route and the parameters for calculating the price for that route along with some additional information for the users. You can define multiple pricings if you want, but at least one pricing has to be defined for this app to work.
 
@@ -265,9 +248,13 @@ Days to expire | Recommended days for contracts to expire | Info
 Days to complete | Recommended days for contract completion | Info
 Details | Text with additional instructions for using this pricing | Info
 
-> **How to add new locations**:<br>If you are creating a pricing for a new route you may need to first add the locations (stations and/or structures).<br>The easiest way is to create a courier contract between those locations in game and then run contract sync. Those locations will then be added automatically.<br>Alternatively you can use the "Add Location" feature on the main page of the app. This will require you to provide the respective station or structure eve ID.
+### Adding locations
 
-## Contract Check
+If you are creating a pricing for a new route you may need to first add the locations (stations and/or structures).<br>The easiest way is to create a courier contract between those locations in game and then run contract sync. Those locations will then be added automatically.<br>Alternatively you can use the "Add Location" feature on the main page of the app. This will require you to provide the respective station or structure eve ID.
+
+> **Hint**:<br>You can get the structure ID of any Upwell structure you have docking rights to by creating a link in-game and then copying that link into a out-of-game text editor. For a detailed guide see [this article](https://wiki.eveuniversity.org/How_to_get_ID#In_game_links) on the Eve Uni wiki.
+
+### Contract Check
 
 The app will automatically check if a newly issued contract complies with the pricing parameters for the respective route. If you want to be notified about all contracts, even without correct pricing, set `FREIGHT_NOTIFY_ALL_CONTRACTS` option to `True`
 
@@ -282,3 +269,24 @@ The following parameters will be checked (if they have been defined):
 - collateral min <= collateral in contract <= collateral max
 
 Deviations on "Days to expire" and "Days to complete" are currently not part of the contract check and only used to show the recommended contract parameters in the calculator.
+
+
+### Operation Mode
+
+The operation mode defines which contracts are processed by the Freight. For example you can define that only contracts assigned to your alliance are processed. Any courier contract that is  not in scope of the configured operation mode will be ignored by the freight app and e.g. not show up in the contract list or generate notifications.
+
+The following operation modes are available:
+
+Name | Description
+-- | --
+`'my_alliance'`| courier contracts assigned to configured alliance by an alliance member
+`'my_corporation'`| courier contracts assigned to configured corporation by a corp member
+`'corp_in_alliance'`| courier contracts assigned to configured corporation by an alliance member
+`'corp_public'`| any courier contract assigned to the configured corporation
+
+You can switch to a different operation mode with the following process. Please note that this will delete your current contract statistics:
+
+- Delete the current contract handler. This can be done on the admin site with the delete action.
+- Change the operation mode in your local settings
+- Restart your AA instance
+- Create a new contract handler with the "Setup My Corporation/Alliance" button
