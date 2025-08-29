@@ -270,7 +270,6 @@ The following parameters will be checked (if they have been defined):
 
 Deviations on "Days to expire" and "Days to complete" are currently not part of the contract check and only used to show the recommended contract parameters in the calculator.
 
-
 ### Operation Mode
 
 The operation mode defines which contracts are processed by the Freight. For example you can define that only contracts assigned to your alliance are processed. Any courier contract that is  not in scope of the configured operation mode will be ignored by the freight app and e.g. not show up in the contract list or generate notifications.

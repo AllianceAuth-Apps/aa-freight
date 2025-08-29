@@ -52,6 +52,7 @@ DATABASES['default'] = {
 ESI_SSO_CLIENT_ID = "dummy"
 ESI_SSO_CLIENT_SECRET = "dummy"
 ESI_SSO_CALLBACK_URL = f"{SITE_URL}/sso/callback"
+ESI_USER_CONTACT_EMAIL = "info@example.com"
 
 # By default emails are validated before new users can log in.
 # It's recommended to use a free service like SparkPost or Elastic Email to send email.
@@ -81,3 +82,8 @@ ANALYTICS_DISABLED = True
 FREIGHT_OPERATION_MODE = "corp_public"
 FREIGHT_DISCORD_WEBHOOK_URL = "https://www.example.com/discord/webhook_1"
 FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL = "https://www.example.com/discord/webhook_2"
+
+# Workaround for fixing the "Missing staticfiles manifest entry" bug in tests
+STORAGES["staticfiles"][
+    "BACKEND"
+] = "django.contrib.staticfiles.storage.StaticFilesStorage"
