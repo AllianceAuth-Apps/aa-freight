@@ -1,5 +1,29 @@
-.dl-horizontal dt { text-align: left; }
+@media all {
 
-.copy_to_clipboard:hover {
-    cursor: pointer;
+    /* dl styling */
+    dl {
+        width: 100%;
+        overflow: hidden;
+        padding: 0;
+    }
+
+    dt {
+        float: left;
+        width: 30%;
+        /* adjust the width; make sure the total of both is 100% */
+        padding: 0;
+        /*margin-bottom: 1em;*/
+    }
+
+    dd {
+        float: left;
+        width: 70%;
+        /* adjust the width; make sure the total of both is 100% */
+        padding: 0;
+        /*margin-bottom: 1em;*/
+    }
+
+    .copy_to_clipboard:hover {
+        cursor: pointer;
+    }
 }

@@ -21,11 +21,11 @@ function createContractsDataTable(tab_name, view_url) {
         },
         {
             data: "reward",
-            render: $.fn.dataTable.render.formatisk(),
+            render: $.fn.dataTable.render.formatISK(),
         },
         {
             data: "collateral",
-            render: $.fn.dataTable.render.formatisk(),
+            render: $.fn.dataTable.render.formatISK(),
         },
         {
             data: "volume",
@@ -81,6 +81,7 @@ function createContractsDataTable(tab_name, view_url) {
             },
         ],
         bootstrap: true,
+        bootstrap_version: 5,
         autoSize: false,
     };
     const createdRow = function (row, data, dataIndex) {
