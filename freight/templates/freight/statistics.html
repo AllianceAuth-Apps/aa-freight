@@ -7,35 +7,34 @@
 {% block details %}
     <!-- Nav tabs -->
     <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active">
-            <a href="#routes" aria-controls="routes" role="tab" data-toggle="tab">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-target="#routes" aria-controls="routes" role="tab" data-bs-toggle="tab">
                 {% translate "Routes" %}
-            </a>
+            </button>
         </li>
-        <li role="presentation">
-            <a href="#pilots" aria-controls="pilots" role="tab" data-toggle="tab">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-target="#pilots" aria-controls="pilots" role="tab" data-bs-toggle="tab">
                 {% translate "Pilots" %}
-            </a>
+            </button>
         </li>
-        <li role="presentation">
-            <a
-                href="#pilot_corporations"
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-target="#pilot_corporations"
                 aria-controls="pilot_corporations"
                 role="tab"
-                data-toggle="tab">
+                data-bs-toggle="tab">
                 {% translate "Pilot Corporations" %}
-            </a>
+            </button>
         </li>
-        <li role="presentation">
-            <a href="#customers" aria-controls="customers" role="tab" data-toggle="tab">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" data-bs-target="#customers" aria-controls="customers" role="tab" data-bs-toggle="tab">
                 {% translate "Customers" %}
-            </a>
+            </button>
         </li>
     </ul>
 
     <!-- Tabs -->
-    <div class="panel panel-default">
-        <div class="panel-body">
+    <div class="card">
+        <div class="card-body">
             <div class="tab-content">
                 <!-- Route -->
                 <div role="tabpanel" class="tab-pane active" id="routes">
@@ -164,14 +163,14 @@
 
     <p class="text-muted">
         {% blocktranslate %}
-            Statistics calculated for all contracts finished withn the last {{ max_days }} days
+            Statistics calculated for all contracts finished within the last {{ max_days }} days
         {% endblocktranslate %}
     </p>
 
 {% endblock %}
 
 {% block extra_javascript %}
-    {% include 'bundles/datatables-js.html' %}
+    {% include 'bundles/datatables-js-bs5.html' %}
     {% include "freight/partials/global_js.html" %}
 
     <script type="application/javascript">
@@ -200,11 +199,11 @@
                     },
                     {
                         data: 'rewards',
-                        render: $.fn.dataTable.render.formatisk()
+                        render: $.fn.dataTable.render.formatISK()
                     },
                     {
                         data: 'collaterals',
-                        render: $.fn.dataTable.render.formatisk()
+                        render: $.fn.dataTable.render.formatISK()
                     },
                     {
                         data: 'volume',
@@ -247,11 +246,11 @@
                     },
                     {
                         data: 'rewards',
-                        render: $.fn.dataTable.render.formatisk()
+                        render: $.fn.dataTable.render.formatISK()
                     },
                     {
                         data: 'collaterals',
-                        render: $.fn.dataTable.render.formatisk()
+                        render: $.fn.dataTable.render.formatISK()
                     },
                     {
                         data: 'volume',
@@ -284,11 +283,11 @@
                     },
                     {
                         data: 'rewards',
-                        render: $.fn.dataTable.render.formatisk()
+                        render: $.fn.dataTable.render.formatISK()
                     },
                     {
                         data: 'collaterals',
-                        render: $.fn.dataTable.render.formatisk()
+                        render: $.fn.dataTable.render.formatISK()
                     },
                     {
                         data: 'volume',
@@ -321,11 +320,11 @@
                     },
                     {
                         data: 'rewards',
-                        render: $.fn.dataTable.render.formatisk()
+                        render: $.fn.dataTable.render.formatISK()
                     },
                     {
                         data: 'collaterals',
-                        render: $.fn.dataTable.render.formatisk()
+                        render: $.fn.dataTable.render.formatISK()
                     },
                     {
                         data: 'volume',
@@ -346,7 +345,7 @@
 {% endblock %}
 
 {% block extra_css %}
-    {% include 'bundles/datatables-css.html' %}
+    {% include 'bundles/datatables-css-bs5.html' %}
 
     <link href="{% static 'freight/css/kalkoken.css' %}" type="text/css" rel="stylesheet" />
     <link

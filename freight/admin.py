@@ -5,6 +5,7 @@
 
 from django.conf import settings
 from django.contrib import admin
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from . import tasks
@@ -64,7 +65,7 @@ class LocationAdmin(admin.ModelAdmin):
 @admin.register(Pricing)
 class PricingAdmin(admin.ModelAdmin):
     list_display = (
-        "name",
+        "_name",
         "start_location",
         "end_location",
         "_bidirectional",
@@ -82,6 +83,10 @@ class PricingAdmin(admin.ModelAdmin):
     @admin.display(boolean=True, description=_("bidirectional"))
     def _bidirectional(self, obj):
         return obj.is_bidirectional
+
+    @admin.display(description=_("name"))
+    def _name(self, obj):
+        return format_html('<span style="white-space: nowrap;">{}</span>', obj.name)
 
     @admin.display(boolean=True, description=_("active"))
     def _active(self, obj):

@@ -10,11 +10,9 @@
         {% csrf_token %}
         <div class="row">
             <div class="col-md-6">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">{% translate "Calculator" %}</h3>
-                    </div>
-                    <div class="panel-body">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{% translate "Calculator" %}</h5>
                         {% if has_pricing %}
                             {{ form|bootstrap }}
                             <br>
@@ -41,13 +39,9 @@
 
             <div class="col-md-6">
 
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">{% translate "Pricing details" %}</h3>
-                    </div>
-
-                    <div class="panel-body" style="min-height: 100px;">
-
+                <div class="card">
+                    <div class="card-body" style="min-height: 100px;">
+                        <h5 class="card-title">{% translate "Pricing details" %}</h5>
                         {% if pricing %}
                             <dl class="dl-horizontal">
                                 {% if pricing.is_bidirectional %}
@@ -67,7 +61,6 @@
 
                                 <dt><dt>{% translate "Both directions:" %}</dt></dt>
                                 <dd>{{ pricing.is_bidirectional|yesno }}</dd>
-                                <br>
 
                                 {% if pricing.price_min != None %}
                                     <dt>{% translate "Minimum price:" %}</dt>
@@ -100,7 +93,6 @@
                                     <dd>{{ pricing.price_per_collateral_percent }} %</dd>
                                 {% endif %}
 
-                                <br>
                                 {% if pricing.volume_min != None %}
                                     <dt>{% translate "Min Volume:" %}</dt>
                                     <dd>
@@ -133,8 +125,6 @@
                                     </dd>
                                 {% endif %}
 
-                                <br>
-
                                 {% if pricing.details %}
                                     <dt>{% translate "Additional Instructions:" %}</dt>
                                     <dd>{{ pricing.details|linebreaks }}</dd>
@@ -149,11 +139,9 @@
                     </div>
                 </div>
 
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">{% translate "Your contract" %}</h3>
-                    </div>
-                    <div class="panel-body" style="min-height: 100px;">
+                <div class="card">
+                    <div class="card-body" style="min-height: 100px;">
+                    <h5 class="card-title">{% translate "Your contract" %}</h5>
                         {% if price != None %}
                             <dl class="dl-horizontal">
                                 <dt>{% translate "Contract Type:" %}</dt>
@@ -235,7 +223,6 @@
         </div>
 
     </form>
-<br>
 
 {% endblock %}
 

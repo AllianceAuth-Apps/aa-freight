@@ -7,15 +7,15 @@
 
     <!-- Nav tabs -->
     <ul class="nav nav-tabs" role="tablist">
-        <li role="presentation" class="active">
-            <a href="#active_contracts" aria-controls="active_contracts" role="tab" data-toggle="tab">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" data-bs-target="#active_contracts" aria-controls="active_contracts" role="tab" data-bs-toggle="tab">
                 {{ user_name }}
             </a>
         </li>
     </ul>
 
-    <div class="panel panel-default panel-tab">
-        <div class="panel-body">
+    <div class="card card-tab">
+        <div class="card-body">
             <div class="tab-content">
                 <div role="tabpanel" class="tab-pane active" id="active_contracts">
                     {% include "freight/partials/contract_table.html" with tab_name="tab_user_contracts" %}
@@ -44,7 +44,7 @@
 {% endblock %}
 
 {% block extra_css %}
-    {% include 'bundles/datatables-css.html' %}
+    {% include 'bundles/datatables-css-bs5.html' %}
 
     <link href="{% static 'freight/css/kalkoken.css' %}" type="text/css" rel="stylesheet">
     <link href="{% static 'freight/css/contracts.css' %}" type="text/css" rel="stylesheet">

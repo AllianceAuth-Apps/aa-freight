@@ -1,10 +1,77 @@
-{% extends 'allianceauth/base.html' %}
+{% extends 'allianceauth/base-bs5.html' %}
 {% load i18n %}
-{% block page_title %}{{ app_title }}{% endblock %}
+{% load navactive %}
+
+{% block page_title %}{{ page_title|striptags }} - {{ app_title }}{% endblock %}
+
+{% block header_nav_brand %}{{ app_title }}{% endblock %}
+
+{% block header_nav_collapse_left %}
+    {% if perms.freight.use_calculator %}
+        <li class="nav-item">
+            <a class="nav-link {% navactive request 'freight:calculator' %}" href="{% url 'freight:calculator' %}">
+                {% translate "Reward Calculator" %}
+            </a>
+        </li>
+
+        <li class="nav-item">
+            <a class="nav-link {% navactive request 'freight:contract_list_user' %}" href="{% url 'freight:contract_list_user' %}">
+                {% translate "My Contract" %}s&nbsp;
+                {% if pending_user_count > 0 %}
+                    <span class="badge badge-nav">{{ pending_user_count }}</span>
+                {% endif %}
+            </a>
+        </li>
+    {% endif %}
+
+    {% if perms.freight.view_contracts %}
+        <li class="nav-item">
+            <a class="nav-link {% navactive request 'freight:contract_list_all' %}" href="{% url 'freight:contract_list_all' %}">
+                {% translate "All Contracts" %}&nbsp;
+                {% if pending_all_count > 0 %}
+                    <span class="badge badge-nav">{{ pending_all_count }}</span>
+                {% endif %}
+            </a>
+        </li>
+     {% endif %}
+
+{% if perms.freight.view_statistics %}
+        <li class="nav-item">
+            <a class="nav-link {% navactive request 'freight:statistics' %}" href="{% url 'freight:statistics' %}">
+                {% translate "Statistics" %}
+            </a>
+        </li>
+     {% endif %}
+
+{% endblock header_nav_collapse_left %}
+
+{% block header_nav_collapse_right %}
+    {% if perms.freight.add_location %}
+        <li class="nav-item">
+            <a class="btn btn-success me-2" href="{% url 'freight:add_location' %}" title="{% translate 'Add courier location' %}">
+                <i class="fa-solid fa-plus"></i>&nbsp;{% translate "Add Location" %}
+            </a>
+        </li>
+    {% endif %}
+
+    {% if perms.freight.setup_contract_handler %}
+        <li class="nav-item">
+            <a class="btn btn-success me-2" href="{% url 'freight:setup_contract_handler' %}" title="{% translate 'Add corporation or alliance for fetching contracts' %}">
+                <i class="fa-solid fa-plus"></i>&nbsp;{{ setup_contract_handler_label }}
+            </a>
+        </li>
+    {% endif %}
+
+{% endblock header_nav_collapse_right %}
+
+{% block header_nav_user_character_control %}
+    {% comment %}
+        Leave empty to remove user control nav items for this app
+    {% endcomment %}
+{% endblock %}
 
 {% block content %}
-    <br />
-    {% include 'freight/partials/menu.html' %}
-    <h2>{{ page_title }}</h2>
+    {% include "framework/header/page-header.html" with title=page_title %}
+
     {% block details %}{% endblock %}
 {% endblock %}

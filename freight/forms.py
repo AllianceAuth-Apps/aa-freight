@@ -37,7 +37,7 @@ class CalculatorForm(forms.Form):
     def clean(self):
         pricing = self.cleaned_data.get("pricing")
         if pricing:
-            issue_prefix = "⚠ Issues:"
+            issue_prefix = "Issues:"
 
             if pricing.requires_volume() and self.cleaned_data["volume"] is None:
                 raise ValidationError(f"{issue_prefix} volume is required")

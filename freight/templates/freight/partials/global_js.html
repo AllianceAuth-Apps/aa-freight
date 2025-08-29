@@ -8,7 +8,7 @@
 
     // Format ISK values for output
     // magnitude: show value with given magnitude, else magnitude will be calculated
-    function formatisk(data, magnitude=null) {
+    function formatISK(data, magnitude=null) {
         if ( data != null ) {
             const power_map = {'t': 12, 'b': 9, 'm': 6, 'k': 3, '': 0}
             if (!power_map.hasOwnProperty(magnitude)) {
@@ -49,7 +49,7 @@
             );
         let result;
         if (format == 'isk'){
-            result = formatisk(columnTotal)
+            result = formatISK(columnTotal)
         } else {
             result = columnTotal.toLocaleString('en-US', {maximumFractionDigits: 0})
         }
@@ -57,10 +57,10 @@
     }
 
     // DataTables renderer for ISK values
-    $.fn.dataTable.render.formatisk = function(magnitude=null) {
+    $.fn.dataTable.render.formatISK = function(magnitude=null) {
         return function ( data, type, row ) {
             if ( type === 'display' ) {
-                return formatisk(data, magnitude);
+                return formatISK(data, magnitude);
             }
             // Search, order and type can use the original data
             return data;
