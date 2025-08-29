@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [2.0.0] - 2025-08-29
+
+### Update notes
+
+This release requires Alliance Auth 4.0 or greater.
+
+### Changed
+
+- BREAKING CHANGE: Support dropped for AA3
+- Templates migrated to AA4 / Bootstrap 5
+
 ## [1.12.0] - 2024-05-10
 
 ### Added
