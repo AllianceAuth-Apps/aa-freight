@@ -8,7 +8,7 @@ from allianceauth.tests.auth_utils import AuthUtils
 from app_utils.testing import NoSocketsTestCase
 
 from freight.models import Contract, Location, Pricing
-from freight.tests.testdata.factories import create_pricing
+from freight.tests.testdata.factories_2 import PricingFactory
 from freight.tests.testdata.helpers import create_contract_handler_w_contracts
 
 _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
@@ -27,7 +27,7 @@ class TestCalculatorWeb(WebTest):
         jita = Location.objects.get(id=60003760)
         amamake = Location.objects.get(id=1022167642188)
         amarr = Location.objects.get(id=60008494)
-        cls.pricing_1 = create_pricing(
+        cls.pricing_1 = PricingFactory(
             start_location=jita,
             end_location=amamake,
             price_base=50000000,
@@ -38,7 +38,7 @@ class TestCalculatorWeb(WebTest):
             days_to_complete=3,
             days_to_expire=7,
         )
-        cls.pricing_2 = create_pricing(
+        cls.pricing_2 = PricingFactory(
             start_location=jita, end_location=amarr, price_base=100000000
         )
         Contract.objects.update_pricing()

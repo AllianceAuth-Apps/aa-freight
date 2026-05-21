@@ -9,8 +9,11 @@ from app_utils.testing import create_user_from_evecharacter
 
 from freight.admin import ContractAdmin
 from freight.models import Contract
-from freight.tests.testdata.factories import create_pricing
-from freight.tests.testdata.factories_2 import ContractFactory, ContractHandlerFactory
+from freight.tests.testdata.factories_2 import (
+    ContractFactory,
+    ContractHandlerFactory,
+    PricingFactory,
+)
 from freight.tests.testdata.helpers import (
     create_entities_from_characters,
     create_locations,
@@ -77,7 +80,7 @@ class TestPricingAdmin(TestCase):
         super().setUpClass()
         cls.user = User.objects.create_superuser("Clark Kent")
         create_locations()
-        create_pricing(
+        PricingFactory(
             start_location_id=60003760,
             end_location_id=1022167642188,
             price_base=100000000,

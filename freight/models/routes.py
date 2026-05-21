@@ -5,6 +5,8 @@ from typing import List, Optional
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 
 from allianceauth.services.hooks import get_extension_logger
@@ -227,17 +229,6 @@ class Pricing(models.Model):
         verbose_name = _("pricing")
         verbose_name_plural = _("pricings")
 
-    def save(self, *args, **kwargs) -> None:
-        update_contracts = kwargs.pop("update_contracts", True)
-        super().save(*args, **kwargs)
-        if update_contracts:
-            self._update_contracts()
-
-    def _update_contracts(self):
-        from freight.tasks import update_contracts_pricing
-
-        update_contracts_pricing.delay()
-
     def __str__(self) -> str:
         return self.name
 
@@ -454,3 +445,14 @@ class Pricing(models.Model):
         if len(issues) == 0:
             return None
         return issues
+
+
+@receiver(post_save, sender=Pricing)
+def update_contracts_pricing(
+    sender,  # pylint: disable=unused-argument
+    instance: Pricing,
+    **kwargs,
+):
+    from freight import tasks
+
+    tasks.update_contracts_pricing.delay()

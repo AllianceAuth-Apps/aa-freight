@@ -9,6 +9,7 @@ from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from allianceauth.eveonline.providers import ObjectNotFound
 from allianceauth.tests.auth_utils import AuthUtils
 from app_utils.django import app_labels
+from app_utils.testdata_factories import EveCharacterFactory
 from app_utils.testing import (
     BravadoOperationStub,
     BravadoResponseStub,
@@ -19,7 +20,7 @@ from app_utils.testing import (
 )
 
 from freight.models import Contract, EveEntity, Location, Pricing
-from freight.tests.testdata.factories import create_pricing
+from freight.tests.testdata.factories_2 import PricingFactory
 from freight.tests.testdata.helpers import (
     characters_data,
     create_contract_handler_w_contracts,
@@ -52,7 +53,7 @@ class TestEveEntityManager(NoSocketsTestCase):
                 "category": EveEntity.CATEGORY_ALLIANCE,
                 "name": character["alliance_name"],
             }
-            EveCharacter.objects.create(**character)
+            EveCharacterFactory(**character)
 
         cls.esi_data = esi_data
         cls.character = EveCharacter.objects.get(character_id=90000001)
@@ -345,13 +346,13 @@ class TestContractManager(NoSocketsTestCase):
         jita = Location.objects.get(id=60003760)
         amamake = Location.objects.get(id=1022167642188)
         amarr = Location.objects.get(id=60008494)
-        pricing_1 = create_pricing(
+        pricing_1 = PricingFactory(
             start_location=jita,
             end_location=amamake,
             price_base=500000000,
             is_bidirectional=True,
         )
-        pricing_3 = create_pricing(
+        pricing_3 = PricingFactory(
             start_location=amarr,
             end_location=amamake,
             price_base=250000000,
@@ -373,19 +374,19 @@ class TestContractManager(NoSocketsTestCase):
         jita = Location.objects.get(id=60003760)
         amamake = Location.objects.get(id=1022167642188)
         amarr = Location.objects.get(id=60008494)
-        pricing_1 = create_pricing(
+        pricing_1 = PricingFactory(
             start_location=jita,
             end_location=amamake,
             price_base=500000000,
             is_bidirectional=False,
         )
-        pricing_2 = create_pricing(
+        pricing_2 = PricingFactory(
             start_location=amamake,
             end_location=jita,
             price_base=350000000,
             is_bidirectional=False,
         )
-        pricing_3 = create_pricing(
+        pricing_3 = PricingFactory(
             start_location=amarr,
             end_location=amamake,
             price_base=250000000,
@@ -710,7 +711,7 @@ if "discord" in app_labels():
             cls.handler, _ = create_contract_handler_w_contracts()
             jita = Location.objects.get(id=60003760)
             amamake = Location.objects.get(id=1022167642188)
-            create_pricing(
+            PricingFactory(
                 start_location=jita, end_location=amamake, price_base=500000000
             )
             Contract.objects.update_pricing()
@@ -892,19 +893,19 @@ class TestPricingManager(NoSocketsTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.jita, cls.amamake, cls.amarr = create_locations()
-        cls.p1 = create_pricing(
+        cls.p1 = PricingFactory(
             start_location=cls.jita,
             end_location=cls.amamake,
             price_base=50000000,
             is_default=True,
         )
-        cls.p2 = create_pricing(
+        cls.p2 = PricingFactory(
             start_location=cls.jita, end_location=cls.amarr, price_base=10000000
         )
 
     def test_default_pricing_no_default_defined(self):
         Pricing.objects.all().delete()
-        p = create_pricing(
+        p = PricingFactory(
             start_location=self.jita,
             end_location=self.amamake,
             price_base=50000000,

@@ -9,16 +9,17 @@ from django.utils.timezone import now
 from allianceauth.authentication.models import CharacterOwnership
 from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from app_utils.django import app_labels
+from app_utils.testdata_factories import EveCharacterFactory
 from app_utils.testing import NoSocketsTestCase
 
-from freight.models import (
-    Contract,
-    ContractCustomerNotification,
-    ContractHandler,
-    EveEntity,
-    Location,
+from freight.models import Contract, ContractCustomerNotification, EveEntity, Location
+from freight.tests.testdata.factories_2 import (
+    ContractFactory,
+    ContractHandlerFactory,
+    EveEntityAllianceFactory,
+    LocationFactory,
+    PricingFactory,
 )
-from freight.tests.testdata.factories import create_pricing
 from freight.tests.testdata.helpers import (
     characters_data,
     create_contract_handler_w_contracts,
@@ -43,11 +44,66 @@ PATCH_FREIGHT_OPERATION_MODE = MODULE_PATH + ".FREIGHT_OPERATION_MODE"
 
 
 class TestContract(NoSocketsTestCase):
+    def test_str(self):
+        contract = ContractFactory(
+            contract_id=42,
+            start_location=LocationFactory(name="Jita"),
+            end_location=LocationFactory(name="Amamake"),
+        )
+        got = str(contract)
+        want = "42: Jita -> Amamake"
+        self.assertEqual(got, want)
+
+
+class TestContract_DateLatest(NoSocketsTestCase):
+    def test_should_return_date_issues_for_new_contract(self):
+        date_issued = now()
+        contract = ContractFactory(
+            date_issued=date_issued,
+        )
+        got = contract.date_latest
+        self.assertEqual(got, date_issued)
+
+    def test_should_return_date_accepted_when_accepted(self):
+        date_accepted = now() - dt.timedelta(hours=1)
+        contract = ContractFactory(accepted=True, date_accepted=date_accepted)
+        got = contract.date_latest
+        self.assertEqual(got, date_accepted)
+
+    def test_should_return_date_completed_when_completed(self):
+        date_completed = now() - dt.timedelta(hours=1)
+        contract = ContractFactory(
+            completed=True,
+            date_completed=date_completed,
+        )
+        got = contract.date_latest
+        self.assertEqual(got, date_completed)
+
+
+class TestContract_IsStale(NoSocketsTestCase):
+    def test_should_return_stale(self):
+        hours = 12
+        contract = ContractFactory(
+            date_issued=now() - dt.timedelta(hours=hours, seconds=1),
+        )
+        with patch(MODULE_PATH + ".FREIGHT_HOURS_UNTIL_STALE_STATUS", hours):
+            self.assertTrue(contract.has_stale_status)
+
+    def test_should_return_not_stale(self):
+        hours = 12
+        contract = ContractFactory(
+            date_issued=now() - dt.timedelta(hours=1),
+        )
+        with patch(MODULE_PATH + ".FREIGHT_HOURS_UNTIL_STALE_STATUS", hours):
+            self.assertFalse(contract.has_stale_status)
+
+
+class TestContract2(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         for character in characters_data:
-            EveCharacter.objects.create(**character)
+            EveCharacterFactory(**character)
             EveCorporationInfo.objects.get_or_create(
                 corporation_id=character["corporation_id"],
                 defaults={
@@ -62,9 +118,8 @@ class TestContract(NoSocketsTestCase):
         cls.corporation = EveCorporationInfo.objects.get(
             corporation_id=cls.character.corporation_id
         )
-        cls.organization = EveEntity.objects.create(
+        cls.organization = EveEntityAllianceFactory(
             id=cls.character.alliance_id,
-            category=EveEntity.CATEGORY_ALLIANCE,
             name=cls.character.alliance_name,
         )
         cls.user = User.objects.create_user(
@@ -74,30 +129,30 @@ class TestContract(NoSocketsTestCase):
             character=cls.character, owner_hash="x1", user=cls.user
         )
         # Locations
-        cls.jita = Location.objects.create(
+        cls.jita = LocationFactory(
             id=60003760,
             name="Jita IV - Moon 4 - Caldari Navy Assembly Plant",
             solar_system_id=30000142,
             type_id=52678,
             category_id=3,
         )
-        cls.amamake = Location.objects.create(
+        cls.amamake = LocationFactory(
             id=1022167642188,
             name="Amamake - 3 Time Nearly AT Winners",
             solar_system_id=30002537,
             type_id=35834,
             category_id=65,
         )
-        cls.handler = ContractHandler.objects.create(
+        cls.handler = ContractHandlerFactory(
             organization=cls.organization, character=cls.main_ownership
         )
 
     def setUp(self):
         # create contracts
-        self.pricing = create_pricing(
+        self.pricing = PricingFactory(
             start_location=self.jita, end_location=self.amamake, price_base=500000000
         )
-        self.contract = Contract.objects.create(
+        self.contract = ContractFactory(
             handler=self.handler,
             contract_id=1,
             collateral=0,
@@ -115,43 +170,11 @@ class TestContract(NoSocketsTestCase):
             pricing=self.pricing,
         )
 
-    def test_str(self):
-        expected = "1: Jita -> Amamake"
-        self.assertEqual(str(self.contract), expected)
-
-    def test_repr(self):
-        excepted = "Contract(contract_id=1, start_location=Jita, end_location=Amamake)"
-        self.assertEqual(repr(self.contract), excepted)
-
     # def test_hours_issued_2_completed(self):
     #     self.contract.date_completed = self.contract.date_issued + dt.timedelta(hours=9)
     #     self.assertEqual(self.contract.hours_issued_2_completed, 9)
     #     self.contract.date_completed = None
     #     self.assertIsNone(self.contract.hours_issued_2_completed)
-
-    def test_date_latest(self):
-        # initial contract only had date_issued
-        self.assertEqual(self.contract.date_issued, self.contract.date_latest)
-
-        # adding date_accepted to contract
-        self.contract.date_accepted = self.contract.date_issued + dt.timedelta(days=1)
-        self.assertEqual(self.contract.date_accepted, self.contract.date_latest)
-
-        # adding date_completed to contract
-        self.contract.date_completed = self.contract.date_accepted + dt.timedelta(
-            days=1
-        )
-        self.assertEqual(self.contract.date_completed, self.contract.date_latest)
-
-    @patch(MODULE_PATH + ".FREIGHT_HOURS_UNTIL_STALE_STATUS", 24)
-    def test_has_stale_status(self):
-        # initial contract only had date_issued
-        # date_issued is now
-        self.assertFalse(self.contract.has_stale_status)
-
-        # date_issued is 30 hours ago
-        self.contract.date_issued = self.contract.date_issued - dt.timedelta(hours=30)
-        self.assertTrue(self.contract.has_stale_status)
 
     def test_acceptor_name(self):
         contract = self.contract
@@ -364,7 +387,7 @@ if DiscordUser:
         def test_can_send_without_acceptor(self, mock_webhook_execute):
             # given
             mock_webhook_execute.return_value.status_ok = True
-            my_contract = Contract.objects.create(
+            my_contract = ContractFactory(
                 handler=self.handler,
                 contract_id=9999,
                 collateral=0,
@@ -390,7 +413,7 @@ if DiscordUser:
         def test_can_send_failed(self, mock_webhook_execute):
             # given
             mock_webhook_execute.return_value.status_ok = True
-            my_contract = Contract.objects.create(
+            my_contract = ContractFactory(
                 handler=self.handler,
                 contract_id=9999,
                 collateral=0,
@@ -510,7 +533,7 @@ class TestContractCustomerNotification(NoSocketsTestCase):
         cls.corporation = EveCorporationInfo.objects.get(
             corporation_id=cls.character.corporation_id
         )
-        cls.organization = EveEntity.objects.create(
+        cls.organization = EveEntityAllianceFactory(
             id=cls.character.alliance_id,
             category=EveEntity.CATEGORY_ALLIANCE,
             name=cls.character.alliance_name,
@@ -522,32 +545,32 @@ class TestContractCustomerNotification(NoSocketsTestCase):
             character=cls.character, owner_hash="x1", user=cls.user
         )
         # Locations
-        cls.location_1 = Location.objects.create(
+        cls.location_1 = LocationFactory(
             id=60003760,
             name="Jita IV - Moon 4 - Caldari Navy Assembly Plant",
             solar_system_id=30000142,
             type_id=52678,
             category_id=3,
         )
-        cls.location_2 = Location.objects.create(
+        cls.location_2 = LocationFactory(
             id=1022167642188,
             name="Amamake - 3 Time Nearly AT Winners",
             solar_system_id=30002537,
             type_id=35834,
             category_id=65,
         )
-        cls.handler = ContractHandler.objects.create(
+        cls.handler = ContractHandlerFactory(
             organization=cls.organization, character=cls.main_ownership
         )
 
     def setUp(self):
         # create contracts
-        self.pricing = create_pricing(
+        self.pricing = PricingFactory(
             start_location=self.location_1,
             end_location=self.location_2,
             price_base=500000000,
         )
-        self.contract = Contract.objects.create(
+        self.contract = ContractFactory(
             handler=self.handler,
             contract_id=1,
             collateral=0,

@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from app_utils.testing import NoSocketsTestCase
 
 from freight.models import ContractHandler, Location, Pricing
-from freight.tests.testdata.factories import create_pricing
+from freight.tests.testdata.factories_2 import PricingFactory
 from freight.tests.testdata.helpers import (
     create_contract_handler_w_contracts,
     create_locations,
@@ -113,32 +113,32 @@ class TestPricing(NoSocketsTestCase):
 
     def test_create_pricings(self):
         # first pricing
-        create_pricing(
+        PricingFactory(
             start_location=self.jita,
             end_location=self.amamake,
             price_base=500000000,
         )
         # pricing with different route
-        create_pricing(
+        PricingFactory(
             start_location=self.amarr,
             end_location=self.amamake,
             price_base=250000000,
         )
         # pricing with reverse route then pricing 1
-        create_pricing(
+        PricingFactory(
             start_location=self.amamake,
             end_location=self.jita,
             price_base=350000000,
         )
 
     def test_create_pricing_no_2nd_bidirectional_allowed(self):
-        create_pricing(
+        PricingFactory(
             start_location=self.jita,
             end_location=self.amamake,
             price_base=500000000,
             is_bidirectional=True,
         )
-        p = create_pricing(
+        p = PricingFactory(
             start_location=self.amamake,
             end_location=self.jita,
             price_base=500000000,
@@ -148,13 +148,13 @@ class TestPricing(NoSocketsTestCase):
             p.clean()
 
     def test_create_pricing_no_2nd_unidirectional_allowed(self):
-        create_pricing(
+        PricingFactory(
             start_location=self.jita,
             end_location=self.amamake,
             price_base=500000000,
             is_bidirectional=True,
         )
-        p = create_pricing(
+        p = PricingFactory(
             start_location=self.amamake,
             end_location=self.jita,
             price_base=500000000,
@@ -169,13 +169,13 @@ class TestPricing(NoSocketsTestCase):
         """
 
     def test_create_pricing_2nd_must_be_unidirectional_a(self):
-        create_pricing(
+        PricingFactory(
             start_location=self.jita,
             end_location=self.amamake,
             price_base=500000000,
             is_bidirectional=False,
         )
-        p = create_pricing(
+        p = PricingFactory(
             start_location=self.amamake,
             end_location=self.jita,
             price_base=500000000,
@@ -185,13 +185,13 @@ class TestPricing(NoSocketsTestCase):
             p.clean()
 
     def test_create_pricing_2nd_ok_when_unidirectional(self):
-        create_pricing(
+        PricingFactory(
             start_location=self.jita,
             end_location=self.amamake,
             price_base=500000000,
             is_bidirectional=False,
         )
-        p = create_pricing(
+        p = PricingFactory(
             start_location=self.amamake,
             end_location=self.jita,
             price_base=500000000,

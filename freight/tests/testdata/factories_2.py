@@ -13,6 +13,7 @@ from app_utils.testdata_factories import (
 )
 
 from freight.models import Contract, ContractHandler, EveEntity, Location, Pricing
+from freight.models.routes import post_save
 
 T = TypeVar("T")
 
@@ -22,15 +23,26 @@ class BaseMetaFactory(Generic[T], factory.base.FactoryMetaClass):
         return super().__call__(*args, **kwargs)
 
 
+class EveEntityAllianceFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[EveEntity]
+):
+    class Meta:
+        model = EveEntity
+
+    id = factory.Sequence(lambda n: 99_900_001 + n)
+    name = factory.LazyAttribute(lambda o: f"alliance_{o.id}")
+    category = EveEntity.CATEGORY_ALLIANCE
+
+
 class EveEntityCharacterFactory(
     factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[EveEntity]
 ):
     class Meta:
         model = EveEntity
 
-    id = factory.Sequence(lambda n: 99100 + n)
+    id = factory.Sequence(lambda n: 90_900_001 + n)
     category = EveEntity.CATEGORY_CHARACTER
-    name = factory.faker.Faker("name")
+    name = factory.LazyAttribute(lambda o: f"character_{o.id}")
 
 
 class EveEntityCorporationFactory(
@@ -39,20 +51,9 @@ class EveEntityCorporationFactory(
     class Meta:
         model = EveEntity
 
-    id = factory.Sequence(lambda n: 99200 + n)
+    id = factory.Sequence(lambda n: 98_900_001 + n)
+    name = factory.LazyAttribute(lambda o: f"corporation_{o.id}")
     category = EveEntity.CATEGORY_CORPORATION
-    name = factory.faker.Faker("city")
-
-
-class EveEntityAllianceFactory(
-    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[EveEntity]
-):
-    class Meta:
-        model = EveEntity
-
-    id = factory.Sequence(lambda n: 99300 + n)
-    category = EveEntity.CATEGORY_ALLIANCE
-    name = factory.faker.Faker("country")
 
 
 class LocationFactory(
@@ -61,7 +62,7 @@ class LocationFactory(
     class Meta:
         model = Location
 
-    id = factory.Sequence(lambda n: 99900 + n)
+    id = factory.Sequence(lambda n: 60_900_000 + n)
     category_id = Location.Category.STATION_ID
     name = factory.faker.Faker("city")
 
@@ -109,12 +110,13 @@ class ContractFactory(
     class Meta:
         model = Contract
 
-    acceptor = factory.SubFactory(EveCharacterFactory)
     contract_id = factory.Sequence(lambda n: 10_000_000 + n)
     collateral = factory.fuzzy.FuzzyFloat(100_000_000, 1_000_000_000)
     days_to_complete = 3
     date_completed = None
-    date_issued = factory.fuzzy.FuzzyDateTime(timezone.now() - dt.timedelta(days=7))
+    date_issued = factory.fuzzy.FuzzyDateTime(
+        timezone.now() - dt.timedelta(days=7), timezone.now() - dt.timedelta(hours=12)
+    )
     date_expired = factory.LazyAttribute(
         lambda o: o.date_issued + dt.timedelta(days=o.days_to_complete)
     )
@@ -123,27 +125,46 @@ class ContractFactory(
     handler = factory.SubFactory(ContractHandlerFactory)
     issuer = factory.SubFactory(EveCharacterFactory)
     reward = factory.fuzzy.FuzzyFloat(50_000_000, 100_000_000)
-    status = Contract.Status.IN_PROGRESS
+    status = Contract.Status.OUTSTANDING
     start_location = factory.SubFactory(LocationFactory)
     title = factory.faker.Faker("sentence")
     volume = factory.fuzzy.FuzzyInteger(1_000, 100_000_000)
 
     @factory.lazy_attribute
-    def date_accepted(self):
-        return factory.fuzzy.FuzzyDateTime(
-            start_dt=self.date_issued,
-            end_dt=min(self.date_issued + dt.timedelta(days=2), timezone.now()),
-        ).fuzz()
-
-    @factory.lazy_attribute
-    def acceptor_corporation(self):
-        return EveCorporationInfoFactory(corporation_id=self.acceptor.corporation_id)
-
-    @factory.lazy_attribute
     def issuer_corporation(self):
         return EveCorporationInfoFactory(corporation_id=self.issuer.corporation_id)
 
+    class Params:
+        accepted = factory.Trait(
+            status=Contract.Status.IN_PROGRESS,
+            date_accepted=factory.LazyAttribute(
+                lambda o: o.date_issued + dt.timedelta(hours=3)
+            ),
+            acceptor=factory.SubFactory(EveCharacterFactory),
+            acceptor_corporation=factory.LazyAttribute(
+                lambda o: EveCorporationInfoFactory(
+                    corporation_id=o.acceptor.corporation_id
+                )
+            ),
+        )
+        completed = factory.Trait(
+            status=Contract.Status.FINISHED,
+            date_accepted=factory.LazyAttribute(
+                lambda o: o.date_issued + dt.timedelta(hours=3)
+            ),
+            date_completed=factory.LazyAttribute(
+                lambda o: o.date_issued + dt.timedelta(hours=6)
+            ),
+            acceptor=factory.SubFactory(EveCharacterFactory),
+            acceptor_corporation=factory.LazyAttribute(
+                lambda o: EveCorporationInfoFactory(
+                    corporation_id=o.acceptor.corporation_id
+                )
+            ),
+        )
 
+
+@factory.django.mute_signals(post_save)
 class PricingFactory(
     factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[Pricing]
 ):
@@ -155,7 +176,9 @@ class PricingFactory(
 
     @factory.post_generation
     def update_contracts(self: Pricing, create, extracted, **kwargs):
-        if not create or extracted is not True:
+        if not create or extracted is False:
             return
 
-        self._update_contracts()
+        from freight.tasks import update_contracts_pricing
+
+        update_contracts_pricing()

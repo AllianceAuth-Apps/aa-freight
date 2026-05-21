@@ -12,8 +12,11 @@ from allianceauth.authentication.models import CharacterOwnership
 from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from allianceauth.tests.auth_utils import AuthUtils
 from app_utils.django import app_labels
+from app_utils.testdata_factories import EveCharacterFactory
 
-from freight.models import Contract, ContractHandler, EveEntity, Location
+from freight.models import Contract, EveEntity
+
+from .factories_2 import ContractHandlerFactory, LocationFactory
 
 if "discord" in app_labels():
     from allianceauth.services.modules.discord.models import DiscordUser
@@ -67,21 +70,21 @@ structures_data = _load_structures_data()
 
 
 def create_locations():
-    jita = Location.objects.create(
+    jita = LocationFactory(
         id=60003760,
         name="Jita IV - Moon 4 - Caldari Navy Assembly Plant",
         solar_system_id=30000142,
         type_id=52678,
         category_id=3,
     )
-    amamake = Location.objects.create(
+    amamake = LocationFactory(
         id=1022167642188,
         name="Amamake - 3 Time Nearly AT Winners",
         solar_system_id=30002537,
         type_id=35834,
         category_id=65,
     )
-    amarr = Location.objects.create(
+    amarr = LocationFactory(
         id=60008494,
         name="Amarr VIII (Oris) - Emperor Family Academy",
         solar_system_id=30002187,
@@ -93,7 +96,7 @@ def create_locations():
 
 def load_eve_characters():
     for character in characters_data:
-        EveCharacter.objects.create(**character)
+        EveCharacterFactory(**character)
 
 
 def create_user_from_character(character: EveCharacter) -> User:
@@ -105,7 +108,7 @@ def create_user_from_character(character: EveCharacter) -> User:
 
 def create_entities_from_characters():
     for character in characters_data:
-        EveCharacter.objects.create(**character)
+        EveCharacterFactory(**character)
         EveCorporationInfo.objects.get_or_create(
             corporation_id=character["corporation_id"],
             defaults={
@@ -155,7 +158,7 @@ def create_contract_handler_w_contracts(selected_contract_ids: list = None) -> t
     my_user.profile.main_character = my_character
     my_user.profile.save()
     my_user = User.objects.get(username=my_character.character_name)
-    my_handler = ContractHandler.objects.create(
+    my_handler = ContractHandlerFactory(
         organization=my_organization, character=my_main_ownership
     )
 

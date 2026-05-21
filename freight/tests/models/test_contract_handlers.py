@@ -9,6 +9,7 @@ from esi.models import Token
 from allianceauth.authentication.models import CharacterOwnership
 from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from allianceauth.tests.auth_utils import AuthUtils
+from app_utils.testdata_factories import EveCharacterFactory
 from app_utils.testing import BravadoOperationStub, NoSocketsTestCase
 
 from freight.app_settings import (
@@ -18,7 +19,13 @@ from freight.app_settings import (
     FREIGHT_OPERATION_MODE_MY_CORPORATION,
     FREIGHT_OPERATION_MODES,
 )
-from freight.models import Contract, ContractHandler, EveEntity, Freight
+from freight.models import Contract, EveEntity, Freight
+from freight.tests.testdata.factories_2 import (
+    ContractHandlerFactory,
+    EveEntityAllianceFactory,
+    EveEntityCharacterFactory,
+    EveEntityCorporationFactory,
+)
 from freight.tests.testdata.helpers import (
     characters_data,
     contracts_data,
@@ -33,7 +40,7 @@ PATCH_FREIGHT_OPERATION_MODE = MODULE_PATH + ".FREIGHT_OPERATION_MODE"
 class TestContractHandler(NoSocketsTestCase):
     def setUp(self):
         for character in characters_data:
-            EveCharacter.objects.create(**character)
+            EveCharacterFactory(**character)
             EveCorporationInfo.objects.get_or_create(
                 corporation_id=character["corporation_id"],
                 defaults={
@@ -48,9 +55,8 @@ class TestContractHandler(NoSocketsTestCase):
         self.corporation = EveCorporationInfo.objects.get(
             corporation_id=self.character.corporation_id
         )
-        self.organization = EveEntity.objects.create(
+        self.organization = EveEntityAllianceFactory(
             id=self.character.alliance_id,
-            category=EveEntity.CATEGORY_ALLIANCE,
             name=self.character.alliance_name,
         )
         self.user = User.objects.create_user(
@@ -59,7 +65,7 @@ class TestContractHandler(NoSocketsTestCase):
         self.main_ownership = CharacterOwnership.objects.create(
             character=self.character, owner_hash="x1", user=self.user
         )
-        self.handler = ContractHandler.objects.create(
+        self.handler = ContractHandlerFactory(
             organization=self.organization, character=self.main_ownership
         )
 
@@ -131,7 +137,7 @@ class TestContractsSync(NoSocketsTestCase):
     @patch(PATCH_FREIGHT_OPERATION_MODE, FREIGHT_OPERATION_MODE_MY_CORPORATION)
     def test_abort_on_wrong_operation_mode(self):
         # given
-        handler = ContractHandler.objects.create(
+        handler = ContractHandlerFactory(
             organization=self.alliance,
             operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
             character=self.main_ownership,
@@ -143,7 +149,7 @@ class TestContractsSync(NoSocketsTestCase):
     @patch(PATCH_FREIGHT_OPERATION_MODE, FREIGHT_OPERATION_MODE_MY_ALLIANCE)
     def test_abort_when_no_sync_char(self):
         # given
-        handler = ContractHandler.objects.create(
+        handler = ContractHandlerFactory(
             organization=self.alliance,
             operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
         )
@@ -160,7 +166,7 @@ class TestContractsSync(NoSocketsTestCase):
         self.user = AuthUtils.add_permission_to_user_by_name(
             "freight.setup_contract_handler", self.user
         )
-        handler = ContractHandler.objects.create(
+        handler = ContractHandlerFactory(
             organization=self.alliance,
             character=self.main_ownership,
             operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
@@ -176,7 +182,7 @@ class TestContractsSync(NoSocketsTestCase):
         self.user = AuthUtils.add_permission_to_user_by_name(
             "freight.setup_contract_handler", self.user
         )
-        handler = ContractHandler.objects.create(
+        handler = ContractHandlerFactory(
             organization=self.alliance,
             character=self.main_ownership,
             operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
@@ -195,7 +201,7 @@ class TestContractsSync(NoSocketsTestCase):
         self.user = AuthUtils.add_permission_to_user_by_name(
             "freight.setup_contract_handler", self.user
         )
-        handler = ContractHandler.objects.create(
+        handler = ContractHandlerFactory(
             organization=self.alliance,
             character=self.main_ownership,
             operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
@@ -230,7 +236,7 @@ class TestContractsSync(NoSocketsTestCase):
         self.user = AuthUtils.add_permission_to_user_by_name(
             "freight.setup_contract_handler", self.user
         )
-        handler = ContractHandler.objects.create(
+        handler = ContractHandlerFactory(
             organization=self.alliance,
             character=self.main_ownership,
             operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
@@ -253,7 +259,7 @@ class TestContractsSync(NoSocketsTestCase):
         self.user = AuthUtils.add_permission_to_user_by_name(
             "freight.setup_contract_handler", self.user
         )
-        handler = ContractHandler.objects.create(
+        handler = ContractHandlerFactory(
             organization=self.alliance,
             character=self.main_ownership,
             operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
@@ -295,7 +301,7 @@ class TestContractsSync(NoSocketsTestCase):
         self.user = AuthUtils.add_permission_to_user_by_name(
             "freight.setup_contract_handler", self.user
         )
-        handler = ContractHandler.objects.create(
+        handler = ContractHandlerFactory(
             organization=self.corporation,
             character=self.main_ownership,
             operation_mode=FREIGHT_OPERATION_MODE_MY_CORPORATION,
@@ -337,7 +343,7 @@ class TestContractsSync(NoSocketsTestCase):
         self.user = AuthUtils.add_permission_to_user_by_name(
             "freight.setup_contract_handler", self.user
         )
-        handler = ContractHandler.objects.create(
+        handler = ContractHandlerFactory(
             organization=self.corporation,
             character=self.main_ownership,
             operation_mode=FREIGHT_OPERATION_MODE_CORP_IN_ALLIANCE,
@@ -373,7 +379,7 @@ class TestContractsSync(NoSocketsTestCase):
         self.user = AuthUtils.add_permission_to_user_by_name(
             "freight.setup_contract_handler", self.user
         )
-        handler = ContractHandler.objects.create(
+        handler = ContractHandlerFactory(
             organization=self.corporation,
             character=self.main_ownership,
             operation_mode=FREIGHT_OPERATION_MODE_CORP_PUBLIC,
@@ -413,7 +419,7 @@ class TestContractsSync(NoSocketsTestCase):
         self.user = AuthUtils.add_permission_to_user_by_name(
             "freight.setup_contract_handler", self.user
         )
-        handler = ContractHandler.objects.create(
+        handler = ContractHandlerFactory(
             organization=self.alliance,
             character=self.main_ownership,
             operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
@@ -424,7 +430,7 @@ class TestContractsSync(NoSocketsTestCase):
 
     @patch(PATCH_FREIGHT_OPERATION_MODE, FREIGHT_OPERATION_MODE_MY_ALLIANCE)
     def test_operation_mode_friendly(self):
-        handler = ContractHandler.objects.create(
+        handler = ContractHandlerFactory(
             organization=self.alliance,
             operation_mode=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
             character=self.main_ownership,
@@ -442,23 +448,40 @@ class TestContractsSync(NoSocketsTestCase):
 
 
 class TestEveEntity(NoSocketsTestCase):
+    def test_str(self):
+        obj = EveEntityCharacterFactory(name="Bruce Wayne")
+        self.assertEqual(str(obj), "Bruce Wayne")
+
+    def test_icon_url(self):
+        cases = [
+            (
+                "alliance",
+                EveEntityAllianceFactory(id=93000001),
+                "https://images.evetech.net/alliances/93000001/logo?size=128",
+            ),
+            (
+                "character",
+                EveEntityCharacterFactory(id=90000001),
+                "https://images.evetech.net/characters/90000001/portrait?size=128",
+            ),
+            (
+                "corporation",
+                EveEntityCorporationFactory(id=92000001),
+                "https://images.evetech.net/corporations/92000001/logo?size=128",
+            ),
+        ]
+        for tc in cases:
+            with self.subTest(name=tc[0]):
+                self.assertEqual(tc[1].icon_url(), tc[2])
+
+
+class TestEveEntity_IdentifyCategory(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        create_entities_from_characters()
-        cls.alliance = EveEntity.objects.get(id=93000001)
-        cls.corporation = EveEntity.objects.get(id=92000001)
-        cls.character = EveEntity.objects.get(id=90000001)
-
-    def test_str(self):
-        self.assertEqual(str(self.character), "Bruce Wayne")
-
-    def test_repr(self):
-        expected = (
-            f"EveEntity(id={self.character.id}, category='character', "
-            "name='Bruce Wayne')"
-        )
-        self.assertEqual(repr(self.character), expected)
+        cls.character = EveEntityCharacterFactory()
+        cls.corporation = EveEntityCorporationFactory()
+        cls.alliance = EveEntityAllianceFactory()
 
     def test_is_alliance(self):
         self.assertFalse(self.character.is_alliance)
@@ -474,18 +497,6 @@ class TestEveEntity(NoSocketsTestCase):
         self.assertTrue(self.character.is_character)
         self.assertFalse(self.corporation.is_character)
         self.assertFalse(self.alliance.is_character)
-
-    def test_avatar_url_alliance(self):
-        expected = "https://images.evetech.net/alliances/93000001/logo?size=128"
-        self.assertEqual(self.alliance.icon_url(), expected)
-
-    def test_avatar_url_corporation(self):
-        expected = "https://images.evetech.net/corporations/92000001/logo?size=128"
-        self.assertEqual(self.corporation.icon_url(), expected)
-
-    def test_avatar_url_character(self):
-        expected = "https://images.evetech.net/characters/90000001/portrait?size=128"
-        self.assertEqual(self.character.icon_url(), expected)
 
 
 class TestFreight(NoSocketsTestCase):

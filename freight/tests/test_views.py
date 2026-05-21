@@ -16,9 +16,9 @@ from freight.app_settings import (
     FREIGHT_OPERATION_MODE_MY_CORPORATION,
 )
 from freight.models import Contract, ContractHandler, Location
-from freight.tests.testdata.factories import create_pricing
 from freight.tests.testdata.factories_2 import (
     ContractFactory,
+    PricingFactory,
     UserMainDefaultFactory,
     UserMainManagerFactory,
 )
@@ -41,7 +41,7 @@ class TestCalculator(TestCase):
         )
         jita = Location.objects.get(id=60003760)
         amamake = Location.objects.get(id=1022167642188)
-        cls.pricing = create_pricing(
+        cls.pricing = PricingFactory(
             start_location=jita, end_location=amamake, price_base=500000000
         )
         Contract.objects.update_pricing()
@@ -101,7 +101,7 @@ class TestContractList(TestCase):
         )
         jita = Location.objects.get(id=60003760)
         amamake = Location.objects.get(id=1022167642188)
-        cls.pricing = create_pricing(
+        cls.pricing = PricingFactory(
             start_location=jita, end_location=amamake, price_base=500000000
         )
         Contract.objects.update_pricing()
@@ -298,7 +298,7 @@ class TestSetupContractHandler(TestCase):
         )
         jita = Location.objects.get(id=60003760)
         amamake = Location.objects.get(id=1022167642188)
-        cls.pricing = create_pricing(
+        cls.pricing = PricingFactory(
             start_location=jita, end_location=amamake, price_base=500000000
         )
         Contract.objects.update_pricing()
@@ -409,7 +409,7 @@ class TestStatistics(TestCase):
         )
         jita = Location.objects.get(id=60003760)
         amamake = Location.objects.get(id=1022167642188)
-        cls.pricing = create_pricing(
+        cls.pricing = PricingFactory(
             start_location=jita, end_location=amamake, price_base=500000000
         )
         Contract.objects.update_pricing()
