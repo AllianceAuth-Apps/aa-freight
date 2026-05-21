@@ -9,12 +9,12 @@ from app_utils.testing import create_user_from_evecharacter
 
 from freight.admin import ContractAdmin
 from freight.models import Contract
-
-from ..tests.testdata.factories import (
+from freight.tests.testdata.factories import (
     create_contract,
     create_contract_handler,
     create_pricing,
 )
+
 from .testdata.helpers import create_entities_from_characters, create_locations
 
 MODULE_PATH = "freight.admin"

@@ -17,3 +17,5 @@ contracts_raw.json
 todos.md
 .mypy_cache
 alliance_auth.sqlite3
+.env
+.temp/

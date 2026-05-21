@@ -5,9 +5,11 @@ from django.core.exceptions import ValidationError
 from app_utils.testing import NoSocketsTestCase
 
 from freight.models import ContractHandler, Location, Pricing
-
-from ..testdata.factories import create_pricing
-from ..testdata.helpers import create_contract_handler_w_contracts, create_locations
+from freight.tests.testdata.factories import create_pricing
+from freight.tests.testdata.helpers import (
+    create_contract_handler_w_contracts,
+    create_locations,
+)
 
 MODULE_PATH = "freight.models.routes"
 

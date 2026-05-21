@@ -19,8 +19,7 @@ from freight.app_settings import (
     FREIGHT_OPERATION_MODES,
 )
 from freight.models import Contract, ContractHandler, EveEntity, Freight
-
-from ..testdata.helpers import (
+from freight.tests.testdata.helpers import (
     characters_data,
     contracts_data,
     create_entities_from_characters,

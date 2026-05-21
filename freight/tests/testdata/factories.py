@@ -4,7 +4,7 @@ from django.utils.timezone import now
 
 from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 
-from ...models import Contract, ContractHandler, Pricing
+from freight.models import Contract, ContractHandler, Pricing
 
 
 def create_contract_handler(**kwargs):

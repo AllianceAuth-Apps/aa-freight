@@ -18,9 +18,11 @@ from freight.models import (
     EveEntity,
     Location,
 )
-
-from ..testdata.factories import create_pricing
-from ..testdata.helpers import characters_data, create_contract_handler_w_contracts
+from freight.tests.testdata.factories import create_pricing
+from freight.tests.testdata.helpers import (
+    characters_data,
+    create_contract_handler_w_contracts,
+)
 
 if "discord" in app_labels():
     from allianceauth.services.modules.discord.models import DiscordUser
