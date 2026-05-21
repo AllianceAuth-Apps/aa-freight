@@ -12,7 +12,7 @@ from app_utils.testdata_factories import (
     UserMainFactory,
 )
 
-from freight.models import Contract, ContractHandler, EveEntity, Location
+from freight.models import Contract, ContractHandler, EveEntity, Location, Pricing
 
 T = TypeVar("T")
 
@@ -142,3 +142,20 @@ class ContractFactory(
     @factory.lazy_attribute
     def issuer_corporation(self):
         return EveCorporationInfoFactory(corporation_id=self.issuer.corporation_id)
+
+
+class PricingFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[Pricing]
+):
+    class Meta:
+        model = Pricing
+
+    start_location = factory.SubFactory(LocationFactory)
+    end_location = factory.SubFactory(LocationFactory)
+
+    @factory.post_generation
+    def update_contracts(self: Pricing, create, extracted, **kwargs):
+        if not create or extracted is not True:
+            return
+
+        self._update_contracts()

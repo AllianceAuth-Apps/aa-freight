@@ -19,9 +19,8 @@ from app_utils.testing import (
 )
 
 from freight.models import Contract, EveEntity, Location, Pricing
-
-from .testdata.factories import create_pricing
-from .testdata.helpers import (
+from freight.tests.testdata.factories import create_pricing
+from freight.tests.testdata.helpers import (
     characters_data,
     create_contract_handler_w_contracts,
     create_locations,

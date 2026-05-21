@@ -8,9 +8,8 @@ from allianceauth.tests.auth_utils import AuthUtils
 from app_utils.testing import NoSocketsTestCase
 
 from freight.models import Contract, Location, Pricing
-
-from .testdata.factories import create_pricing
-from .testdata.helpers import create_contract_handler_w_contracts
+from freight.tests.testdata.factories import create_pricing
+from freight.tests.testdata.helpers import create_contract_handler_w_contracts
 
 _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
 

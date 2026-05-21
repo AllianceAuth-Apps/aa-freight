@@ -9,13 +9,12 @@ from app_utils.testing import create_user_from_evecharacter
 
 from freight.admin import ContractAdmin
 from freight.models import Contract
-from freight.tests.testdata.factories import (
-    create_contract,
-    create_contract_handler,
-    create_pricing,
+from freight.tests.testdata.factories import create_pricing
+from freight.tests.testdata.factories_2 import ContractFactory, ContractHandlerFactory
+from freight.tests.testdata.helpers import (
+    create_entities_from_characters,
+    create_locations,
 )
-
-from .testdata.helpers import create_entities_from_characters, create_locations
 
 MODULE_PATH = "freight.admin"
 
@@ -34,8 +33,8 @@ class TestContractAdmin(TestCase):
         cls.modeladmin = ContractAdmin(model=Contract, admin_site=AdminSite())
         cls.user = User.objects.create_superuser("Clark Kent")
         _, character_ownership = create_user_from_evecharacter(90000001)
-        cls.handler = create_contract_handler(character=character_ownership)
-        cls.contract = create_contract(handler=cls.handler)
+        cls.handler = ContractHandlerFactory(character=character_ownership)
+        cls.contract = ContractFactory(handler=cls.handler)
 
     @patch(MODULE_PATH + ".ContractAdmin.message_user", spec=True)
     @patch(MODULE_PATH + ".Contract.send_pilot_notification")

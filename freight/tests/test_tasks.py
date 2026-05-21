@@ -12,8 +12,7 @@ from freight.tasks import (
     update_location,
     update_locations,
 )
-
-from .testdata.helpers import create_contract_handler_w_contracts
+from freight.tests.testdata.helpers import create_contract_handler_w_contracts
 
 MODULE_PATH = "freight.tasks"
 

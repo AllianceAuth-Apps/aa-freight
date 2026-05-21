@@ -16,14 +16,13 @@ from freight.app_settings import (
     FREIGHT_OPERATION_MODE_MY_CORPORATION,
 )
 from freight.models import Contract, ContractHandler, Location
-
-from .testdata.factories import create_pricing
-from .testdata.factories_2 import (
+from freight.tests.testdata.factories import create_pricing
+from freight.tests.testdata.factories_2 import (
     ContractFactory,
     UserMainDefaultFactory,
     UserMainManagerFactory,
 )
-from .testdata.helpers import create_contract_handler_w_contracts
+from freight.tests.testdata.helpers import create_contract_handler_w_contracts
 
 MODULE_PATH = "freight.views"
 

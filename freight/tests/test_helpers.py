@@ -3,8 +3,7 @@ from app_utils.testing import NoSocketsTestCase
 
 from freight.helpers import update_or_create_eve_entity_from_evecharacter
 from freight.models import EveEntity
-
-from .testdata.helpers import load_eve_characters
+from freight.tests.testdata.helpers import load_eve_characters
 
 
 class TestCreateEveEntityFromEveCharacter(NoSocketsTestCase):
