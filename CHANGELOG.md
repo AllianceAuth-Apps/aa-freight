@@ -11,7 +11,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
-- BREAKING CHANGE: Now requires Python 3.10+
+- BREAKING CHANGE: Now requires Python 3.10
+
+### Fixed
+
+- Trying to resolve a invalid eve entity ID raises exception instead of creating an empty object
 
 ## [2.0.0] - 2025-08-29
 

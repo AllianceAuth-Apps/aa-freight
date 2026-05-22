@@ -1,305 +1,421 @@
-from datetime import datetime, timedelta
+import datetime as dt
+from http import HTTPStatus
 from unittest.mock import Mock, patch
 
-from bravado.exception import HTTPForbidden, HTTPNotFound
+import pook
+from bravado.exception import HTTPError, HTTPForbidden
 
-from django.utils.timezone import now, utc
+from django.utils.timezone import now
 
 from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from allianceauth.eveonline.providers import ObjectNotFound
-from allianceauth.tests.auth_utils import AuthUtils
 from app_utils.django import app_labels
-from app_utils.testdata_factories import EveCharacterFactory
-from app_utils.testing import (
-    BravadoOperationStub,
-    BravadoResponseStub,
-    NoSocketsTestCase,
-    add_character_to_user_2,
-    add_new_token,
-    generate_invalid_pk,
-)
+from app_utils.testing import NoSocketsTestCase, generate_invalid_pk
 
 from freight.models import Contract, EveEntity, Location, Pricing
-from freight.tests.testdata.factories_2 import PricingFactory
+from freight.tests.helpers import TestCaseWithClearCache
+from freight.tests.testdata.factories_2 import (
+    EveEntityCharacterFactory,
+    LocationStationFactory,
+    LocationStructureFactory,
+    PositionFactory,
+    PricingFactory,
+    TokenFactory2,
+    make_esi_url,
+)
 from freight.tests.testdata.helpers import (
-    characters_data,
     create_contract_handler_w_contracts,
     create_locations,
-    structures_data,
 )
 
 MANAGERS_PATH = "freight.managers"
 MODELS_PATH = "freight.models"
 
 
-class TestEveEntityManager(NoSocketsTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        esi_data = {}
-        for character in characters_data:
-            esi_data[character["character_id"]] = {
-                "id": character["character_id"],
-                "category": EveEntity.CATEGORY_CHARACTER,
-                "name": character["character_name"],
-            }
-            esi_data[character["corporation_id"]] = {
-                "id": character["corporation_id"],
-                "category": EveEntity.CATEGORY_CORPORATION,
-                "name": character["corporation_name"],
-            }
-            esi_data[character["alliance_id"]] = {
-                "id": character["alliance_id"],
-                "category": EveEntity.CATEGORY_ALLIANCE,
-                "name": character["alliance_name"],
-            }
-            EveCharacterFactory(**character)
-
-        cls.esi_data = esi_data
-        cls.character = EveCharacter.objects.get(character_id=90000001)
-
-    @classmethod
-    def esi_post_universe_names(cls, *args, **kwargs) -> list:
-        data = []
-        if "ids" not in kwargs:
-            raise ValueError("missing parameter: ids")
-        for id in kwargs["ids"]:
-            if id in cls.esi_data:
-                data.append(cls.esi_data[id])
-
-        return BravadoOperationStub(data)
-
-    @patch(MANAGERS_PATH + ".esi")
-    def test_can_create_entity(self, mock_esi):
-        mock_esi.client.Universe.post_universe_names.side_effect = (
-            TestEveEntityManager.esi_post_universe_names
+class TestEveEntityManager(TestCaseWithClearCache):
+    @pook.on
+    def test_can_create_new_from_esi_when_not_exists(self):
+        # given
+        entity_id = 1001
+        name = "Alpha"
+        category = EveEntity.CATEGORY_CHARACTER
+        pook.post(
+            make_esi_url("universe/names"),
+            reply=200,
+            response_json=[
+                {"category": "character", "id": entity_id, "name": name},
+            ],
         )
 
-        obj, created = EveEntity.objects.update_or_create_esi(id=90000001)
+        # when
+        obj: EveEntity
+        obj, created = EveEntity.objects.get_or_create_esi(id=entity_id)
+
+        # then
         self.assertTrue(created)
-        self.assertEqual(obj.id, 90000001)
-        self.assertEqual(obj.name, "Bruce Wayne")
-        self.assertEqual(obj.category, EveEntity.CATEGORY_CHARACTER)
+        self.assertEqual(obj.id, entity_id)
+        self.assertEqual(obj.name, name)
+        self.assertEqual(obj.category, category)
 
-    @patch(MANAGERS_PATH + ".esi")
-    def test_can_create_entity_when_not_found(self, mock_esi):
-        mock_esi.client.Universe.post_universe_names.side_effect = (
-            TestEveEntityManager.esi_post_universe_names
-        )
+    @pook.on
+    def test_should_return_existing_object_when_exists(self):
+        # given
+        obj = EveEntityCharacterFactory()
 
-        obj, created = EveEntity.objects.get_or_create_esi(id=90000001)
-        self.assertTrue(created)
-        self.assertEqual(obj.id, 90000001)
-        self.assertEqual(obj.name, "Bruce Wayne")
-        self.assertEqual(obj.category, EveEntity.CATEGORY_CHARACTER)
+        # when
+        obj_2: EveEntity
+        obj_2, created = EveEntity.objects.get_or_create_esi(id=obj.id)
 
-    @patch(MANAGERS_PATH + ".esi")
-    def test_can_update_entity(self, mock_esi):
-        mock_esi.client.Universe.post_universe_names.side_effect = (
-            TestEveEntityManager.esi_post_universe_names
-        )
-        obj, _ = EveEntity.objects.update_or_create_esi(id=90000001)
-        obj.name = "Blue Company"
-        obj.category = EveEntity.CATEGORY_CORPORATION
-
-        obj, created = EveEntity.objects.update_or_create_esi(id=90000001)
+        # then
         self.assertFalse(created)
-        self.assertEqual(obj.id, 90000001)
-        self.assertEqual(obj.name, "Bruce Wayne")
-        self.assertEqual(obj.category, EveEntity.CATEGORY_CHARACTER)
+        self.assertEqual(obj, obj_2)
 
-    @patch(MANAGERS_PATH + ".esi")
-    def test_raise_exception_if_entity_can_not_be_created(self, mock_esi):
-        mock_esi.client.Universe.post_universe_names.side_effect = (
-            TestEveEntityManager.esi_post_universe_names
+    @pook.on
+    def test_can_update_existing(self):
+        # given
+        entity_id = 1001
+        EveEntityCharacterFactory(id=entity_id, name="Alpha")
+        name = "Alpha2"
+        category = EveEntity.CATEGORY_ALLIANCE
+        pook.post(
+            make_esi_url("universe/names"),
+            reply=HTTPStatus.OK,
+            response_json=[
+                {"category": "alliance", "id": entity_id, "name": name},
+            ],
         )
 
+        # when
+        obj: EveEntity
+        obj, created = EveEntity.objects.update_or_create_esi(id=entity_id)
+
+        # then
+        self.assertFalse(created)
+        self.assertEqual(obj.id, entity_id)
+        self.assertEqual(obj.name, name)
+        self.assertEqual(obj.category, category)
+
+    @pook.on
+    def test_raise_exception_if_entity_can_not_be_created(self):
+        # given
+        pook.post(
+            make_esi_url("universe/names"),
+            reply=HTTPStatus.NOT_FOUND,
+            response_json={"error": "not found"},
+        )
+
+        # when/then
         with self.assertRaises(ObjectNotFound):
             EveEntity.objects.get_or_create_esi(id=666)
 
 
-def get_universe_stations_station_id(*args, **kwargs) -> dict:
-    if "station_id" not in kwargs:
-        raise ValueError("missing parameter: station_id")
-
-    station_id = str(kwargs["station_id"])
-    if station_id not in structures_data:
-        raise HTTPNotFound
-    else:
-        return BravadoOperationStub(structures_data[station_id])
-
-
-def get_universe_structures_structure_id(*args, **kwargs) -> dict:
-    if "structure_id" not in kwargs:
-        raise ValueError("missing parameter: structure_id")
-
-    structure_id = str(kwargs["structure_id"])
-    if structure_id not in structures_data:
-        raise HTTPNotFound
-    else:
-        return BravadoOperationStub(structures_data[structure_id])
-
-
-@patch(MANAGERS_PATH + ".esi")
-class TestLocationManager(NoSocketsTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        user = AuthUtils.create_user("Bruce Wayne")
-        character = add_character_to_user_2(
-            user, 1001, "Bruce Wayne", 2001, "Wayne Tech"
-        )
-        cls.token = add_new_token(
-            user, character, scopes=["esi-universe.read_structures.v1"]
-        )
-
-    def test_should_create_structure(self, mock_esi):
+class TestLocationManager_GetOrCreate(TestCaseWithClearCache):
+    @pook.on
+    def test_should_get_existing_location(self):
         # given
-        mock_esi.client.Universe.get_universe_structures_structure_id.side_effect = (
-            get_universe_structures_structure_id
-        )
-        # when
-        obj, created = Location.objects.update_or_create_esi(self.token, 1000000000001)
-        # then
-        self.assertTrue(created)
-        self.assertEqual(obj.id, 1000000000001)
-        self.assertEqual(obj.name, "Test Structure Alpha")
-        self.assertEqual(obj.solar_system_id, 30002537)
-        self.assertEqual(obj.type_id, 35832)
+        token = TokenFactory2(scopes=["esi-universe.read_structures.v1"])
+        location = LocationStationFactory()
 
-    def test_should_update_structure(self, mock_esi):
-        # given
-        mock_esi.client.Universe.get_universe_structures_structure_id.side_effect = (
-            get_universe_structures_structure_id
-        )
-        obj, _ = Location.objects.update_or_create_esi(self.token, 1000000000001)
-        obj.name = "Not my structure"
-        obj.solar_system_id = 123
-        obj.type_id = 456
-        obj.save()
         # when
-        obj, created = Location.objects.update_or_create_esi(self.token, 1000000000001)
+        got, created = Location.objects.get_or_create_esi(token, location.id)
+
         # then
         self.assertFalse(created)
-        self.assertEqual(obj.id, 1000000000001)
-        self.assertEqual(obj.name, "Test Structure Alpha")
-        self.assertEqual(obj.solar_system_id, 30002537)
-        self.assertEqual(obj.type_id, 35832)
+        self.assertEqual(got, location)
 
-    def test_should_get_existing_location(self, mock_esi):
+    @pook.on
+    def test_should_create_new_structure(self):
         # given
-        mock_esi.client.Universe.get_universe_structures_structure_id.side_effect = (
-            get_universe_structures_structure_id
+        token = TokenFactory2(scopes=["esi-universe.read_structures.v1"])
+        name = "Alpha"
+        structure_id = 1000000000001
+        solar_system_id = 30004984  # Abune
+        type_id = 35832  # Astrahus
+        pook.get(
+            make_esi_url(f"universe/structures/{structure_id}"),
+            reply=HTTPStatus.OK,
+            response_json={
+                "owner_id": 666,
+                "name": name,
+                "position": PositionFactory(),
+                "solar_system_id": solar_system_id,
+                "type_id": type_id,
+            },
         )
-        obj_created, _ = Location.objects.update_or_create_esi(
-            self.token, 1000000000001
-        )
-        # when
-        obj, created = Location.objects.get_or_create_esi(self.token, 1000000000001)
-        # then
-        self.assertFalse(created)
-        self.assertEqual(obj, obj_created)
 
-    def test_should_create_not_existing_location(self, mock_esi):
-        # given
-        mock_esi.client.Universe.get_universe_structures_structure_id.side_effect = (
-            get_universe_structures_structure_id
-        )
         # when
-        obj, created = Location.objects.get_or_create_esi(self.token, 1000000000001)
+        obj: Location
+        obj, created = Location.objects.get_or_create_esi(token, structure_id)
+
         # then
         self.assertTrue(created)
-        self.assertEqual(obj.id, 1000000000001)
-        self.assertEqual(obj.name, "Test Structure Alpha")
-        self.assertEqual(obj.solar_system_id, 30002537)
-        self.assertEqual(obj.type_id, 35832)
+        self.assertEqual(obj.category, Location.Category.STRUCTURE)
+        self.assertEqual(obj.id, structure_id)
+        self.assertEqual(obj.name, name)
+        self.assertEqual(obj.solar_system_id, solar_system_id)
+        self.assertEqual(obj.type_id, type_id)
 
-    def test_should_propagate_http_error_on_structure_create(self, mock_esi):
+
+class TestLocationManager_Structure_UpdateOrCreate(TestCaseWithClearCache):
+    @pook.on
+    def test_should_create_structure(self):
         # given
-        mock_esi.client.Universe.get_universe_structures_structure_id.side_effect = (
-            HTTPForbidden(BravadoResponseStub(status_code=403, reason="test"))
+        token = TokenFactory2(scopes=["esi-universe.read_structures.v1"])
+        name = "Alpha"
+        location_id = 1_000_000_000_001
+        solar_system_id = 30004984  # Abune
+        type_id = 35832  # Astrahus
+        pook.get(
+            make_esi_url(f"universe/structures/{location_id}"),
+            reply=HTTPStatus.OK,
+            response_json={
+                "owner_id": 666,
+                "name": name,
+                "position": PositionFactory(),
+                "solar_system_id": solar_system_id,
+                "type_id": type_id,
+            },
         )
+
+        # when
+        location: Location
+        location, created = Location.objects.update_or_create_esi(
+            token=token, location_id=location_id
+        )
+
+        # then
+        self.assertTrue(created)
+        self.assertEqual(location.category, Location.Category.STRUCTURE)
+        self.assertEqual(location.id, location_id)
+        self.assertEqual(location.name, name)
+        self.assertEqual(location.solar_system_id, solar_system_id)
+        self.assertEqual(location.type_id, type_id)
+
+    @pook.on
+    def test_should_update_structure(self):
+        # given
+        token = TokenFactory2(scopes=["esi-universe.read_structures.v1"])
+        location_1 = LocationStructureFactory()
+        name = "Alpha"
+        solar_system_id = 30004984  # Abune
+        type_id = 35832  # Astrahus
+        pook.get(
+            make_esi_url(f"universe/structures/{location_1.id}"),
+            reply=HTTPStatus.OK,
+            response_json={
+                "owner_id": 666,
+                "name": name,
+                "position": PositionFactory(),
+                "solar_system_id": solar_system_id,
+                "type_id": type_id,
+            },
+        )
+
+        # when
+        location_2: Location
+        location_2, created = Location.objects.update_or_create_esi(
+            token=token, location_id=location_1.id
+        )
+
+        # then
+        self.assertFalse(created)
+        location_1.refresh_from_db()
+        self.assertEqual(location_1.category, Location.Category.STRUCTURE)
+        self.assertEqual(location_1.id, location_1.id)
+        self.assertEqual(location_1.name, name)
+        self.assertEqual(location_1.solar_system_id, solar_system_id)
+        self.assertEqual(location_1.type_id, type_id)
+        self.assertEqual(location_2, location_1)
+
+    @pook.on
+    def test_should_create_skeleton_structure_on_specific_http_errors(self):
+        # given
+        token = TokenFactory2(scopes=["esi-universe.read_structures.v1"])
+        location_id = 1_000_000_000_001
+        for status_code in [HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN]:
+            with self.subTest(status_code=status_code):
+                pook.get(
+                    make_esi_url(f"universe/structures/{location_id}"),
+                    reply=status_code,
+                    response_json={"error": "some error"},
+                )
+
+                # when
+                location: Location
+                location, created = Location.objects.update_or_create_esi(
+                    token=token, location_id=location_id
+                )
+
+                # then
+                self.assertTrue(created)
+                self.assertEqual(location.category, Location.Category.STRUCTURE)
+                self.assertEqual(location.id, location.id)
+                self.assertEqual(location.name, f"Unknown structure {location_id}")
+                self.assertIsNone(location.solar_system_id)
+                self.assertIsNone(location.type_id)
+
+                Location.objects.filter(id=location_id).delete()
+
+    @pook.on
+    def test_should_raise_specific_http_errors_when_requested(self):
+        # given
+        token = TokenFactory2(scopes=["esi-universe.read_structures.v1"])
+        location_id = 1_000_000_000_001
+        pook.get(
+            make_esi_url(f"universe/structures/{location_id}"),
+            reply=HTTPStatus.FORBIDDEN,
+            response_json={"error": "some error"},
+        )
+
         # when/then
         with self.assertRaises(HTTPForbidden):
-            Location.objects.update_or_create_esi(self.token, 42, add_unknown=False)
+            Location.objects.update_or_create_esi(
+                token=token, location_id=location_id, add_unknown=False
+            )
 
-    def test_should_propagates_exceptions_on_structure_create(self, mock_esi):
+    @pook.on
+    def test_should_raise_error_on_other_http_errors_for_structures(self):
         # given
-        mock_esi.client.Universe.get_universe_structures_structure_id.side_effect = (
-            RuntimeError
+        token = TokenFactory2(scopes=["esi-universe.read_structures.v1"])
+        location_id = 1_000_000_000_001
+        pook.get(
+            make_esi_url(f"universe/structures/{location_id}"),
+            reply=HTTPStatus.INTERNAL_SERVER_ERROR,
         )
+
         # when/then
-        with self.assertRaises(RuntimeError):
-            Location.objects.update_or_create_esi(self.token, 42, add_unknown=False)
+        with self.assertRaises(HTTPError):
+            Location.objects.update_or_create_esi(
+                token=token, location_id=location_id, add_unknown=False
+            )
 
-    def test_should_create_skeleton_structure_on_http_error_if_requested(
-        self, mock_esi
-    ):
+
+class TestLocationManager_Station_UpdateOrCreate(TestCaseWithClearCache):
+    @pook.on
+    def test_should_create_station(self):
         # given
-        mock_esi.client.Universe.get_universe_structures_structure_id.side_effect = (
-            HTTPForbidden(BravadoResponseStub(status_code=403, reason="test"))
+        name = "Alpha"
+        location_id = 60_000_001
+        solar_system_id = 30004984  # Abune
+        type_id = 1529  # Caldari station
+        pook.get(
+            make_esi_url(f"universe/stations/{location_id}"),
+            reply=200,
+            response_json={
+                "max_dockable_ship_volume": 50000000,
+                "name": name,
+                "office_rental_cost": 118744,
+                "owner": 1000180,
+                "position": PositionFactory(),
+                "race_id": 1,
+                "reprocessing_efficiency": 0.2,
+                "reprocessing_stations_take": 0.025,
+                "services": [
+                    "bounty-missions",
+                    "courier-missions",
+                    "reprocessing-plant",
+                    "market",
+                    "repair-facilities",
+                    "factory",
+                    "fitting",
+                    "news",
+                    "insurance",
+                    "docking",
+                    "office-rental",
+                    "loyalty-point-store",
+                    "navy-offices",
+                    "security-offices",
+                ],
+                "station_id": location_id,
+                "system_id": solar_system_id,
+                "type_id": type_id,
+            },
         )
+
         # when
-        obj, created = Location.objects.update_or_create_esi(
-            self.token, 42, add_unknown=True
+        location: Location
+        location, created = Location.objects.update_or_create_esi(
+            token=None, location_id=location_id
         )
+
         # then
         self.assertTrue(created)
-        self.assertEqual(obj.id, 42)
+        self.assertEqual(location.category, Location.Category.STATION)
+        self.assertEqual(location.id, location_id)
+        self.assertEqual(location.name, name)
+        self.assertEqual(location.solar_system_id, solar_system_id)
+        self.assertEqual(location.type_id, type_id)
 
-    def test_should_creates_skeleton_structure_on_exceptions_if_requested(
-        self, mock_esi
-    ):
+    @pook.on
+    def test_should_update_station(self):
         # given
-        mock_esi.client.Universe.get_universe_structures_structure_id.side_effect = (
-            RuntimeError
+        location_1 = LocationStationFactory()
+        name = "Alpha"
+        solar_system_id = 30004984  # Abune
+        type_id = 1529  # Caldari station
+        pook.get(
+            make_esi_url(f"universe/stations/{location_1.id}"),
+            reply=200,
+            response_json={
+                "max_dockable_ship_volume": 50000000,
+                "name": name,
+                "office_rental_cost": 118744,
+                "owner": 1000180,
+                "position": PositionFactory(),
+                "race_id": 1,
+                "reprocessing_efficiency": 0.2,
+                "reprocessing_stations_take": 0.025,
+                "services": [
+                    "bounty-missions",
+                    "courier-missions",
+                    "reprocessing-plant",
+                    "market",
+                    "repair-facilities",
+                    "factory",
+                    "fitting",
+                    "news",
+                    "insurance",
+                    "docking",
+                    "office-rental",
+                    "loyalty-point-store",
+                    "navy-offices",
+                    "security-offices",
+                ],
+                "station_id": location_1.id,
+                "system_id": solar_system_id,
+                "type_id": type_id,
+            },
         )
-        # when/then
-        with self.assertRaises(RuntimeError):
-            Location.objects.update_or_create_esi(self.token, 42, add_unknown=True)
 
-    def test_should_create_station_from_scratch(self, mock_esi):
-        # given
-        mock_esi.client.Universe.get_universe_stations_station_id.side_effect = (
-            get_universe_stations_station_id
-        )
         # when
-        obj, created = Location.objects.update_or_create_esi(self.token, 60000001)
-        # then
-        self.assertTrue(created)
-        self.assertEqual(obj.id, 60000001)
-        self.assertEqual(obj.name, "Test Station Charlie")
-        self.assertEqual(obj.solar_system_id, 30002537)
-        self.assertEqual(obj.type_id, 99)
-
-    def test_should_update_existing_station(self, mock_esi):
-        # given
-        mock_esi.client.Universe.get_universe_stations_station_id.side_effect = (
-            get_universe_stations_station_id
+        location_2: Location
+        location_2, created = Location.objects.update_or_create_esi(
+            token=None, location_id=location_1.id
         )
-        obj, created = Location.objects.update_or_create_esi(self.token, 60000001)
-        obj.name = "Not my station"
-        obj.solar_system_id = 123
-        obj.type_id = 456
-        obj.save()
-        # when
-        obj, created = Location.objects.update_or_create_esi(self.token, 60000001)
+
         # then
         self.assertFalse(created)
-        self.assertEqual(obj.id, 60000001)
-        self.assertEqual(obj.name, "Test Station Charlie")
-        self.assertEqual(obj.solar_system_id, 30002537)
-        self.assertEqual(obj.type_id, 99)
+        location_1.refresh_from_db()
+        self.assertEqual(location_1.category, Location.Category.STATION)
+        self.assertEqual(location_1.id, location_1.id)
+        self.assertEqual(location_1.name, name)
+        self.assertEqual(location_1.solar_system_id, solar_system_id)
+        self.assertEqual(location_1.type_id, type_id)
+        self.assertEqual(location_2, location_1)
 
-    def test_should_propagate_http_error_on_station_create(self, mock_esi):
+    @pook.on
+    def test_should_raise_http_errors(self):
         # given
-        mock_esi.client.Universe.get_universe_stations_station_id.side_effect = (
-            HTTPNotFound(BravadoResponseStub(status_code=404, reason="test"))
+        location_id = 60_000_001
+        pook.get(
+            make_esi_url(f"universe/stations/{location_id}"),
+            reply=HTTPStatus.INTERNAL_SERVER_ERROR,
         )
+
         # when/then
-        with self.assertRaises(HTTPNotFound):
+        with self.assertRaises(HTTPError):
             Location.objects.update_or_create_esi(
-                self.token, 60000001, add_unknown=False
+                token=None, location_id=location_id, add_unknown=False
             )
 
 
@@ -407,7 +523,7 @@ class TestContractManager(NoSocketsTestCase):
         self.assertIsNone(contract_5.pricing)
 
 
-class TestContractManagerCreateFromDict(NoSocketsTestCase):
+class TestContractManager_CreateFromDict(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -425,8 +541,8 @@ class TestContractManagerCreateFromDict(NoSocketsTestCase):
             "contract_id": 149409014,
             "date_accepted": None,
             "date_completed": None,
-            "date_expired": datetime(2019, 10, 30, 23, tzinfo=utc),
-            "date_issued": datetime(2019, 10, 2, 23, tzinfo=utc),
+            "date_expired": dt.datetime(2019, 10, 30, 23, tzinfo=dt.timezone.utc),
+            "date_issued": dt.datetime(2019, 10, 2, 23, tzinfo=dt.timezone.utc),
             "days_to_complete": 3,
             "end_location_id": 1022167642188,
             "for_corporation": False,
@@ -450,8 +566,12 @@ class TestContractManagerCreateFromDict(NoSocketsTestCase):
         self.assertEqual(obj.collateral, 50000000)
         self.assertIsNone(obj.date_accepted)
         self.assertIsNone(obj.date_completed)
-        self.assertEqual(obj.date_expired, datetime(2019, 10, 30, 23, tzinfo=utc))
-        self.assertEqual(obj.date_issued, datetime(2019, 10, 2, 23, tzinfo=utc))
+        self.assertEqual(
+            obj.date_expired, dt.datetime(2019, 10, 30, 23, tzinfo=dt.timezone.utc)
+        )
+        self.assertEqual(
+            obj.date_issued, dt.datetime(2019, 10, 2, 23, tzinfo=dt.timezone.utc)
+        )
         self.assertEqual(obj.days_to_complete, 3)
         self.assertEqual(obj.end_location_id, 1022167642188)
         self.assertFalse(obj.for_corporation)
@@ -476,10 +596,10 @@ class TestContractManagerCreateFromDict(NoSocketsTestCase):
             "buyout": None,
             "collateral": 50000000.0,
             "contract_id": 149409014,
-            "date_accepted": datetime(2019, 10, 3, 23, tzinfo=utc),
+            "date_accepted": dt.datetime(2019, 10, 3, 23, tzinfo=dt.timezone.utc),
             "date_completed": None,
-            "date_expired": datetime(2019, 10, 30, 23, tzinfo=utc),
-            "date_issued": datetime(2019, 10, 2, 23, tzinfo=utc),
+            "date_expired": dt.datetime(2019, 10, 30, 23, tzinfo=dt.timezone.utc),
+            "date_issued": dt.datetime(2019, 10, 2, 23, tzinfo=dt.timezone.utc),
             "days_to_complete": 3,
             "end_location_id": 1022167642188,
             "for_corporation": False,
@@ -504,10 +624,16 @@ class TestContractManagerCreateFromDict(NoSocketsTestCase):
             EveCorporationInfo.objects.get(corporation_id=92000002),
         )
         self.assertEqual(obj.collateral, 50000000)
-        self.assertEqual(obj.date_accepted, datetime(2019, 10, 3, 23, tzinfo=utc))
+        self.assertEqual(
+            obj.date_accepted, dt.datetime(2019, 10, 3, 23, tzinfo=dt.timezone.utc)
+        )
         self.assertIsNone(obj.date_completed)
-        self.assertEqual(obj.date_issued, datetime(2019, 10, 2, 23, tzinfo=utc))
-        self.assertEqual(obj.date_expired, datetime(2019, 10, 30, 23, tzinfo=utc))
+        self.assertEqual(
+            obj.date_issued, dt.datetime(2019, 10, 2, 23, tzinfo=dt.timezone.utc)
+        )
+        self.assertEqual(
+            obj.date_expired, dt.datetime(2019, 10, 30, 23, tzinfo=dt.timezone.utc)
+        )
         self.assertEqual(obj.days_to_complete, 3)
         self.assertEqual(obj.end_location_id, 1022167642188)
         self.assertFalse(obj.for_corporation)
@@ -532,10 +658,10 @@ class TestContractManagerCreateFromDict(NoSocketsTestCase):
             "buyout": None,
             "collateral": 50000000.0,
             "contract_id": 149409014,
-            "date_accepted": datetime(2019, 10, 3, 23, tzinfo=utc),
-            "date_completed": datetime(2019, 10, 4, 23, tzinfo=utc),
-            "date_expired": datetime(2019, 10, 30, 23, tzinfo=utc),
-            "date_issued": datetime(2019, 10, 2, 23, tzinfo=utc),
+            "date_accepted": dt.datetime(2019, 10, 3, 23, tzinfo=dt.timezone.utc),
+            "date_completed": dt.datetime(2019, 10, 4, 23, tzinfo=dt.timezone.utc),
+            "date_expired": dt.datetime(2019, 10, 30, 23, tzinfo=dt.timezone.utc),
+            "date_issued": dt.datetime(2019, 10, 2, 23, tzinfo=dt.timezone.utc),
             "days_to_complete": 3,
             "end_location_id": 1022167642188,
             "for_corporation": False,
@@ -560,10 +686,18 @@ class TestContractManagerCreateFromDict(NoSocketsTestCase):
             EveCorporationInfo.objects.get(corporation_id=92000002),
         )
         self.assertEqual(obj.collateral, 50000000)
-        self.assertEqual(obj.date_accepted, datetime(2019, 10, 3, 23, tzinfo=utc))
-        self.assertEqual(obj.date_completed, datetime(2019, 10, 4, 23, tzinfo=utc))
-        self.assertEqual(obj.date_issued, datetime(2019, 10, 2, 23, tzinfo=utc))
-        self.assertEqual(obj.date_expired, datetime(2019, 10, 30, 23, tzinfo=utc))
+        self.assertEqual(
+            obj.date_accepted, dt.datetime(2019, 10, 3, 23, tzinfo=dt.timezone.utc)
+        )
+        self.assertEqual(
+            obj.date_completed, dt.datetime(2019, 10, 4, 23, tzinfo=dt.timezone.utc)
+        )
+        self.assertEqual(
+            obj.date_issued, dt.datetime(2019, 10, 2, 23, tzinfo=dt.timezone.utc)
+        )
+        self.assertEqual(
+            obj.date_expired, dt.datetime(2019, 10, 30, 23, tzinfo=dt.timezone.utc)
+        )
         self.assertEqual(obj.days_to_complete, 3)
         self.assertEqual(obj.end_location_id, 1022167642188)
         self.assertFalse(obj.for_corporation)
@@ -633,10 +767,10 @@ class TestContractManagerCreateFromDict(NoSocketsTestCase):
             "buyout": None,
             "collateral": 50000000.0,
             "contract_id": 149409014,
-            "date_accepted": datetime(2019, 10, 3, 23, tzinfo=utc),
+            "date_accepted": dt.datetime(2019, 10, 3, 23, tzinfo=dt.timezone.utc),
             "date_completed": None,
-            "date_expired": datetime(2019, 10, 30, 23, tzinfo=utc),
-            "date_issued": datetime(2019, 10, 2, 23, tzinfo=utc),
+            "date_expired": dt.datetime(2019, 10, 30, 23, tzinfo=dt.timezone.utc),
+            "date_issued": dt.datetime(2019, 10, 2, 23, tzinfo=dt.timezone.utc),
             "days_to_complete": 3,
             "end_location_id": 1022167642188,
             "for_corporation": False,
@@ -672,10 +806,10 @@ class TestContractManagerCreateFromDict(NoSocketsTestCase):
             "buyout": None,
             "collateral": 50000000.0,
             "contract_id": 149409014,
-            "date_accepted": datetime(2019, 10, 3, 23, tzinfo=utc),
+            "date_accepted": dt.datetime(2019, 10, 3, 23, tzinfo=dt.timezone.utc),
             "date_completed": None,
-            "date_expired": datetime(2019, 10, 30, 23, tzinfo=utc),
-            "date_issued": datetime(2019, 10, 2, 23, tzinfo=utc),
+            "date_expired": dt.datetime(2019, 10, 30, 23, tzinfo=dt.timezone.utc),
+            "date_issued": dt.datetime(2019, 10, 2, 23, tzinfo=dt.timezone.utc),
             "days_to_complete": 3,
             "end_location_id": 1022167642188,
             "for_corporation": False,
@@ -704,7 +838,7 @@ if "discord" in app_labels():
 
     @patch(MODELS_PATH + ".contracts.FREIGHT_HOURS_UNTIL_STALE_STATUS", 48)
     @patch(MODELS_PATH + ".contracts.dhooks_lite.Webhook.execute", autospec=True)
-    class TestContractManagerNotifications(NoSocketsTestCase):
+    class TestContractManager_Notifications(NoSocketsTestCase):
         @classmethod
         def setUpClass(cls):
             super().setUpClass()
@@ -771,7 +905,7 @@ if "discord" in app_labels():
         ):
             x = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
             Contract.objects.all().exclude(pk=x.pk).delete()
-            x.date_expired = now() - timedelta(hours=1)
+            x.date_expired = now() - dt.timedelta(hours=1)
             x.save()
             Contract.objects.send_notifications(rate_limited=False)
             self.assertEqual(mock_webhook_execute.call_count, 0)
@@ -828,7 +962,7 @@ if "discord" in app_labels():
         ):
             x = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
             Contract.objects.all().exclude(pk=x.pk).delete()
-            x.date_expired = now() - timedelta(hours=1)
+            x.date_expired = now() - dt.timedelta(hours=1)
             x.save()
             Contract.objects.send_notifications(rate_limited=False)
             self.assertEqual(mock_webhook_execute.call_count, 0)

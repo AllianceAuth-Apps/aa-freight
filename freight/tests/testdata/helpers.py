@@ -16,7 +16,7 @@ from app_utils.testdata_factories import EveCharacterFactory
 
 from freight.models import Contract, EveEntity
 
-from .factories_2 import ContractHandlerFactory, LocationFactory
+from .factories_2 import ContractHandlerFactory, LocationStationFactory
 
 if "discord" in app_labels():
     from allianceauth.services.modules.discord.models import DiscordUser
@@ -70,21 +70,21 @@ structures_data = _load_structures_data()
 
 
 def create_locations():
-    jita = LocationFactory(
+    jita = LocationStationFactory(
         id=60003760,
         name="Jita IV - Moon 4 - Caldari Navy Assembly Plant",
         solar_system_id=30000142,
         type_id=52678,
         category_id=3,
     )
-    amamake = LocationFactory(
+    amamake = LocationStationFactory(
         id=1022167642188,
         name="Amamake - 3 Time Nearly AT Winners",
         solar_system_id=30002537,
         type_id=35834,
         category_id=65,
     )
-    amarr = LocationFactory(
+    amarr = LocationStationFactory(
         id=60008494,
         name="Amarr VIII (Oris) - Emperor Family Academy",
         solar_system_id=30002187,

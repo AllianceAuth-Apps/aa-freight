@@ -27,9 +27,9 @@ class Location(models.Model):
     class Category(models.IntegerChoices):
         """A location category."""
 
-        STATION_ID = 3, "station"
-        STRUCTURE_ID = 65, "structure"
-        UNKNOWN_ID = 0, "(unknown)"
+        STATION = 3, "station"
+        STRUCTURE = 65, "structure"
+        UNKNOWN = 0, "(unknown)"
 
     id = models.BigIntegerField(
         primary_key=True,
@@ -41,7 +41,7 @@ class Location(models.Model):
 
     category_id = models.PositiveIntegerField(
         choices=Category.choices,
-        default=Category.UNKNOWN_ID,
+        default=Category.UNKNOWN,
         help_text="Eve Online category ID",
     )
     name = models.CharField(

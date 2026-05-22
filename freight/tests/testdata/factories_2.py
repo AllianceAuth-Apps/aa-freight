@@ -1,10 +1,13 @@
 import datetime as dt
+import urllib.parse
 from typing import Generic, TypeVar
 
 import factory
 import factory.fuzzy
 
 from django.utils import timezone
+from esi.tests.factories_2 import ScopeFactory
+from esi.tests.factories_2 import TokenFactory as _TokenFactory
 
 from app_utils.testdata_factories import (
     EveCharacterFactory,
@@ -16,11 +19,45 @@ from freight.models import Contract, ContractHandler, EveEntity, Location, Prici
 from freight.models.routes import post_save
 
 T = TypeVar("T")
+_BASE_URL = "https://esi.evetech.net/"
+_POSITION_MIN = -100_000_000_000_000_000
+_POSITION_MAX = 100_000_000_000_000_000
+
+
+def make_esi_url(path: str) -> str:
+    if path.startswith("/"):
+        raise ValueError("path can not start with a slash")
+    if path.endswith("/"):
+        raise ValueError("path can not end with a slash")
+
+    url = urllib.parse.urljoin(_BASE_URL, "/latest/" + path + "/")
+    return url
 
 
 class BaseMetaFactory(Generic[T], factory.base.FactoryMetaClass):
     def __call__(cls, *args, **kwargs) -> T:
         return super().__call__(*args, **kwargs)
+
+
+class PositionFactory(factory.DictFactory, metaclass=BaseMetaFactory[dict]):
+    x = factory.fuzzy.FuzzyFloat(_POSITION_MIN, _POSITION_MAX)
+    y = factory.fuzzy.FuzzyFloat(_POSITION_MIN, _POSITION_MAX)
+    z = factory.fuzzy.FuzzyFloat(_POSITION_MIN, _POSITION_MAX)
+
+
+@factory.django.mute_signals(post_save)
+class TokenFactory2(_TokenFactory):
+    """Token factory that does not trigger the character ownership update
+    in Alliance Auth.
+    """
+
+    @factory.post_generation
+    def scopes(self, create, extracted, **kwargs):
+        if not create or not extracted:
+            return
+
+        for name in extracted:
+            self.scopes.add(ScopeFactory(name=name))
 
 
 class EveEntityAllianceFactory(
@@ -56,15 +93,26 @@ class EveEntityCorporationFactory(
     category = EveEntity.CATEGORY_CORPORATION
 
 
-class LocationFactory(
+class LocationStationFactory(
     factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[Location]
 ):
     class Meta:
         model = Location
 
     id = factory.Sequence(lambda n: 60_900_000 + n)
-    category_id = Location.Category.STATION_ID
-    name = factory.faker.Faker("city")
+    category_id = Location.Category.STATION
+    name = factory.LazyAttribute(lambda o: f"Station #{o.id}")
+
+
+class LocationStructureFactory(
+    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[Location]
+):
+    class Meta:
+        model = Location
+
+    id = factory.Sequence(lambda n: 1_000_900_000_001 + n)
+    category_id = Location.Category.STRUCTURE
+    name = factory.LazyAttribute(lambda o: f"Structure #{o.id}")
 
 
 class UserMainDefaultFactory(UserMainFactory):
@@ -120,13 +168,13 @@ class ContractFactory(
     date_expired = factory.LazyAttribute(
         lambda o: o.date_issued + dt.timedelta(days=o.days_to_complete)
     )
-    end_location = factory.SubFactory(LocationFactory)
+    end_location = factory.SubFactory(LocationStationFactory)
     for_corporation = False
     handler = factory.SubFactory(ContractHandlerFactory)
     issuer = factory.SubFactory(EveCharacterFactory)
     reward = factory.fuzzy.FuzzyFloat(50_000_000, 100_000_000)
     status = Contract.Status.OUTSTANDING
-    start_location = factory.SubFactory(LocationFactory)
+    start_location = factory.SubFactory(LocationStationFactory)
     title = factory.faker.Faker("sentence")
     volume = factory.fuzzy.FuzzyInteger(1_000, 100_000_000)
 
@@ -171,8 +219,8 @@ class PricingFactory(
     class Meta:
         model = Pricing
 
-    start_location = factory.SubFactory(LocationFactory)
-    end_location = factory.SubFactory(LocationFactory)
+    start_location = factory.SubFactory(LocationStationFactory)
+    end_location = factory.SubFactory(LocationStationFactory)
 
     @factory.post_generation
     def update_contracts(self: Pricing, create, extracted, **kwargs):

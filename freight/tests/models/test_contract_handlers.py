@@ -117,7 +117,7 @@ class TestContractHandler(NoSocketsTestCase):
         self.assertFalse(self.handler.is_sync_ok)
 
 
-class TestContractsSync(NoSocketsTestCase):
+class TestContractHandler_UpdateContractsEsi(NoSocketsTestCase):
     def setUp(self):
         create_entities_from_characters()
 

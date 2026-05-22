@@ -7,7 +7,7 @@ from datetime import datetime
 from time import sleep
 from typing import Any, Tuple
 
-from bravado.exception import HTTPForbidden, HTTPUnauthorized
+from bravado.exception import HTTPForbidden, HTTPNotFound, HTTPUnauthorized
 
 from django.contrib.auth.models import User
 from django.db import models, transaction
@@ -93,7 +93,7 @@ class LocationManager(models.Manager):
                     "name": station["name"],
                     "solar_system_id": station["system_id"],
                     "type_id": station["type_id"],
-                    "category_id": Location.Category.STATION_ID,
+                    "category_id": Location.Category.STATION,
                 },
             )
 
@@ -108,7 +108,7 @@ class LocationManager(models.Manager):
                     id=location_id,
                     defaults={
                         "name": f"Unknown structure {location_id}",
-                        "category_id": Location.Category.STRUCTURE_ID,
+                        "category_id": Location.Category.STRUCTURE,
                     },
                 )
             raise ex
@@ -119,7 +119,7 @@ class LocationManager(models.Manager):
                 "name": structure["name"],
                 "solar_system_id": structure["solar_system_id"],
                 "type_id": structure["type_id"],
-                "category_id": Location.Category.STRUCTURE_ID,
+                "category_id": Location.Category.STRUCTURE,
             },
         )
 
@@ -137,9 +137,14 @@ class EveEntityManager(models.Manager):
 
     def update_or_create_esi(self, *, id: int) -> Tuple[Any, bool]:
         """updates or creates entity object with data fetched from ESI"""
-        response = esi.client.Universe.post_universe_names(ids=[id]).results()
+        try:
+            response = esi.client.Universe.post_universe_names(ids=[id]).results()
+        except HTTPNotFound:
+            raise ObjectNotFound(id, "unknown_type")
+
         if len(response) != 1:
             raise ObjectNotFound(id, "unknown_type")
+
         entity_data = response[0]
         return self.update_or_create(
             id=entity_data["id"],

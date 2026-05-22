@@ -17,7 +17,7 @@ from freight.tests.testdata.factories_2 import (
     ContractFactory,
     ContractHandlerFactory,
     EveEntityAllianceFactory,
-    LocationFactory,
+    LocationStationFactory,
     PricingFactory,
 )
 from freight.tests.testdata.helpers import (
@@ -47,8 +47,8 @@ class TestContract(NoSocketsTestCase):
     def test_str(self):
         contract = ContractFactory(
             contract_id=42,
-            start_location=LocationFactory(name="Jita"),
-            end_location=LocationFactory(name="Amamake"),
+            start_location=LocationStationFactory(name="Jita"),
+            end_location=LocationStationFactory(name="Amamake"),
         )
         got = str(contract)
         want = "42: Jita -> Amamake"
@@ -129,14 +129,14 @@ class TestContract2(NoSocketsTestCase):
             character=cls.character, owner_hash="x1", user=cls.user
         )
         # Locations
-        cls.jita = LocationFactory(
+        cls.jita = LocationStationFactory(
             id=60003760,
             name="Jita IV - Moon 4 - Caldari Navy Assembly Plant",
             solar_system_id=30000142,
             type_id=52678,
             category_id=3,
         )
-        cls.amamake = LocationFactory(
+        cls.amamake = LocationStationFactory(
             id=1022167642188,
             name="Amamake - 3 Time Nearly AT Winners",
             solar_system_id=30002537,
@@ -545,14 +545,14 @@ class TestContractCustomerNotification(NoSocketsTestCase):
             character=cls.character, owner_hash="x1", user=cls.user
         )
         # Locations
-        cls.location_1 = LocationFactory(
+        cls.location_1 = LocationStationFactory(
             id=60003760,
             name="Jita IV - Moon 4 - Caldari Navy Assembly Plant",
             solar_system_id=30000142,
             type_id=52678,
             category_id=3,
         )
-        cls.location_2 = LocationFactory(
+        cls.location_2 = LocationStationFactory(
             id=1022167642188,
             name="Amamake - 3 Time Nearly AT Winners",
             solar_system_id=30002537,

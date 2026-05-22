@@ -34,7 +34,7 @@ class TestLocation(NoSocketsTestCase):
         self.assertEqual(repr(self.amamake), expected)
 
     def test_category(self):
-        self.assertEqual(self.jita.category, Location.Category.STATION_ID)
+        self.assertEqual(self.jita.category, Location.Category.STATION)
 
     def test_solar_system_name_station(self):
         self.assertEqual(self.jita.solar_system_name, "Jita")
