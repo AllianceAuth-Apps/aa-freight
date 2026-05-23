@@ -27,10 +27,7 @@ from freight import __title__
 from freight.app_settings import (
     FREIGHT_CONTRACT_SYNC_GRACE_MINUTES,
     FREIGHT_OPERATION_MODE,
-    FREIGHT_OPERATION_MODE_CORP_IN_ALLIANCE,
-    FREIGHT_OPERATION_MODE_CORP_PUBLIC,
     FREIGHT_OPERATION_MODE_MY_ALLIANCE,
-    FREIGHT_OPERATION_MODE_MY_CORPORATION,
     FREIGHT_OPERATION_MODES,
 )
 from freight.constants import AVATAR_SIZE
@@ -162,6 +159,14 @@ class ContractHandler(models.Model):
         (ERROR_UNKNOWN, "Unknown error"),
     ]
 
+    class Mode(models.TextChoices):
+        """The operation mode of the contract handler."""
+
+        CORP_IN_ALLIANCE = "corp_in_alliance"
+        CORP_PUBLIC = "corp_public"
+        MY_ALLIANCE = "my_alliance"
+        MY_CORPORATION = "my_corporation"
+
     organization = models.OneToOneField(
         EveEntity,
         on_delete=models.CASCADE,
@@ -179,7 +184,7 @@ class ContractHandler(models.Model):
     )
     operation_mode = models.CharField(
         max_length=32,
-        default=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
+        default=Mode.MY_ALLIANCE,
         verbose_name=_("operation mode"),
         help_text=_("Defines what kind of contracts are synced"),
     )
@@ -255,10 +260,10 @@ class ContractHandler(models.Model):
     def get_availability_text_for_contracts(self) -> str:
         """returns a text detailing the availability choice for this setup"""
 
-        if self.operation_mode == FREIGHT_OPERATION_MODE_MY_ALLIANCE:
+        if self.operation_mode == self.Mode.MY_ALLIANCE:
             extra_text = "[My Alliance]"
 
-        elif self.operation_mode == FREIGHT_OPERATION_MODE_MY_CORPORATION:
+        elif self.operation_mode == self.Mode.MY_CORPORATION:
             extra_text = "[My Corporation]"
 
         else:
@@ -337,18 +342,18 @@ class ContractHandler(models.Model):
             issuer_corporation_id = int(issuer.corporation_id)
             issuer_alliance_id = int(issuer.alliance_id) if issuer.alliance_id else None
 
-            if self.operation_mode == FREIGHT_OPERATION_MODE_MY_ALLIANCE:
+            if self.operation_mode == self.Mode.MY_ALLIANCE:
                 in_scope = issuer_alliance_id == assignee_id
 
-            elif self.operation_mode == FREIGHT_OPERATION_MODE_MY_CORPORATION:
+            elif self.operation_mode == self.Mode.MY_CORPORATION:
                 in_scope = assignee_id == issuer_corporation_id
 
-            elif self.operation_mode == FREIGHT_OPERATION_MODE_CORP_IN_ALLIANCE:
+            elif self.operation_mode == self.Mode.CORP_IN_ALLIANCE:
                 in_scope = issuer_alliance_id == int(
                     self.character.character.alliance_id
                 )
 
-            elif self.operation_mode == FREIGHT_OPERATION_MODE_CORP_PUBLIC:
+            elif self.operation_mode == self.Mode.CORP_PUBLIC:
                 in_scope = True
 
             else:
