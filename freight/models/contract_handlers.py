@@ -290,7 +290,7 @@ class ContractHandler(models.Model):
 
         return token
 
-    def update_contracts_esi(self, force_sync=False) -> bool:
+    def update_contracts_esi(self, force_sync=False):
         """Update contracts from ESI."""
         self._validate_update_readiness()
         token = self.token()

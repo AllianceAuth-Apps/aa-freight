@@ -268,6 +268,9 @@ class ContractQuerySet(models.QuerySet):
         raise ValueError(f"Invalid category: {category}")
 
 
+# TODO: Add handling for optional values, e.g. collateral
+
+
 class ContractManagerBase(models.Manager):
     def update_or_create_from_dict(
         self, handler: Any, contract: dict, token: Token

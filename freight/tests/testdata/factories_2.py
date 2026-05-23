@@ -60,36 +60,28 @@ class TokenFactory2(_TokenFactory):
             self.scopes.add(ScopeFactory(name=name))
 
 
-class EveEntityAllianceFactory(
+class _EveEntityFactory(
     factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[EveEntity]
 ):
     class Meta:
         model = EveEntity
+        django_get_or_create = ("id",)
 
+    name = factory.LazyAttribute(lambda o: f"{o.category.title()} #{o.id}")
+
+
+class EveEntityAllianceFactory(_EveEntityFactory):
     id = factory.Sequence(lambda n: 99_900_001 + n)
-    name = factory.LazyAttribute(lambda o: f"alliance_{o.id}")
     category = EveEntity.CATEGORY_ALLIANCE
 
 
-class EveEntityCharacterFactory(
-    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[EveEntity]
-):
-    class Meta:
-        model = EveEntity
-
+class EveEntityCharacterFactory(_EveEntityFactory):
     id = factory.Sequence(lambda n: 90_900_001 + n)
     category = EveEntity.CATEGORY_CHARACTER
-    name = factory.LazyAttribute(lambda o: f"character_{o.id}")
 
 
-class EveEntityCorporationFactory(
-    factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[EveEntity]
-):
-    class Meta:
-        model = EveEntity
-
+class EveEntityCorporationFactory(_EveEntityFactory):
     id = factory.Sequence(lambda n: 98_900_001 + n)
-    name = factory.LazyAttribute(lambda o: f"corporation_{o.id}")
     category = EveEntity.CATEGORY_CORPORATION
 
 
@@ -98,6 +90,7 @@ class LocationStationFactory(
 ):
     class Meta:
         model = Location
+        django_get_or_create = ("id",)
 
     id = factory.Sequence(lambda n: 60_900_000 + n)
     category_id = Location.Category.STATION
@@ -109,6 +102,7 @@ class LocationStructureFactory(
 ):
     class Meta:
         model = Location
+        django_get_or_create = ("id",)
 
     id = factory.Sequence(lambda n: 1_000_900_000_001 + n)
     category_id = Location.Category.STRUCTURE
@@ -149,7 +143,40 @@ class ContractHandlerFactory(
     class Meta:
         model = ContractHandler
 
-    organization = factory.SubFactory(EveEntityAllianceFactory)
+    class Params:
+        user = None
+
+    operation_mode = ContractHandler.Mode.MY_ALLIANCE
+
+    @factory.lazy_attribute
+    def character(self):
+        user = self.user or UserMainManagerFactory()
+        return user.profile.main_character.character_ownership
+
+    @factory.lazy_attribute
+    def organization(self):
+        match self.operation_mode:
+            case ContractHandler.Mode.MY_ALLIANCE:
+                if self.character:
+                    return EveEntityAllianceFactory(
+                        id=self.character.character.alliance_id,
+                        name=self.character.character.alliance_name,
+                    )
+                return EveEntityAllianceFactory()
+
+            case (
+                ContractHandler.Mode.CORP_IN_ALLIANCE
+                | ContractHandler.Mode.CORP_PUBLIC
+                | ContractHandler.Mode.MY_CORPORATION
+            ):
+                if self.character:
+                    return EveEntityCorporationFactory(
+                        id=self.character.character.corporation_id,
+                        name=self.character.character.corporation_name,
+                    )
+                return EveEntityCorporationFactory()
+
+        raise ValueError(f"Unexpected operation mode: {self.operation_mode}")
 
 
 class ContractFactory(
@@ -171,12 +198,27 @@ class ContractFactory(
     end_location = factory.SubFactory(LocationStationFactory)
     for_corporation = False
     handler = factory.SubFactory(ContractHandlerFactory)
-    issuer = factory.SubFactory(EveCharacterFactory)
     reward = factory.fuzzy.FuzzyFloat(50_000_000, 100_000_000)
     status = Contract.Status.OUTSTANDING
     start_location = factory.SubFactory(LocationStationFactory)
     title = factory.faker.Faker("sentence")
     volume = factory.fuzzy.FuzzyInteger(1_000, 100_000_000)
+
+    @factory.lazy_attribute
+    def issuer(self):
+        match self.handler.operation_mode:
+            case ContractHandler.Mode.MY_ALLIANCE:
+                corporation = EveCorporationInfoFactory(
+                    alliance=self.handler.character.character.corporation.alliance
+                )
+                return EveCharacterFactory(corporation=corporation)
+
+            case ContractHandler.Mode.MY_CORPORATION:
+                return EveCharacterFactory(
+                    corporation=self.handler.character.character.corporation
+                )
+
+        raise ValueError("Unexpected input")
 
     @factory.lazy_attribute
     def issuer_corporation(self):
@@ -210,6 +252,16 @@ class ContractFactory(
                 )
             ),
         )
+
+    @factory.post_generation
+    def eve_entities(self, create, extracted, **kwargs):
+        if not create or extracted is False:
+            return
+
+        if self.acceptor:
+            EveEntityCharacterFactory(
+                id=self.acceptor.character_id, name=self.acceptor.character_name
+            )
 
 
 @factory.django.mute_signals(post_save)
