@@ -73,7 +73,7 @@ class TestContract_DateLatest(NoSocketsTestCase):
     def test_should_return_date_completed_when_completed(self):
         date_completed = now() - dt.timedelta(hours=1)
         contract = ContractFactory(
-            completed=True,
+            finished=True,
             date_completed=date_completed,
         )
         got = contract.date_latest

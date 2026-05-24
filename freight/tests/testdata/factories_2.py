@@ -5,10 +5,11 @@ from typing import Generic, TypeVar
 import factory
 import factory.fuzzy
 
-from django.utils import timezone
+from django.utils.timezone import now
 from esi.tests.factories_2 import ScopeFactory
 from esi.tests.factories_2 import TokenFactory as _TokenFactory
 
+from app_utils.django import app_labels
 from app_utils.testdata_factories import (
     EveCharacterFactory,
     EveCorporationInfoFactory,
@@ -17,6 +18,11 @@ from app_utils.testdata_factories import (
 
 from freight.models import Contract, ContractHandler, EveEntity, Location, Pricing
 from freight.models.routes import post_save
+
+if "discord" in app_labels():
+    from allianceauth.services.modules.discord.models import DiscordUser
+else:
+    DiscordUser = None  # pylint: disable=invalid-name
 
 T = TypeVar("T")
 _BASE_URL = "https://esi.evetech.net/"
@@ -45,11 +51,15 @@ class PositionFactory(factory.DictFactory, metaclass=BaseMetaFactory[dict]):
     z = factory.fuzzy.FuzzyFloat(_POSITION_MIN, _POSITION_MAX)
 
 
-@factory.django.mute_signals(post_save)
 class TokenFactory2(_TokenFactory):
     """Token factory that does not trigger the character ownership update
     in Alliance Auth.
     """
+
+    @classmethod
+    def _generate(cls, strategy, params):
+        with factory.django.mute_signals(post_save):
+            return super()._generate(strategy, params)
 
     @factory.post_generation
     def scopes(self, create, extracted, **kwargs):
@@ -185,15 +195,45 @@ class ContractFactory(
     class Meta:
         model = Contract
 
+    class Params:
+        user = None
+        accepted = factory.Trait(
+            status=Contract.Status.IN_PROGRESS,
+            date_accepted=factory.LazyAttribute(
+                lambda o: o.date_issued + dt.timedelta(hours=3)
+            ),
+            acceptor=factory.SubFactory(EveCharacterFactory),
+            acceptor_corporation=factory.LazyAttribute(
+                lambda o: EveCorporationInfoFactory(
+                    corporation_id=o.acceptor.corporation_id
+                )
+            ),
+        )
+        finished = factory.Trait(
+            status=Contract.Status.FINISHED,
+            date_accepted=factory.LazyAttribute(
+                lambda o: o.date_issued + dt.timedelta(hours=3)
+            ),
+            date_completed=factory.LazyAttribute(
+                lambda o: o.date_issued + dt.timedelta(hours=6)
+            ),
+            acceptor=factory.SubFactory(EveCharacterFactory),
+            acceptor_corporation=factory.LazyAttribute(
+                lambda o: EveCorporationInfoFactory(
+                    corporation_id=o.acceptor.corporation_id
+                )
+            ),
+        )
+
     contract_id = factory.Sequence(lambda n: 10_000_000 + n)
     collateral = factory.fuzzy.FuzzyFloat(100_000_000, 1_000_000_000)
     days_to_complete = 3
     date_completed = None
     date_issued = factory.fuzzy.FuzzyDateTime(
-        timezone.now() - dt.timedelta(days=7), timezone.now() - dt.timedelta(hours=12)
+        now() - dt.timedelta(hours=12), now() - dt.timedelta(hours=1)
     )
-    date_expired = factory.LazyAttribute(
-        lambda o: o.date_issued + dt.timedelta(days=o.days_to_complete)
+    date_expired = factory.fuzzy.FuzzyDateTime(
+        now() + dt.timedelta(hours=1), now() + dt.timedelta(days=7)
     )
     end_location = factory.SubFactory(LocationStationFactory)
     for_corporation = False
@@ -206,6 +246,9 @@ class ContractFactory(
 
     @factory.lazy_attribute
     def issuer(self):
+        if self.user:
+            return self.user.profile.main_character
+
         match self.handler.operation_mode:
             case ContractHandler.Mode.MY_ALLIANCE:
                 corporation = EveCorporationInfoFactory(
@@ -224,35 +267,6 @@ class ContractFactory(
     def issuer_corporation(self):
         return EveCorporationInfoFactory(corporation_id=self.issuer.corporation_id)
 
-    class Params:
-        accepted = factory.Trait(
-            status=Contract.Status.IN_PROGRESS,
-            date_accepted=factory.LazyAttribute(
-                lambda o: o.date_issued + dt.timedelta(hours=3)
-            ),
-            acceptor=factory.SubFactory(EveCharacterFactory),
-            acceptor_corporation=factory.LazyAttribute(
-                lambda o: EveCorporationInfoFactory(
-                    corporation_id=o.acceptor.corporation_id
-                )
-            ),
-        )
-        completed = factory.Trait(
-            status=Contract.Status.FINISHED,
-            date_accepted=factory.LazyAttribute(
-                lambda o: o.date_issued + dt.timedelta(hours=3)
-            ),
-            date_completed=factory.LazyAttribute(
-                lambda o: o.date_issued + dt.timedelta(hours=6)
-            ),
-            acceptor=factory.SubFactory(EveCharacterFactory),
-            acceptor_corporation=factory.LazyAttribute(
-                lambda o: EveCorporationInfoFactory(
-                    corporation_id=o.acceptor.corporation_id
-                )
-            ),
-        )
-
     @factory.post_generation
     def eve_entities(self, create, extracted, **kwargs):
         if not create or extracted is False:
@@ -263,16 +277,63 @@ class ContractFactory(
                 id=self.acceptor.character_id, name=self.acceptor.character_name
             )
 
+    @factory.post_generation
+    def create_pricing(self, create, extracted, **kwargs):
+        if not create or extracted is not True:
+            return
 
-@factory.django.mute_signals(post_save)
+        self.pricing = PricingFactory(contract=self)
+        self.save()
+
+
 class PricingFactory(
     factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[Pricing]
 ):
     class Meta:
         model = Pricing
 
-    start_location = factory.SubFactory(LocationStationFactory)
-    end_location = factory.SubFactory(LocationStationFactory)
+    class Params:
+        contract = None
+
+    is_default = False
+    is_active = True
+    is_bidirectional = True
+
+    @classmethod
+    def _generate(cls, strategy, params):
+        with factory.django.mute_signals(post_save):
+            return super()._generate(strategy, params)
+
+    @factory.lazy_attribute
+    def start_location(self):
+        if self.contract:
+            return self.contract.start_location
+
+        return LocationStationFactory()
+
+    @factory.lazy_attribute
+    def end_location(self):
+        if self.contract:
+            return self.contract.end_location
+
+        return LocationStationFactory()
+
+    @classmethod
+    def _adjust_kwargs(cls, **kwargs):
+        """Set a base price as default when no pricing field defined."""
+        price_fields = {
+            "price_base",
+            "price_per_volume",
+            "price_per_collateral_percent",
+            "use_price_per_volume_modifier",
+        }
+        fields_provided = set(kwargs.keys())
+        if not price_fields.intersection(fields_provided):
+            kwargs["price_base"] = factory.fuzzy.FuzzyInteger(
+                100_000, 10_000_000
+            ).fuzz()
+
+        return kwargs
 
     @factory.post_generation
     def update_contracts(self: Pricing, create, extracted, **kwargs):
@@ -282,3 +343,17 @@ class PricingFactory(
         from freight.tasks import update_contracts_pricing
 
         update_contracts_pricing()
+
+
+if "discord" in app_labels():
+
+    class DiscordUserFactory(
+        factory.django.DjangoModelFactory, metaclass=BaseMetaFactory[DiscordUser]
+    ):
+        class Meta:
+            model = DiscordUser
+
+        activated = factory.fuzzy.FuzzyDateTime(now() - dt.timedelta(days=30), now())
+        uid = factory.Sequence(lambda n: 1_000_000_001 + n)
+        user = factory.SubFactory(UserMainDefaultFactory)
+        username = factory.LazyAttribute(lambda o: o.user.username)

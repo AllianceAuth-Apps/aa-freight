@@ -1,35 +1,35 @@
 import datetime as dt
 from http import HTTPStatus
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pook
 from bravado.exception import HTTPError, HTTPForbidden
 
 from django.utils.timezone import now
 
-from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from allianceauth.eveonline.providers import ObjectNotFound
-from app_utils.django import app_labels
+from app_utils.testdata_factories import EveCharacterFactory, EveCorporationInfoFactory
 from app_utils.testing import NoSocketsTestCase, generate_invalid_pk
 
 from freight.models import Contract, EveEntity, Location, Pricing
 from freight.tests.helpers import TestCaseWithClearCache
 from freight.tests.testdata.factories_2 import (
+    ContractFactory,
+    ContractHandlerFactory,
     EveEntityCharacterFactory,
     LocationStationFactory,
     LocationStructureFactory,
     PositionFactory,
     PricingFactory,
     TokenFactory2,
+    UserMainDefaultFactory,
     make_esi_url,
-)
-from freight.tests.testdata.helpers import (
-    create_contract_handler_w_contracts,
-    create_locations,
 )
 
 MANAGERS_PATH = "freight.managers"
 MODELS_PATH = "freight.models"
+
+# TODO: Add tests for sending notifications with discord notify
 
 
 class TestEveEntityManager(TestCaseWithClearCache):
@@ -420,652 +420,380 @@ class TestLocationManager_Station_UpdateOrCreate(TestCaseWithClearCache):
 
 
 class TestContractQuerySet(NoSocketsTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.handler, cls.user = create_contract_handler_w_contracts(
-            [149409016, 149409061, 149409062, 149409063, 149409064, 149409006]
-        )
-
     def test_pending_count(self):
-        result = Contract.objects.all().pending_count()
-        self.assertEqual(result, 6)
-
-
-class TestContractManager(NoSocketsTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.handler, cls.user = create_contract_handler_w_contracts(
-            [
-                149409016,
-                149409061,
-                149409062,
-                149409063,
-                149409064,
-                149409006,
-                149409318,
-            ]
+        # given
+        handler = ContractHandlerFactory()
+        ContractFactory(handler=handler, date_expired=now() + dt.timedelta(days=1))
+        ContractFactory(
+            handler=handler, date_expired=now() + dt.timedelta(hours=1), accepted=True
         )
-
-    def test_issued_by_user(self):
+        ContractFactory(
+            handler=handler, date_expired=now() - dt.timedelta(hours=1), accepted=True
+        )
+        ContractFactory(
+            handler=handler, date_expired=now() + dt.timedelta(days=1), finished=True
+        )
         # when
-        qs = Contract.objects.all().issued_by_user(user=self.user)
+        got = Contract.objects.all().pending_count()
         # then
-        self.assertSetEqual(
-            set(qs.values_list("contract_id", flat=True)),
-            {149409016, 149409061, 149409062, 149409063, 149409064},
-        )
+        self.assertEqual(got, 1)
 
+
+class TestContractManager_IssuedByUser(NoSocketsTestCase):
+    def test_issued_by_user(self):
+        # given
+        user = UserMainDefaultFactory()
+        handler = ContractHandlerFactory(user=user)
+        contract = ContractFactory(handler=handler, issuer=user.profile.main_character)
+        ContractFactory(handler=handler)
+
+        # when
+        qs = Contract.objects.all().issued_by_user(user=user)
+
+        # then
+        self.assertCountEqual(qs, [contract])
+
+
+class TestContractManager_UpdatePricing(NoSocketsTestCase):
     def test_can_update_pricing_for_bidirectional(self):
         # given
-        jita = Location.objects.get(id=60003760)
-        amamake = Location.objects.get(id=1022167642188)
-        amarr = Location.objects.get(id=60008494)
-        pricing_1 = PricingFactory(
-            start_location=jita,
-            end_location=amamake,
-            price_base=500000000,
-            is_bidirectional=True,
+        handler = ContractHandlerFactory()
+        location_1 = LocationStationFactory()
+        location_2 = LocationStationFactory()
+        contract_1 = ContractFactory(
+            handler=handler, start_location=location_1, end_location=location_2
         )
-        pricing_3 = PricingFactory(
-            start_location=amarr,
-            end_location=amamake,
-            price_base=250000000,
-            is_bidirectional=True,
+        contract_2 = ContractFactory(
+            handler=handler, start_location=location_2, end_location=location_1
         )
+        contract_3 = ContractFactory(handler=handler)
+        pricing = PricingFactory(
+            contract=contract_1, price_base=500000000, is_bidirectional=True
+        )
+
         # when
-        result = Contract.objects.update_pricing()
+        got = Contract.objects.update_pricing()
+
         # then
-        self.assertEqual(result, 7)
-        contract_1 = Contract.objects.get(contract_id=149409016)
-        self.assertEqual(contract_1.pricing, pricing_1)
-        contract_2 = Contract.objects.get(contract_id=149409061)
-        self.assertEqual(contract_2.pricing, pricing_1)
-        contract_3 = Contract.objects.get(contract_id=149409062)
-        self.assertEqual(contract_3.pricing, pricing_3)
+        self.assertEqual(got, 3)
+        contract_1.refresh_from_db()
+        self.assertEqual(contract_1.pricing, pricing)
+        contract_2.refresh_from_db()
+        self.assertEqual(contract_2.pricing, pricing)
+        contract_3.refresh_from_db()
+        self.assertIsNone(contract_3.pricing)
 
     def test_can_update_pricing_for_unidirectional(self):
         # given
-        jita = Location.objects.get(id=60003760)
-        amamake = Location.objects.get(id=1022167642188)
-        amarr = Location.objects.get(id=60008494)
-        pricing_1 = PricingFactory(
-            start_location=jita,
-            end_location=amamake,
-            price_base=500000000,
+        handler = ContractHandlerFactory()
+        location_1 = LocationStationFactory()
+        location_2 = LocationStationFactory()
+        contract_1 = ContractFactory(
+            handler=handler,
+            start_location=location_1,
+            end_location=location_2,
+        )
+        contract_2 = ContractFactory(
+            handler=handler,
+            start_location=location_2,
+            end_location=location_1,
+        )
+        pricing = PricingFactory(
+            start_location=location_1,
+            end_location=location_2,
             is_bidirectional=False,
         )
-        pricing_2 = PricingFactory(
-            start_location=amamake,
-            end_location=jita,
-            price_base=350000000,
-            is_bidirectional=False,
-        )
-        pricing_3 = PricingFactory(
-            start_location=amarr,
-            end_location=amamake,
-            price_base=250000000,
-            is_bidirectional=True,
-        )
+
         # when
-        Contract.objects.update_pricing()
+        got = Contract.objects.update_pricing()
+
         # then
-        contract_1 = Contract.objects.get(contract_id=149409016)
-        self.assertEqual(contract_1.pricing, pricing_1)
-        contract_2 = Contract.objects.get(contract_id=149409061)
-        self.assertEqual(contract_2.pricing, pricing_2)
-        contract_3 = Contract.objects.get(contract_id=149409062)
-        self.assertEqual(contract_3.pricing, pricing_3)
-        contract_4 = Contract.objects.get(contract_id=149409063)
-        self.assertEqual(contract_4.pricing, pricing_3)
-        contract_5 = Contract.objects.get(contract_id=149409064)
-        self.assertIsNone(contract_5.pricing)
+        self.assertEqual(got, 2)
+
+        contract_1.refresh_from_db()
+        self.assertEqual(contract_1.pricing, pricing)
+        contract_2.refresh_from_db()
+        self.assertIsNone(contract_2.pricing)
 
 
 class TestContractManager_CreateFromDict(NoSocketsTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.handler, cls.user = create_contract_handler_w_contracts(
-            [149409016, 149409061, 149409062, 149409063, 149409064]
-        )
-
     def test_can_create_outstanding(self):
+        # given
+        handler = ContractHandlerFactory()
+        start_location = LocationStationFactory()
+        end_location = LocationStationFactory()
+        assignee = EveCorporationInfoFactory()
+        date_expired = now() + dt.timedelta(days=3)
+        date_issued = now() - dt.timedelta(hours=3)
+        contract_id = 149409014
+        collaterial = 50000000.0
+        days_to_complete = 3
+        reward = 25000000.0
+        volume = 115000.0
+        issuer = EveCharacterFactory()
+        title = "demo contract"
         contract_dict = {
             "acceptor_id": 0,
-            "assignee_id": 93000001,
+            "assignee_id": assignee.corporation_id,
             "availability": "personal",
             "buyout": None,
-            "collateral": 50000000.0,
-            "contract_id": 149409014,
+            "collateral": collaterial,
+            "contract_id": contract_id,
             "date_accepted": None,
             "date_completed": None,
-            "date_expired": dt.datetime(2019, 10, 30, 23, tzinfo=dt.timezone.utc),
-            "date_issued": dt.datetime(2019, 10, 2, 23, tzinfo=dt.timezone.utc),
-            "days_to_complete": 3,
-            "end_location_id": 1022167642188,
+            "date_expired": date_expired,
+            "date_issued": date_issued,
+            "days_to_complete": days_to_complete,
+            "end_location_id": end_location.id,
             "for_corporation": False,
-            "issuer_corporation_id": 92000002,
-            "issuer_id": 90000003,
-            "price": 0.0,
-            "reward": 25000000.0,
-            "start_location_id": 60003760,
+            "issuer_corporation_id": issuer.corporation.corporation_id,
+            "issuer_id": issuer.character_id,
+            "reward": reward,
+            "start_location_id": start_location.id,
             "status": "outstanding",
-            "title": "demo contract",
+            "title": title,
             "type": "courier",
-            "volume": 115000.0,
+            "volume": volume,
         }
-        obj, created = Contract.objects.update_or_create_from_dict(
-            self.handler, contract_dict, Mock()
-        )
-        self.assertTrue(created)
-        self.assertEqual(obj.contract_id, 149409014)
-        self.assertIsNone(obj.acceptor)
-        self.assertIsNone(obj.acceptor_corporation)
-        self.assertEqual(obj.collateral, 50000000)
-        self.assertIsNone(obj.date_accepted)
-        self.assertIsNone(obj.date_completed)
-        self.assertEqual(
-            obj.date_expired, dt.datetime(2019, 10, 30, 23, tzinfo=dt.timezone.utc)
-        )
-        self.assertEqual(
-            obj.date_issued, dt.datetime(2019, 10, 2, 23, tzinfo=dt.timezone.utc)
-        )
-        self.assertEqual(obj.days_to_complete, 3)
-        self.assertEqual(obj.end_location_id, 1022167642188)
-        self.assertFalse(obj.for_corporation)
-        self.assertEqual(
-            obj.issuer_corporation,
-            EveCorporationInfo.objects.get(corporation_id=92000002),
-        )
-        self.assertEqual(obj.issuer, EveCharacter.objects.get(character_id=90000003))
-        self.assertEqual(obj.reward, 25000000)
-        self.assertEqual(obj.start_location_id, 60003760)
-        self.assertEqual(obj.status, Contract.Status.OUTSTANDING)
-        self.assertEqual(obj.title, "demo contract")
-        self.assertEqual(obj.volume, 115000)
-        self.assertIsNone(obj.pricing)
-        self.assertIsNone(obj.issues)
 
-    def test_can_create_in_progress(self):
-        contract_dict = {
-            "acceptor_id": 90000003,
-            "assignee_id": 90000003,
-            "availability": "personal",
-            "buyout": None,
-            "collateral": 50000000.0,
-            "contract_id": 149409014,
-            "date_accepted": dt.datetime(2019, 10, 3, 23, tzinfo=dt.timezone.utc),
-            "date_completed": None,
-            "date_expired": dt.datetime(2019, 10, 30, 23, tzinfo=dt.timezone.utc),
-            "date_issued": dt.datetime(2019, 10, 2, 23, tzinfo=dt.timezone.utc),
-            "days_to_complete": 3,
-            "end_location_id": 1022167642188,
-            "for_corporation": False,
-            "issuer_corporation_id": 92000002,
-            "issuer_id": 90000003,
-            "price": 0.0,
-            "reward": 25000000.0,
-            "start_location_id": 60003760,
-            "status": "in_progress",
-            "title": "demo contract",
-            "type": "courier",
-            "volume": 115000.0,
-        }
-        obj, created = Contract.objects.update_or_create_from_dict(
-            self.handler, contract_dict, Mock()
-        )
-        self.assertTrue(created)
-        self.assertEqual(obj.contract_id, 149409014)
-        self.assertEqual(obj.acceptor, EveCharacter.objects.get(character_id=90000003))
-        self.assertEqual(
-            obj.acceptor_corporation,
-            EveCorporationInfo.objects.get(corporation_id=92000002),
-        )
-        self.assertEqual(obj.collateral, 50000000)
-        self.assertEqual(
-            obj.date_accepted, dt.datetime(2019, 10, 3, 23, tzinfo=dt.timezone.utc)
-        )
-        self.assertIsNone(obj.date_completed)
-        self.assertEqual(
-            obj.date_issued, dt.datetime(2019, 10, 2, 23, tzinfo=dt.timezone.utc)
-        )
-        self.assertEqual(
-            obj.date_expired, dt.datetime(2019, 10, 30, 23, tzinfo=dt.timezone.utc)
-        )
-        self.assertEqual(obj.days_to_complete, 3)
-        self.assertEqual(obj.end_location_id, 1022167642188)
-        self.assertFalse(obj.for_corporation)
-        self.assertEqual(
-            obj.issuer_corporation,
-            EveCorporationInfo.objects.get(corporation_id=92000002),
-        )
-        self.assertEqual(obj.issuer, EveCharacter.objects.get(character_id=90000003))
-        self.assertEqual(obj.reward, 25000000)
-        self.assertEqual(obj.start_location_id, 60003760)
-        self.assertEqual(obj.status, Contract.Status.IN_PROGRESS)
-        self.assertEqual(obj.title, "demo contract")
-        self.assertEqual(obj.volume, 115000)
-        self.assertIsNone(obj.pricing)
-        self.assertIsNone(obj.issues)
-
-    def test_can_create_finished(self):
-        contract_dict = {
-            "acceptor_id": 90000003,
-            "assignee_id": 90000003,
-            "availability": "personal",
-            "buyout": None,
-            "collateral": 50000000.0,
-            "contract_id": 149409014,
-            "date_accepted": dt.datetime(2019, 10, 3, 23, tzinfo=dt.timezone.utc),
-            "date_completed": dt.datetime(2019, 10, 4, 23, tzinfo=dt.timezone.utc),
-            "date_expired": dt.datetime(2019, 10, 30, 23, tzinfo=dt.timezone.utc),
-            "date_issued": dt.datetime(2019, 10, 2, 23, tzinfo=dt.timezone.utc),
-            "days_to_complete": 3,
-            "end_location_id": 1022167642188,
-            "for_corporation": False,
-            "issuer_corporation_id": 92000002,
-            "issuer_id": 90000003,
-            "price": 0.0,
-            "reward": 25000000.0,
-            "start_location_id": 60003760,
-            "status": "finished",
-            "title": "demo contract",
-            "type": "courier",
-            "volume": 115000.0,
-        }
-        obj, created = Contract.objects.update_or_create_from_dict(
-            self.handler, contract_dict, Mock()
-        )
-        self.assertTrue(created)
-        self.assertEqual(obj.contract_id, 149409014)
-        self.assertEqual(obj.acceptor, EveCharacter.objects.get(character_id=90000003))
-        self.assertEqual(
-            obj.acceptor_corporation,
-            EveCorporationInfo.objects.get(corporation_id=92000002),
-        )
-        self.assertEqual(obj.collateral, 50000000)
-        self.assertEqual(
-            obj.date_accepted, dt.datetime(2019, 10, 3, 23, tzinfo=dt.timezone.utc)
-        )
-        self.assertEqual(
-            obj.date_completed, dt.datetime(2019, 10, 4, 23, tzinfo=dt.timezone.utc)
-        )
-        self.assertEqual(
-            obj.date_issued, dt.datetime(2019, 10, 2, 23, tzinfo=dt.timezone.utc)
-        )
-        self.assertEqual(
-            obj.date_expired, dt.datetime(2019, 10, 30, 23, tzinfo=dt.timezone.utc)
-        )
-        self.assertEqual(obj.days_to_complete, 3)
-        self.assertEqual(obj.end_location_id, 1022167642188)
-        self.assertFalse(obj.for_corporation)
-        self.assertEqual(
-            obj.issuer_corporation,
-            EveCorporationInfo.objects.get(corporation_id=92000002),
-        )
-        self.assertEqual(obj.issuer, EveCharacter.objects.get(character_id=90000003))
-        self.assertEqual(obj.reward, 25000000)
-        self.assertEqual(obj.start_location_id, 60003760)
-        self.assertEqual(obj.status, Contract.Status.FINISHED)
-        self.assertEqual(obj.title, "demo contract")
-        self.assertEqual(obj.volume, 115000)
-        self.assertIsNone(obj.pricing)
-        self.assertIsNone(obj.issues)
-
-    def test_raises_exception_on_wrong_date_types(self):
-        contract_dict = {
-            "acceptor_id": 90000003,
-            "assignee_id": 90000003,
-            "availability": "personal",
-            "buyout": None,
-            "collateral": 50000000.0,
-            "contract_id": 149409014,
-            "date_accepted": "2019-10-03T23:00:00Z",
-            "date_completed": "2019-10-04T23:00:00Z",
-            "date_expired": "2019-10-30T23:00:00Z",
-            "date_issued": "2019-10-02T23:00:00Z",
-            "days_to_complete": 3,
-            "end_location_id": 1022167642188,
-            "for_corporation": False,
-            "issuer_corporation_id": 92000002,
-            "issuer_id": 90000003,
-            "price": 0.0,
-            "reward": 25000000.0,
-            "start_location_id": 60003760,
-            "status": "finished",
-            "title": "demo contract",
-            "type": "courier",
-            "volume": 115000.0,
-        }
-        with self.assertRaises(TypeError):
-            Contract.objects.update_or_create_from_dict(
-                self.handler, contract_dict, Mock()
-            )
-
-    @patch(MANAGERS_PATH + ".EveCharacter.objects.create_character")
-    def test_can_create_in_progress_and_creates_acceptor_char(
-        self, mock_create_character
-    ):
-        def create_character(character_id):
-            return EveCharacter.objects.create(
-                character_id=90000987,
-                character_name="Dummy",
-                corporation_id=92000002,
-                corporation_name="The Planet",
-            )
-
-        mock_create_character.side_effect = create_character
-        EveEntity.objects.create(
-            id=90000987, name="Dummy", category=EveEntity.CATEGORY_CHARACTER
-        )
-        contract_dict = {
-            "acceptor_id": 90000987,
-            "assignee_id": 90000987,
-            "availability": "personal",
-            "buyout": None,
-            "collateral": 50000000.0,
-            "contract_id": 149409014,
-            "date_accepted": dt.datetime(2019, 10, 3, 23, tzinfo=dt.timezone.utc),
-            "date_completed": None,
-            "date_expired": dt.datetime(2019, 10, 30, 23, tzinfo=dt.timezone.utc),
-            "date_issued": dt.datetime(2019, 10, 2, 23, tzinfo=dt.timezone.utc),
-            "days_to_complete": 3,
-            "end_location_id": 1022167642188,
-            "for_corporation": False,
-            "issuer_corporation_id": 92000002,
-            "issuer_id": 90000003,
-            "price": 0.0,
-            "reward": 25000000.0,
-            "start_location_id": 60003760,
-            "status": "in_progress",
-            "title": "demo contract",
-            "type": "courier",
-            "volume": 115000.0,
-        }
-        obj, created = Contract.objects.update_or_create_from_dict(
-            self.handler, contract_dict, Mock()
-        )
-        self.assertTrue(created)
-        self.assertEqual(obj.contract_id, 149409014)
-        self.assertEqual(obj.acceptor, EveCharacter.objects.get(character_id=90000987))
-        self.assertEqual(
-            obj.acceptor_corporation,
-            EveCorporationInfo.objects.get(corporation_id=92000002),
-        )
-
-    @patch(MANAGERS_PATH + ".EveEntityManager.get_or_create_esi")
-    def test_sets_acceptor_to_none_if_it_cant_be_created(self, mock_get_or_create_esi):
-        # given
-        mock_get_or_create_esi.side_effect = OSError
-        contract_dict = {
-            "acceptor_id": 666,
-            "assignee_id": 90000987,
-            "availability": "personal",
-            "buyout": None,
-            "collateral": 50000000.0,
-            "contract_id": 149409014,
-            "date_accepted": dt.datetime(2019, 10, 3, 23, tzinfo=dt.timezone.utc),
-            "date_completed": None,
-            "date_expired": dt.datetime(2019, 10, 30, 23, tzinfo=dt.timezone.utc),
-            "date_issued": dt.datetime(2019, 10, 2, 23, tzinfo=dt.timezone.utc),
-            "days_to_complete": 3,
-            "end_location_id": 1022167642188,
-            "for_corporation": False,
-            "issuer_corporation_id": 92000002,
-            "issuer_id": 90000003,
-            "price": 0.0,
-            "reward": 25000000.0,
-            "start_location_id": 60003760,
-            "status": "in_progress",
-            "title": "demo contract",
-            "type": "courier",
-            "volume": 115000.0,
-        }
         # when
+        obj: Contract
         obj, created = Contract.objects.update_or_create_from_dict(
-            self.handler, contract_dict, Mock()
+            handler, contract_dict, token=Mock()
         )
+
         # then
         self.assertTrue(created)
-        self.assertEqual(obj.contract_id, 149409014)
-        self.assertIsNone(obj.acceptor)
+        self.assertEqual(obj.collateral, collaterial)
+        self.assertEqual(obj.contract_id, contract_id)
+        self.assertEqual(obj.date_expired, date_expired)
+        self.assertEqual(obj.date_issued, date_issued)
+        self.assertEqual(obj.days_to_complete, days_to_complete)
+        self.assertEqual(obj.end_location, end_location)
+        self.assertEqual(obj.issuer_corporation, issuer.corporation)
+        self.assertEqual(obj.issuer, issuer)
+        self.assertEqual(obj.reward, reward)
+        self.assertEqual(obj.start_location, start_location)
+        self.assertEqual(obj.status, Contract.Status.OUTSTANDING)
+        self.assertEqual(obj.title, title)
+        self.assertEqual(obj.volume, volume)
+        self.assertFalse(obj.for_corporation)
         self.assertIsNone(obj.acceptor_corporation)
+        self.assertIsNone(obj.acceptor)
+        self.assertIsNone(obj.date_accepted)
+        self.assertIsNone(obj.date_completed)
+        self.assertIsNone(obj.issues)
+        self.assertIsNone(obj.pricing)
 
+    def test_can_create_in_progress(self):
+        # given
+        handler = ContractHandlerFactory()
+        start_location = LocationStationFactory()
+        end_location = LocationStationFactory()
+        assignee = EveCorporationInfoFactory()
+        date_expired = now() + dt.timedelta(days=3)
+        date_issued = now() - dt.timedelta(hours=3)
+        date_accepted = now() - dt.timedelta(hours=2)
+        contract_id = 149409014
+        collaterial = 50000000.0
+        days_to_complete = 3
+        reward = 25000000.0
+        volume = 115000.0
+        issuer = EveCharacterFactory()
+        acceptor = EveCharacterFactory()
+        title = "demo contract"
+        EveEntityCharacterFactory(
+            id=acceptor.character_id, name=acceptor.character_name
+        )  # needed for internal check
+        contract_dict = {
+            "acceptor_id": acceptor.character_id,
+            "assignee_id": assignee.corporation_id,
+            "availability": "personal",
+            "buyout": None,
+            "collateral": collaterial,
+            "contract_id": contract_id,
+            "date_accepted": date_accepted,
+            "date_completed": None,
+            "date_expired": date_expired,
+            "date_issued": date_issued,
+            "days_to_complete": days_to_complete,
+            "end_location_id": end_location.id,
+            "for_corporation": False,
+            "issuer_corporation_id": issuer.corporation.corporation_id,
+            "issuer_id": issuer.character_id,
+            "reward": reward,
+            "start_location_id": start_location.id,
+            "status": "in_progress",
+            "title": title,
+            "type": "courier",
+            "volume": volume,
+        }
 
-if "discord" in app_labels():
-
-    @patch(MODELS_PATH + ".contracts.FREIGHT_HOURS_UNTIL_STALE_STATUS", 48)
-    @patch(MODELS_PATH + ".contracts.dhooks_lite.Webhook.execute", autospec=True)
-    class TestContractManager_Notifications(NoSocketsTestCase):
-        @classmethod
-        def setUpClass(cls):
-            super().setUpClass()
-            cls.handler, _ = create_contract_handler_w_contracts()
-            jita = Location.objects.get(id=60003760)
-            amamake = Location.objects.get(id=1022167642188)
-            PricingFactory(
-                start_location=jita, end_location=amamake, price_base=500000000
-            )
-            Contract.objects.update_pricing()
-
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
-        def test_send_pilot_notifications_normal(self, mock_webhook_execute):
-            Contract.objects.send_notifications(rate_limited=False)
-            self.assertEqual(mock_webhook_execute.call_count, 8)
-
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", True)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
-        def test_send_pilot_notifications_if_invalid_route_set_but_global_option_enabled(
-            self, mock_webhook_execute
-        ):
-            x = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
-            Contract.objects.all().exclude(pk=x.pk).delete()
-            x.end_location_id = 60008494
-            x.save()
-            Contract.objects.update_pricing()
-            Contract.objects.send_notifications(rate_limited=False)
-            self.assertEqual(mock_webhook_execute.call_count, 1)
-
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
-        def test_send_pilot_notifications_if_invalid_route_set_and_global_option_disabled(
-            self, mock_webhook_execute
-        ):
-            x = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
-            Contract.objects.all().exclude(pk=x.pk).delete()
-            x.end_location_id = 60008494
-            x.save()
-            Contract.objects.update_pricing()
-            Contract.objects.send_notifications(rate_limited=False)
-            self.assertEqual(mock_webhook_execute.call_count, 0)
-
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
-        def test_dont_send_pilot_notifications_for_expired_contracts(
-            self, mock_webhook_execute
-        ):
-            x = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
-            Contract.objects.all().exclude(pk=x.pk).delete()
-            x.date_expired = now() - dt.timedelta(hours=1)
-            x.save()
-            Contract.objects.send_notifications(rate_limited=False)
-            self.assertEqual(mock_webhook_execute.call_count, 0)
-
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
-        def test_send_pilot_notifications_only_once(self, mock_webhook_execute):
-            x = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
-            Contract.objects.all().exclude(pk=x.pk).delete()
-
-            # round #1
-            Contract.objects.send_notifications(rate_limited=False)
-            self.assertEqual(mock_webhook_execute.call_count, 1)
-
-            # round #2
-            Contract.objects.send_notifications(rate_limited=False)
-            self.assertEqual(mock_webhook_execute.call_count, 1)
-
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", None)
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
-        def test_dont_send_any_notifications_when_no_url_if_set(
-            self, mock_webhook_execute
-        ):
-            Contract.objects.send_notifications(rate_limited=False)
-            self.assertEqual(mock_webhook_execute.call_count, 0)
-
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", None)
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
-        def test_send_customer_notifications_normal(self, mock_webhook_execute):
-            Contract.objects.send_notifications(rate_limited=False)
-            self.assertEqual(mock_webhook_execute.call_count, 12)
-
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", None)
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
-        def test_dont_send_customer_notifications_for_expired_contracts(
-            self, mock_webhook_execute
-        ):
-            x = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
-            Contract.objects.all().exclude(pk=x.pk).delete()
-            x.date_expired = now() - dt.timedelta(hours=1)
-            x.save()
-            Contract.objects.send_notifications(rate_limited=False)
-            self.assertEqual(mock_webhook_execute.call_count, 0)
-
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", None)
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
-        def test_send_customer_notifications_only_once_per_state(
-            self, mock_webhook_execute
-        ):
-            x = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
-            Contract.objects.all().exclude(pk=x.pk).delete()
-
-            # round #1
-            Contract.objects.send_notifications(rate_limited=False)
-            self.assertEqual(mock_webhook_execute.call_count, 1)
-
-            # round #2
-            Contract.objects.send_notifications(rate_limited=False)
-            self.assertEqual(mock_webhook_execute.call_count, 1)
-
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", True)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
-        def test_send_customer_notification_if_invalid_route_set_but_global_option_enabled(
-            self, mock_webhook_execute
-        ):
-            x = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
-            Contract.objects.all().exclude(pk=x.pk).delete()
-            x.end_location_id = 60008494
-            x.save()
-            Contract.objects.update_pricing()
-            Contract.objects.send_notifications(rate_limited=False)
-            self.assertEqual(mock_webhook_execute.call_count, 1)
-
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MANAGERS_PATH + ".FREIGHT_NOTIFY_ALL_CONTRACTS", False)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_WEBHOOK_URL", "url")
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORDPROXY_ENABLED", False)
-        def test_send_customer_notification_if_invalid_route_set_and_global_option_disabled(
-            self, mock_webhook_execute
-        ):
-            x = Contract.objects.filter(status=Contract.Status.OUTSTANDING).first()
-            Contract.objects.all().exclude(pk=x.pk).delete()
-            x.end_location_id = 60008494
-            x.save()
-            Contract.objects.update_pricing()
-            Contract.objects.send_notifications(rate_limited=False)
-            self.assertEqual(mock_webhook_execute.call_count, 0)
-
-
-class TestPricingManager(NoSocketsTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.jita, cls.amamake, cls.amarr = create_locations()
-        cls.p1 = PricingFactory(
-            start_location=cls.jita,
-            end_location=cls.amamake,
-            price_base=50000000,
-            is_default=True,
-        )
-        cls.p2 = PricingFactory(
-            start_location=cls.jita, end_location=cls.amarr, price_base=10000000
+        # when
+        obj: Contract
+        obj, created = Contract.objects.update_or_create_from_dict(
+            handler, contract_dict, token=Mock()
         )
 
-    def test_default_pricing_no_default_defined(self):
-        Pricing.objects.all().delete()
-        p = PricingFactory(
-            start_location=self.jita,
-            end_location=self.amamake,
-            price_base=50000000,
-            is_default=True,
+        # then
+        self.assertTrue(created)
+        self.assertEqual(obj.acceptor_corporation, acceptor.corporation)
+        self.assertEqual(obj.collateral, collaterial)
+        self.assertEqual(obj.contract_id, contract_id)
+        self.assertEqual(obj.date_accepted, date_accepted)
+        self.assertEqual(obj.date_expired, date_expired)
+        self.assertEqual(obj.date_issued, date_issued)
+        self.assertEqual(obj.days_to_complete, days_to_complete)
+        self.assertEqual(obj.end_location, end_location)
+        self.assertEqual(obj.issuer_corporation, issuer.corporation)
+        self.assertEqual(obj.issuer, issuer)
+        self.assertEqual(obj.reward, reward)
+        self.assertEqual(obj.start_location, start_location)
+        self.assertEqual(obj.status, Contract.Status.IN_PROGRESS)
+        self.assertEqual(obj.title, title)
+        self.assertEqual(obj.volume, volume)
+        self.assertFalse(obj.for_corporation)
+        self.assertIsNone(obj.date_completed)
+        self.assertIsNone(obj.issues)
+        self.assertIsNone(obj.pricing)
+
+    def test_can_create_finished(self):
+        # given
+        handler = ContractHandlerFactory()
+        start_location = LocationStationFactory()
+        end_location = LocationStationFactory()
+        assignee = EveCorporationInfoFactory()
+        date_expired = now() + dt.timedelta(days=3)
+        date_issued = now() - dt.timedelta(hours=3)
+        date_accepted = now() - dt.timedelta(hours=2)
+        date_completed = now()
+        contract_id = 149409014
+        collaterial = 50000000.0
+        days_to_complete = 3
+        reward = 25000000.0
+        volume = 115000.0
+        issuer = EveCharacterFactory()
+        acceptor = EveCharacterFactory()
+        title = "demo contract"
+        EveEntityCharacterFactory(
+            id=acceptor.character_id, name=acceptor.character_name
+        )  # needed for internal check
+        contract_dict = {
+            "acceptor_id": acceptor.character_id,
+            "assignee_id": assignee.corporation_id,
+            "availability": "personal",
+            "buyout": None,
+            "collateral": collaterial,
+            "contract_id": contract_id,
+            "date_accepted": date_accepted,
+            "date_completed": date_completed,
+            "date_expired": date_expired,
+            "date_issued": date_issued,
+            "days_to_complete": days_to_complete,
+            "end_location_id": end_location.id,
+            "for_corporation": False,
+            "issuer_corporation_id": issuer.corporation.corporation_id,
+            "issuer_id": issuer.character_id,
+            "reward": reward,
+            "start_location_id": start_location.id,
+            "status": "finished",
+            "title": title,
+            "type": "courier",
+            "volume": volume,
+        }
+
+        # when
+        obj: Contract
+        obj, created = Contract.objects.update_or_create_from_dict(
+            handler, contract_dict, token=Mock()
         )
-        expected = p
-        self.assertEqual(Pricing.objects.get_default(), expected)
 
-    def test_default_and_default_defined(self):
-        expected = self.p1
-        self.assertEqual(Pricing.objects.get_default(), expected)
+        # then
+        self.assertTrue(created)
+        self.assertEqual(obj.acceptor_corporation, acceptor.corporation)
+        self.assertEqual(obj.collateral, collaterial)
+        self.assertEqual(obj.contract_id, contract_id)
+        self.assertEqual(obj.date_accepted, date_accepted)
+        self.assertEqual(obj.date_expired, date_expired)
+        self.assertEqual(obj.date_issued, date_issued)
+        self.assertEqual(obj.date_completed, date_completed)
+        self.assertEqual(obj.days_to_complete, days_to_complete)
+        self.assertEqual(obj.end_location, end_location)
+        self.assertEqual(obj.issuer_corporation, issuer.corporation)
+        self.assertEqual(obj.issuer, issuer)
+        self.assertEqual(obj.reward, reward)
+        self.assertEqual(obj.start_location, start_location)
+        self.assertEqual(obj.status, Contract.Status.FINISHED)
+        self.assertEqual(obj.title, title)
+        self.assertEqual(obj.volume, volume)
+        self.assertFalse(obj.for_corporation)
+        self.assertIsNone(obj.issues)
+        self.assertIsNone(obj.pricing)
 
-    def test_default_with_no_pricing_defined(self):
-        Pricing.objects.all().delete()
-        expected = None
-        self.assertEqual(Pricing.objects.get_default(), expected)
 
-    def test_get_or_default_normal(self):
-        expected = self.p1
-        self.assertEqual(Pricing.objects.get_or_default(self.p1.pk), expected)
+class TestPricingManager_GetDefault(NoSocketsTestCase):
+    def test_should_return_default_pricing_when_exists(self):
+        # given
+        pricing = PricingFactory(is_default=True)
+        PricingFactory()
+        # when
+        got = Pricing.objects.get_default()
+        # then
+        self.assertEqual(got, pricing)
 
-    def test_get_or_default_not_found(self):
-        expected = self.p1
-        invalid_pk = generate_invalid_pk(Pricing)
-        self.assertEqual(Pricing.objects.get_or_default(invalid_pk), expected)
+    def test_should_return_any_pricing_when_no_default_defined(self):
+        # given
+        pricing = PricingFactory()
+        # when
+        got = Pricing.objects.get_default()
+        # then
+        self.assertEqual(got, pricing)
 
-    def test_get_or_default_with_none(self):
-        expected = self.p1
-        self.assertEqual(Pricing.objects.get_or_default(None), expected)
+    def test_should_return_none_when_no_pricing_defined(self):
+        # when
+        got = Pricing.objects.get_default()
+        # then
+        self.assertIsNone(got)
+
+
+class TestPricingManager_GetOrDefault(NoSocketsTestCase):
+    def test_should_return_default_pricing_when_exists(self):
+        # given
+        pricing = PricingFactory(is_default=True)
+        PricingFactory()
+        # when
+        got = Pricing.objects.get_or_default()
+        # then
+        self.assertEqual(got, pricing)
+
+    def test_should_return_any_pricing_when_no_default_defined(self):
+        # given
+        pricing = PricingFactory()
+        # when
+        got = Pricing.objects.get_or_default()
+        # then
+        self.assertEqual(got, pricing)
+
+    def test_should_return_none_when_no_pricing_defined(self):
+        # when
+        got = Pricing.objects.get_or_default()
+        # then
+        self.assertIsNone(got)
+
+    def test_should_return_given_pricing_when_it_exists(self):
+        # given
+        PricingFactory(is_default=True)
+        pricing = PricingFactory()
+        # when
+        got = Pricing.objects.get_or_default(pk=pricing.pk)
+        # then
+        self.assertEqual(got, pricing)
+
+    def test_should_return_default_when_given_pricing_not_found(self):
+        # given
+        pricing = PricingFactory(is_default=True)
+        PricingFactory()
+        # when
+        got = Pricing.objects.get_or_default(pk=generate_invalid_pk(Pricing))
+        # then
+        self.assertEqual(got, pricing)

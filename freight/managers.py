@@ -1,11 +1,12 @@
 """Managers for Freight."""
 
-# pylint: disable = missing-class-docstring, import-outside-toplevel, redefined-builtin
+from __future__ import annotations
 
+# pylint: disable = missing-class-docstring, import-outside-toplevel, redefined-builtin
 import json
 from datetime import datetime
 from time import sleep
-from typing import Any, Tuple
+from typing import TYPE_CHECKING, Any, Tuple
 
 from bravado.exception import HTTPForbidden, HTTPNotFound, HTTPUnauthorized
 
@@ -29,6 +30,9 @@ from .app_settings import (
 from .helpers import get_or_create_eve_character, get_or_create_eve_corporation_info
 from .providers import esi
 
+if TYPE_CHECKING:
+    from freight.models import Contract
+
 logger = LoggerAddTag(get_extension_logger(__name__), __title__)
 
 
@@ -49,12 +53,13 @@ class PricingManager(models.Manager):
 
     def get_or_default(self, pk: int = None):
         """Return the pricing for given pk if found else default pricing."""
-        if pk:
-            try:
-                return self.filter(is_active=True).get(pk=pk)
-            except self.model.DoesNotExist:
-                return self.get_default()
-        return self.get_default()
+        if not pk:
+            return self.get_default()
+
+        try:
+            return self.filter(is_active=True).get(pk=pk)
+        except self.model.DoesNotExist:
+            return self.get_default()
 
 
 class LocationManager(models.Manager):
@@ -175,7 +180,9 @@ class ContractQuerySet(models.QuerySet):
         )
 
     def update_pricing(self) -> int:
-        """Updates contracts with matching pricing"""
+        """Update contracts with matching pricing
+        and return number of processed contracts.
+        """
         from .models import Pricing
 
         def _make_key(location_id_1: int, location_id_2: int) -> str:
@@ -226,6 +233,7 @@ class ContractQuerySet(models.QuerySet):
             "Checking %d contracts if customer notifications need to be sent",
             self.count(),
         )
+        contract: Contract
         for contract in self:
             if contract.has_expired:
                 logger.debug("contract %d has expired", contract.contract_id)
@@ -392,6 +400,7 @@ class ContractManagerBase(models.Manager):
                 "and FREIGHT_NOTIFY_ALL_CONTRACTS option is set to False."
             )
             return
+
         self._sent_pilot_notifications(force_sent, rate_limited)
         self._sent_customer_notifications(force_sent, rate_limited)
 

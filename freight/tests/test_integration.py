@@ -1,15 +1,17 @@
 import re
+from http import HTTPStatus
 
 from django.test import override_settings
 from django.urls import reverse
 from django_webtest import WebTest
 
-from allianceauth.tests.auth_utils import AuthUtils
-from app_utils.testing import NoSocketsTestCase
-
-from freight.models import Contract, Location, Pricing
-from freight.tests.testdata.factories_2 import PricingFactory
-from freight.tests.testdata.helpers import create_contract_handler_w_contracts
+from freight.models import Contract, Pricing
+from freight.tests.testdata.factories_2 import (
+    ContractHandlerFactory,
+    LocationStationFactory,
+    PricingFactory,
+    UserMainDefaultFactory,
+)
 
 _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
 
@@ -19,14 +21,11 @@ class TestCalculatorWeb(WebTest):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        _, cls.user = create_contract_handler_w_contracts()
-        cls.user = AuthUtils.add_permission_to_user_by_name(
-            "freight.use_calculator", cls.user
-        )
-
-        jita = Location.objects.get(id=60003760)
-        amamake = Location.objects.get(id=1022167642188)
-        amarr = Location.objects.get(id=60008494)
+        cls.user = UserMainDefaultFactory()
+        ContractHandlerFactory()
+        jita = LocationStationFactory(id=60003760)
+        amamake = LocationStationFactory(id=60004816)
+        amarr = LocationStationFactory(id=60008494)
         cls.pricing_1 = PricingFactory(
             start_location=jita,
             end_location=amamake,
@@ -110,41 +109,16 @@ class TestCalculatorWeb(WebTest):
         self.assertIn("exceeds the maximum allowed collateral", form.text)
 
 
-@override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
 class TestCalculatorWeb2(WebTest):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        _, cls.user = create_contract_handler_w_contracts()
-        cls.user = AuthUtils.add_permission_to_user_by_name(
-            "freight.use_calculator", cls.user
-        )
-
     def test_can_handle_no_pricing(self):
         # given
-        self.app.set_user(self.user)
+        ContractHandlerFactory()
+        user = UserMainDefaultFactory()
+        self.app.set_user(user)
+
         # when
         response = self.app.get(reverse("freight:calculator"))
+
         # then
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIn("Please define a pricing/route!", response.text)
-
-
-@override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
-class TestPricingSave(NoSocketsTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        _, cls.user = create_contract_handler_w_contracts([149409016])
-
-    def test_pricing_save_handler(self):
-        # given
-        jita = Location.objects.get(id=60003760)
-        amamake = Location.objects.get(id=1022167642188)
-        # when
-        pricing = Pricing.objects.create(
-            start_location=jita, end_location=amamake, price_base=500000000
-        )
-        # then
-        contract_1 = Contract.objects.get(contract_id=149409016)
-        self.assertEqual(contract_1.pricing, pricing)

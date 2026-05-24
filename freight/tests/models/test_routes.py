@@ -1,11 +1,12 @@
 from unittest.mock import patch
 
 from django.core.exceptions import ValidationError
+from django.test import override_settings
 
 from app_utils.testing import NoSocketsTestCase
 
 from freight.models import ContractHandler, Location, Pricing
-from freight.tests.testdata.factories_2 import PricingFactory
+from freight.tests.testdata.factories_2 import ContractFactory, PricingFactory
 from freight.tests.testdata.helpers import (
     create_contract_handler_w_contracts,
     create_locations,
@@ -433,3 +434,21 @@ class TestPricingPricePerVolumeModifier(NoSocketsTestCase):
         p = Pricing(price_base=50000000)
         p.use_price_per_volume_modifier = True
         self.assertIsNone(p.price_per_volume_modifier())
+
+
+@override_settings(CELERY_ALWAYS_EAGER=True, CELERY_EAGER_PROPAGATES_EXCEPTIONS=True)
+class TestPricingSave(NoSocketsTestCase):
+    def test_should_update_contracts_after_saving_pricing(self):
+        # given
+        contract = ContractFactory()
+
+        # when
+        pricing = Pricing.objects.create(
+            start_location=contract.start_location,
+            end_location=contract.end_location,
+            price_base=500000000,
+        )
+
+        # then
+        contract.refresh_from_db()
+        self.assertEqual(contract.pricing, pricing)
