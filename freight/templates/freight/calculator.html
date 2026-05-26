@@ -1,7 +1,7 @@
 {% extends 'freight/base.html' %}
 {% load i18n %}
 {% load humanize %}
-{% load bootstrap %}
+{% load django_bootstrap5 %}
 {% load static %}
 {% load freight_filters %}
 
@@ -14,7 +14,7 @@
                     <div class="card-body">
                         <h5 class="card-title">{% translate "Calculator" %}</h5>
                         {% if has_pricing %}
-                            {{ form|bootstrap }}
+                            {{ bootstrap_form }}
                             <br>
                             <p><strong>{% translate "Reward" %}</strong></p>
                             <h2 id="text_price">
