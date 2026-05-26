@@ -2,8 +2,9 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 from django.contrib.admin.sites import AdminSite
-from django.contrib.auth.models import User
 from django.test import TestCase
+
+from app_utils.testdata_factories import UserFactory
 
 from freight.admin import ContractAdmin
 from freight.models import Contract
@@ -26,7 +27,7 @@ class TestContractAdmin(TestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.modeladmin = ContractAdmin(model=Contract, admin_site=AdminSite())
-        cls.user = User.objects.create_superuser("Clark Kent")
+        cls.user = UserFactory(is_superuser=True, is_staff=True)
         cls.handler = ContractHandlerFactory()
 
     @patch(MODULE_PATH + ".ContractAdmin.message_user", spec=True)
@@ -71,7 +72,7 @@ class TestPricingAdmin(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create_superuser("Clark Kent")
+        cls.user = UserFactory(is_superuser=True, is_staff=True)
         PricingFactory()
 
     def test_should_open_list(self):

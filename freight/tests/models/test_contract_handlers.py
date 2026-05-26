@@ -8,6 +8,7 @@ import pook
 from django.core.cache import cache
 from django.test import TransactionTestCase
 from django.utils.timezone import now
+from esi.exceptions import HTTPServerError
 
 from app_utils.testdata_factories import (
     EveAllianceInfoFactory,
@@ -37,6 +38,7 @@ from freight.tests.testdata.factories_2 import (
 )
 
 MODULE_PATH = "freight.models.contract_handlers"
+MANAGERS_PATH = "freight.managers"
 
 
 class TestContractHandler(NoSocketsTestCase):
@@ -485,6 +487,66 @@ class TestContractHandler_UpdateContractsEsi(TransactionTestCase):
                 self.assertSetEqual(
                     extract(handler.contracts, "contract_id"), tc.contract_ids
                 )
+
+    @patch(
+        MODULE_PATH + ".FREIGHT_OPERATION_MODE", FREIGHT_OPERATION_MODE_MY_CORPORATION
+    )
+    @pook.on
+    def test_should_continue_when_storing_a_contract_failed(self):
+        # given
+        handler = ContractHandlerFactory(
+            operation_mode=ContractHandler.Mode.MY_CORPORATION
+        )
+        corporation = handler.character.character.corporation
+        contract_id = 42
+        end_location = LocationStationFactory()
+        issuer = EveCharacterFactory(corporation=corporation)
+        reward = 1234.56
+        collateral = 91234.56
+        days_to_complete = 3
+        start_location = LocationStationFactory()
+        date_issued = now() - dt.timedelta(hours=3)
+        date_expired = date_issued + dt.timedelta(days=3)
+        title = "title"
+        volume = 100_000
+        pook.get(
+            make_esi_url(f"corporations/{handler.organization.id}/contracts"),
+            reply=HTTPStatus.OK,
+            response_headers={"X-Pages": "1"},
+            response_json=[
+                {
+                    "acceptor_id": 0,
+                    "assignee_id": handler.organization.id,
+                    "availability": "corporation",
+                    "collateral": collateral,
+                    "contract_id": contract_id,
+                    "date_expired": date_expired.isoformat(),
+                    "date_issued": date_issued.isoformat(),
+                    "days_to_complete": days_to_complete,
+                    "end_location_id": end_location.id,
+                    "for_corporation": False,
+                    "issuer_corporation_id": corporation.corporation_id,
+                    "issuer_id": issuer.character_id,
+                    "reward": reward,
+                    "start_location_id": start_location.id,
+                    "status": "outstanding",
+                    "title": title,
+                    "type": "courier",
+                    "volume": volume,
+                }
+            ],
+        )
+        exception = HTTPServerError(
+            status_code=500, headers={}, data="Internal Server Error"
+        )
+
+        # when
+        with patch(MANAGERS_PATH + ".ContractManager.update_or_create_from_dict") as m:
+            m.side_effect = exception
+            handler.update_contracts_esi()
+
+        # then
+        self.assertEqual(handler.contracts.count(), 0)
 
     @pook.on
     def test_abort_when_operation_mode_does_not_match(self):
