@@ -33,7 +33,7 @@ dependencies = [
     "typing_extensions",
 ]
 [project.optional-dependencies]
-test = ["coverage", "factory_boy", "pook", "django-webtest"]
+test = ["coverage", "factory_boy", "pook"]
 
 [project.urls]
 Homepage = "https://gitlab.com/ErikKalkoken/aa-freight"

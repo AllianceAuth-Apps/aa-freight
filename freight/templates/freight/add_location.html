@@ -6,7 +6,7 @@
 {% block details %}
     <form class="form" action="{% url 'freight:add_location_2' %}" method="POST">
         {% csrf_token %}
-        {{ bootstrap_form }}
+        {% bootstrap_form form %}
         <button class="btn btn-success btn-block" type="submit">
             {% translate "Add / Update Location" %}
         </button>

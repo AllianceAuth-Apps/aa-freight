@@ -9,7 +9,7 @@ from app_utils.testing import NoSocketsTestCase
 if "discord" in app_labels():
 
     from freight.models import Contract
-    from freight.tests.test_managers import MANAGERS_PATH, MODELS_PATH
+    from freight.tests.managers.test_managers import MANAGERS_PATH, MODELS_PATH
     from freight.tests.testdata.factories_2 import (
         ContractFactory,
         DiscordUserFactory,

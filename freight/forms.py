@@ -67,8 +67,8 @@ class CalculatorForm(forms.Form):
             else:
                 collateral = 0
             price = (
-                math.ceil(pricing.get_calculated_price(volume, collateral) / 1000000)
-                * 1000000
+                math.ceil(pricing.get_calculated_price(volume, collateral) / 1_000_000)
+                * 1_000_000
             )
 
         else:

@@ -7,11 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
-## [3.0.0] - tbd
+## [3.0.0a1] - tbd
 
 ### Changed
 
 - BREAKING CHANGE: Now requires Python 3.10
+- Added support for AA5
 - Migrated ESI client to OpenAPI
 - Modernized test suite
 - Deprecated old test factories

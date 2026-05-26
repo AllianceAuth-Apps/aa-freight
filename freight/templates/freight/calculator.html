@@ -14,7 +14,7 @@
                     <div class="card-body">
                         <h5 class="card-title">{% translate "Calculator" %}</h5>
                         {% if has_pricing %}
-                            {{ bootstrap_form }}
+                            {% bootstrap_form form %}
                             <br>
                             <p><strong>{% translate "Reward" %}</strong></p>
                             <h2 id="text_price">
