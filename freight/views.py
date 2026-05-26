@@ -20,9 +20,8 @@ from esi.models import Token
 from allianceauth.authentication.models import CharacterOwnership
 from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.logging import LoggerAddTag
 
-from . import __title__, constants, tasks
+from . import constants, tasks
 from .app_settings import (
     FREIGHT_APP_NAME,
     FREIGHT_OPERATION_MODE,
@@ -32,7 +31,7 @@ from .forms import CalculatorForm
 from .helpers import update_or_create_eve_entity_from_evecharacter
 from .models import Contract, ContractHandler, EveEntity, Freight, Location, Pricing
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 ADD_LOCATION_TOKEN_TAG = "freight_add_location_token"
 

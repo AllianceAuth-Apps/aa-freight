@@ -20,10 +20,8 @@ from allianceauth.services.hooks import get_extension_logger
 from app_utils.datetime import DATETIME_FORMAT
 from app_utils.django import app_labels
 from app_utils.helpers import humanize_number
-from app_utils.logging import LoggerAddTag
 from app_utils.urls import site_absolute_url
 
-from freight import __title__
 from freight.app_settings import (
     DISCORDPROXY_HOST,
     DISCORDPROXY_PORT,
@@ -54,7 +52,7 @@ try:
 except ImportError:
     DiscordClient = None
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 class Contract(models.Model):

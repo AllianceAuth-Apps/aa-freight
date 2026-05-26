@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Migrated ESI client to OpenAPI
 - Modernized test suite
 - Deprecated old test factories
+- Removed logger tag
 
 ### Fixed
 

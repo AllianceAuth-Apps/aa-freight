@@ -21,9 +21,7 @@ from allianceauth.eveonline.models import (
     EveCorporationInfo,
 )
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.logging import LoggerAddTag
 
-from freight import __title__
 from freight.app_settings import (
     FREIGHT_CONTRACT_SYNC_GRACE_MINUTES,
     FREIGHT_OPERATION_MODE,
@@ -35,7 +33,7 @@ from freight.helpers import get_or_create_eve_character
 from freight.managers import EveEntityManager
 from freight.providers import esi
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 class Freight(models.Model):

@@ -10,15 +10,13 @@ from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.logging import LoggerAddTag
 
-from freight import __title__
 from freight.app_settings import FREIGHT_FULL_ROUTE_NAMES
 from freight.managers import LocationManager, PricingManager
 
 from .contract_handlers import ContractHandler
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 class Location(models.Model):

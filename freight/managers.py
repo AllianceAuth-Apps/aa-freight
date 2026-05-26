@@ -18,9 +18,8 @@ from esi.models import Token
 from allianceauth.eveonline.models import EveCharacter
 from allianceauth.eveonline.providers import ObjectNotFound
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.logging import LoggerAddTag
 
-from . import __title__, constants
+from . import constants
 from .app_settings import (
     FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL,
     FREIGHT_DISCORD_WEBHOOK_URL,
@@ -33,7 +32,7 @@ from .providers import esi
 if TYPE_CHECKING:
     from freight.models import Contract
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 class PricingManager(models.Manager):

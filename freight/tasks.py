@@ -3,12 +3,10 @@
 from celery import chain, shared_task
 
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.logging import LoggerAddTag
 
-from . import __title__
 from .models import Contract, ContractHandler, Location
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 def _get_contract_handler() -> ContractHandler:
