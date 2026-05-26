@@ -6,18 +6,17 @@ from django.utils.timezone import now
 from app_utils.django import app_labels
 from app_utils.testing import NoSocketsTestCase
 
-from freight.models import Contract
-from freight.tests.test_managers import MANAGERS_PATH, MODELS_PATH
-from freight.tests.testdata.factories_2 import (
-    ContractFactory,
-    DiscordUserFactory,
-    UserMainDefaultFactory,
-)
-
-# TODO: Try to consolidate URL mocks to one module
-
-
 if "discord" in app_labels():
+
+    from freight.models import Contract
+    from freight.tests.test_managers import MANAGERS_PATH, MODELS_PATH
+    from freight.tests.testdata.factories_2 import (
+        ContractFactory,
+        DiscordUserFactory,
+        UserMainDefaultFactory,
+    )
+
+    # TODO: Try to consolidate URL mocks to one module
 
     @patch(MANAGERS_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
     @patch(MODELS_PATH + ".contracts.FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)

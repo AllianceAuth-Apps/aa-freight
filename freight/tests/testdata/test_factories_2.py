@@ -6,7 +6,6 @@ from freight.models import ContractHandler
 from .factories_2 import (
     ContractFactory,
     ContractHandlerFactory,
-    DiscordUserFactory,
     EveEntityCorporationFactory,
     PricingFactory,
 )
@@ -96,12 +95,6 @@ class TestEveEntityCorporationFactory(NoSocketsTestCase):
         a = EveEntityCorporationFactory()
         b = EveEntityCorporationFactory(id=a.id)
         self.assertEqual(a, b)
-
-
-class TestDiscordUserFactory(NoSocketsTestCase):
-    def test_can_create(self):
-        x = DiscordUserFactory()
-        self.assertTrue(x)
 
 
 class TestUserMainFactory(NoSocketsTestCase):
