@@ -1,13 +1,18 @@
 """Helpers for Freight."""
 
-from typing import Any, Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Tuple
 
 from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
+
+if TYPE_CHECKING:
+    from freight.models import EveEntity
 
 
 def update_or_create_eve_entity_from_evecharacter(
     character: EveCharacter, category: str
-) -> Tuple[Any, bool]:
+) -> Tuple[EveEntity, bool]:
     """Update or create an EveEntity object from an EveCharacter object."""
     from .models import EveEntity
 

@@ -12,7 +12,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.html import format_html
 from django.utils.text import format_lazy
 from django.utils.timezone import now
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as __
 from esi.decorators import token_required
 from esi.models import Token
 
@@ -42,7 +42,7 @@ def add_common_context(request, context: dict) -> dict:
         Contract.objects.all().issued_by_user(request.user).pending_count()
     )
     my_mode = Freight.operation_mode_friendly(FREIGHT_OPERATION_MODE)
-    setup_str = _("Setup")
+    setup_str = __("Setup")
     button_label = format_lazy(
         "{setup} {operation_mode}", setup=setup_str, operation_mode=my_mode
     )
@@ -74,7 +74,7 @@ def contract_list_user(request):
     except AttributeError:
         user_name = request.user.username
     context = {
-        "page_title": _("My Contracts"),
+        "page_title": __("My Contracts"),
         "category": constants.CONTRACT_LIST_USER,
         "user_name": user_name,
     }
@@ -88,7 +88,7 @@ def contract_list_user(request):
 def contract_list_all(request):
     """View rendering contract list with all contracts."""
     context = {
-        "page_title": _("All Contracts"),
+        "page_title": __("All Contracts"),
         "category": constants.CONTRACT_LIST_ALL,
     }
     return render(
@@ -252,7 +252,7 @@ def calculator(request, pricing_pk=None):
         organization_name = None
         availability = None
     context = {
-        "page_title": _("Reward Calculator"),
+        "page_title": __("Reward Calculator"),
         "form": form,
         "pricing": pricing,
         "has_pricing": Pricing.objects.exists(),
@@ -272,84 +272,77 @@ def calculator(request, pricing_pk=None):
 @login_required
 @permission_required("freight.setup_contract_handler")
 @token_required(scopes=ContractHandler.get_esi_scopes())
-def setup_contract_handler(request, token):
+def setup_contract_handler(request, token: Token):
     """View for setting up a new contract handler."""
-    success = True
     token_char = get_object_or_404(EveCharacter, character_id=token.character_id)
-    if (
-        Freight.category_for_operation_mode(FREIGHT_OPERATION_MODE)
-        == EveEntity.CATEGORY_ALLIANCE
-    ) and not token_char.alliance_id:
+    try:
+        owned_char = CharacterOwnership.objects.get(
+            user=request.user, character=token_char
+        )
+    except CharacterOwnership.DoesNotExist:
         messages.error(
             request,
-            _(
+            __(
+                "You can only use your main or alt characters to setup "
+                "the contract handler. "
+                "However, character %s is neither. ",
+            )
+            % token_char.character_name,
+        )
+        return redirect("freight:index")
+
+    handler = ContractHandler.objects.first()
+    if handler and handler.operation_mode != FREIGHT_OPERATION_MODE:
+        messages.error(
+            request,
+            __(
+                "There already is a contract handler installed for a "
+                "different operation mode. You need to first delete the "
+                "existing contract handler in the admin section "
+                "before you can set up this app for a different operation mode."
+            ),
+        )
+        return redirect("freight:index")
+
+    category = Freight.category_for_operation_mode(FREIGHT_OPERATION_MODE)
+    if category == EveEntity.CATEGORY_ALLIANCE and not token_char.alliance_id:
+        messages.error(
+            request,
+            __(
                 "Can not setup contract handler, "
                 "because %s is not a member of any alliance"
             )
             % token_char,
         )
-        success = False
+        return redirect("freight:index")
 
-    owned_char = None
-    if success:
-        try:
-            owned_char = CharacterOwnership.objects.get(
-                user=request.user, character=token_char
-            )
-        except CharacterOwnership.DoesNotExist:
-            messages.error(
-                request,
-                _(
-                    "You can only use your main or alt characters to setup "
-                    "the contract handler. "
-                    "However, character %s is neither. ",
-                )
-                % token_char.character_name,
-            )
-            success = False
+    organization, _ = update_or_create_eve_entity_from_evecharacter(
+        token_char, category
+    )
 
-    if success:
-        handler = ContractHandler.objects.first()
-        if handler and handler.operation_mode != FREIGHT_OPERATION_MODE:
-            messages.error(
-                request,
-                _(
-                    "There already is a contract handler installed for a "
-                    "different operation mode. You need to first delete the "
-                    "existing contract handler in the admin section "
-                    "before you can set up this app for a different operation mode."
-                ),
-            )
-            success = False
-
-    if success:
-        organization = update_or_create_eve_entity_from_evecharacter(
-            token_char, Freight.category_for_operation_mode(FREIGHT_OPERATION_MODE)
-        )[0]
-
-        handler = ContractHandler.objects.update_or_create(
-            organization=organization,
-            defaults={
-                "character": owned_char,
-                "operation_mode": FREIGHT_OPERATION_MODE,
-            },
-        )[0]
-        tasks.run_contracts_sync.delay(force_sync=True)
-        messages.success(
-            request,
-            _(
-                "Contract Handler setup started for "
-                "%(organization)s organization "
-                "with %(character)s as sync character. "
-                "Operation mode: %(operation_mode)s. "
-                "Started syncing of courier contracts. "
-            )
-            % {
-                "organization": organization.name,
-                "character": handler.character.character.character_name,
-                "operation_mode": handler.operation_mode_friendly,
-            },
+    handler, _ = ContractHandler.objects.update_or_create(
+        organization=organization,
+        defaults={
+            "character": owned_char,
+            "operation_mode": FREIGHT_OPERATION_MODE,
+        },
+    )
+    tasks.run_contracts_sync.delay(force_sync=True)
+    messages.success(
+        request,
+        __(
+            "Contract Handler setup started for "
+            "%(organization)s organization "
+            "with %(character)s as sync character. "
+            "Operation mode: %(operation_mode)s. "
+            "Started syncing of courier contracts. "
         )
+        % {
+            "organization": organization.name,
+            "character": handler.character.character.character_name,
+            "operation_mode": handler.operation_mode_friendly,
+        },
+    )
     return redirect("freight:index")
 
 
@@ -385,7 +378,7 @@ def add_location_2(request):
             except OSError as ex:
                 messages.error(
                     request,
-                    _(
+                    __(
                         "Failed to add location with token from %(character)s "
                         "for location ID %(id)s: %(error)s"
                     )
@@ -396,11 +389,11 @@ def add_location_2(request):
                     },
                 )
             else:
-                action_txt = _("Added:") if created else _("Updated:")
+                action_txt = __("Added:") if created else __("Updated:")
                 messages.success(request, f"{action_txt} {location.name}")
                 return redirect("freight:add_location_2")
     context = {
-        "page_title": _("Add / Update Location"),
+        "page_title": __("Add / Update Location"),
         "form": form,
         "token_char_name": token.character_name,
     }
