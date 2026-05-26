@@ -144,8 +144,8 @@ class EveEntityManager(models.Manager):
         """updates or creates entity object with data fetched from ESI"""
         try:
             response = esi.client.Universe.post_universe_names(ids=[id]).results()
-        except HTTPNotFound:
-            raise ObjectNotFound(id, "unknown_type")
+        except HTTPNotFound as ex:
+            raise ObjectNotFound(id, "unknown_type") from ex
 
         if len(response) != 1:
             raise ObjectNotFound(id, "unknown_type")

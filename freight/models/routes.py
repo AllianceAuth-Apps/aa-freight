@@ -449,10 +449,9 @@ class Pricing(models.Model):
 
 @receiver(post_save, sender=Pricing)
 def update_contracts_pricing(
-    sender,  # pylint: disable=unused-argument
-    instance: Pricing,
-    **kwargs,
+    sender, instance, **kwargs  # pylint: disable=unused-argument
 ):
+    """Update pricing for all contracts."""
     from freight import tasks
 
     tasks.update_contracts_pricing.delay()

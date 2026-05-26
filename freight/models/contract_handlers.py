@@ -265,7 +265,7 @@ class ContractHandler(models.Model):
         if self.operation_mode == self.Mode.MY_ALLIANCE:
             return text + " [My Alliance]"
 
-        elif self.operation_mode == self.Mode.MY_CORPORATION:
+        if self.operation_mode == self.Mode.MY_CORPORATION:
             return text + " [My Corporation]"
 
         return text

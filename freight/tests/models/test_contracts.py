@@ -1,5 +1,6 @@
 import datetime as dt
-from unittest.mock import patch
+from typing import NamedTuple
+from unittest.mock import MagicMock, patch
 
 from dhooks_lite import Embed
 
@@ -8,13 +9,15 @@ from django.utils.timezone import now
 from app_utils.django import app_labels
 from app_utils.testing import NoSocketsTestCase
 
-from freight.models import Contract, Location
+from freight.models import Contract
 from freight.tests.testdata.factories_2 import (
     ContractCustomerNotificationFactory,
     ContractFactory,
+    ContractHandlerFactory,
+    DiscordUserFactory,
     LocationStationFactory,
+    UserMainDefaultFactory,
 )
-from freight.tests.testdata.helpers import create_contract_handler_w_contracts
 
 if "discord" in app_labels():
     from allianceauth.services.modules.discord.models import DiscordUser
@@ -134,307 +137,86 @@ class TestContract_GetIssueList(NoSocketsTestCase):
 
 @patch(MODULE_PATH + ".dhooks_lite.Webhook.execute", spec=True)
 class TestContractSendPilotNotification(NoSocketsTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.handler, _ = create_contract_handler_w_contracts()
-        cls.contract = Contract.objects.get(contract_id=149409005)
-
     @patch(MODULE_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", None)
     def test_aborts_without_webhook_url(self, mock_webhook_execute):
+        # given
         mock_webhook_execute.return_value.status_ok = True
-        self.contract.send_pilot_notification()
+        contract = ContractFactory()
+
+        # when
+        contract.send_pilot_notification()
+
+        # then
         self.assertEqual(mock_webhook_execute.call_count, 0)
 
     @patch(MODULE_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
     @patch(MODULE_PATH + ".FREIGHT_DISCORD_DISABLE_BRANDING", False)
     @patch(MODULE_PATH + ".FREIGHT_DISCORD_MENTIONS", None)
     def test_with_branding_and_wo_mentions(self, mock_webhook_execute):
+        # given
         mock_webhook_execute.return_value.status_ok = True
-        self.contract.send_pilot_notification()
+        contract = ContractFactory()
+
+        # when
+        contract.send_pilot_notification()
+
+        # then
         self.assertEqual(mock_webhook_execute.call_count, 1)
 
     @patch(MODULE_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
     @patch(MODULE_PATH + ".FREIGHT_DISCORD_DISABLE_BRANDING", True)
     @patch(MODULE_PATH + ".FREIGHT_DISCORD_MENTIONS", None)
     def test_wo_branding_and_wo_mentions(self, mock_webhook_execute):
+        # given
         mock_webhook_execute.return_value.status_ok = True
-        self.contract.send_pilot_notification()
+        contract = ContractFactory()
+
+        # when
+        contract.send_pilot_notification()
+
+        # then
         self.assertEqual(mock_webhook_execute.call_count, 1)
 
     @patch(MODULE_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
     @patch(MODULE_PATH + ".FREIGHT_DISCORD_DISABLE_BRANDING", True)
     @patch(MODULE_PATH + ".FREIGHT_DISCORD_MENTIONS", "@here")
     def test_with_branding_and_with_mentions(self, mock_webhook_execute):
+        # given
         mock_webhook_execute.return_value.status_ok = True
-        self.contract.send_pilot_notification()
+        contract = ContractFactory()
+
+        # when
+        contract.send_pilot_notification()
+
+        # then
         self.assertEqual(mock_webhook_execute.call_count, 1)
 
     @patch(MODULE_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
     @patch(MODULE_PATH + ".FREIGHT_DISCORD_DISABLE_BRANDING", True)
     @patch(MODULE_PATH + ".FREIGHT_DISCORD_MENTIONS", True)
     def test_wo_branding_and_with_mentions(self, mock_webhook_execute):
+        # given
         mock_webhook_execute.return_value.status_ok = True
-        self.contract.send_pilot_notification()
+        contract = ContractFactory()
+
+        # when
+        contract.send_pilot_notification()
+
+        # then
         self.assertEqual(mock_webhook_execute.call_count, 1)
 
     @patch(MODULE_PATH + ".FREIGHT_DISCORD_WEBHOOK_URL", "url")
     def test_log_error_from_execute(self, mock_webhook_execute):
+        # given
         mock_webhook_execute.return_value.status_ok = False
         mock_webhook_execute.return_value.status_code = 404
-        self.contract.send_pilot_notification()
+        contract = ContractFactory()
+
+        # when
+        contract.send_pilot_notification()
+
+        # then
         self.assertEqual(mock_webhook_execute.call_count, 1)
-
-
-if DiscordUser:
-
-    @patch(MODULE_PATH + ".dhooks_lite.Webhook.execute", spec=True)
-    class TestContractSendCustomerNotification(NoSocketsTestCase):
-        @classmethod
-        def setUpClass(cls):
-            super().setUpClass()
-            cls.handler, cls.user = create_contract_handler_w_contracts()
-            cls.character = cls.user.profile.main_character
-            cls.corporation = cls.character.corporation
-            cls.contract_1 = Contract.objects.get(contract_id=149409005)
-            cls.contract_2 = Contract.objects.get(contract_id=149409019)
-            cls.contract_3 = Contract.objects.get(contract_id=149409118)
-            cls.jita = Location.objects.get(id=60003760)
-            cls.amamake = Location.objects.get(id=1022167642188)
-            cls.amarr = Location.objects.get(id=60008494)
-
-        @patch(MODULE_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
-        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        def test_can_send_outstanding(self, mock_webhook_execute):
-            # given
-            mock_webhook_execute.return_value.status_ok = True
-            # when
-            self.contract_1.send_customer_notification()
-            # then
-            self.assertEqual(mock_webhook_execute.call_count, 1)
-            obj = self.contract_1.customer_notifications.get(
-                status=Contract.Status.OUTSTANDING
-            )
-            self.assertAlmostEqual(
-                obj.date_notified, now(), delta=dt.timedelta(seconds=30)
-            )
-
-        @patch(MODULE_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
-        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        def test_can_send_in_progress(self, mock_webhook_execute):
-            # given
-            mock_webhook_execute.return_value.status_ok = True
-            # when
-            self.contract_2.send_customer_notification()
-            # then
-            self.assertEqual(mock_webhook_execute.call_count, 1)
-            obj = self.contract_2.customer_notifications.get(
-                status=Contract.Status.IN_PROGRESS
-            )
-            self.assertAlmostEqual(
-                obj.date_notified, now(), delta=dt.timedelta(seconds=30)
-            )
-
-        @patch(MODULE_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
-        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        def test_can_send_finished(self, mock_webhook_execute):
-            # given
-            mock_webhook_execute.return_value.status_ok = True
-            # when
-            self.contract_3.send_customer_notification()
-            # then
-            self.assertEqual(mock_webhook_execute.call_count, 1)
-            obj = self.contract_3.customer_notifications.get(
-                status=Contract.Status.FINISHED
-            )
-            self.assertAlmostEqual(
-                obj.date_notified, now(), delta=dt.timedelta(seconds=30)
-            )
-
-        @patch(MODULE_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
-        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        def test_aborts_without_webhook_url(self, mock_webhook_execute):
-            # given
-            mock_webhook_execute.return_value.status_ok = True
-            # when
-            self.contract_1.send_customer_notification()
-            # then
-            self.assertEqual(mock_webhook_execute.call_count, 0)
-
-        @patch(MODULE_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
-        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        @patch(MODULE_PATH + ".DiscordUser", None)
-        def test_aborts_without_discord(self, mock_webhook_execute):
-            # given
-            mock_webhook_execute.return_value.status_ok = True
-            # when
-            self.contract_1.send_customer_notification()
-            # then
-            self.assertEqual(mock_webhook_execute.call_count, 0)
-
-        @patch(MODULE_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
-        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        @patch(MODULE_PATH + ".User.objects")
-        def test_aborts_without_issuer(self, mock_objects, mock_webhook_execute):
-            # given
-            mock_webhook_execute.return_value.status_ok = True
-            mock_objects.filter.return_value.first.return_value = None
-            # when
-            self.contract_1.send_customer_notification()
-            # then
-            self.assertEqual(mock_webhook_execute.call_count, 0)
-
-        @patch(MODULE_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
-        @patch(MODULE_PATH + ".FREIGHT_DISCORD_DISABLE_BRANDING", True)
-        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        def test_can_send_wo_branding(self, mock_webhook_execute):
-            # given
-            mock_webhook_execute.return_value.status_ok = True
-            # when
-            self.contract_1.send_customer_notification()
-            # then
-            self.assertEqual(mock_webhook_execute.call_count, 1)
-
-        @patch(MODULE_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
-        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        def test_log_error_from_execute(self, mock_webhook_execute):
-            # given
-            mock_webhook_execute.return_value.status_ok = False
-            mock_webhook_execute.return_value.status_code = 404
-            # when
-            self.contract_1.send_customer_notification()
-            # then
-            self.assertEqual(mock_webhook_execute.call_count, 1)
-
-        @patch(MODULE_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
-        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        def test_can_send_without_acceptor(self, mock_webhook_execute):
-            # given
-            mock_webhook_execute.return_value.status_ok = True
-            my_contract = ContractFactory(
-                handler=self.handler,
-                contract_id=9999,
-                collateral=0,
-                date_issued=now(),
-                date_expired=now() + dt.timedelta(days=5),
-                days_to_complete=3,
-                end_location=self.amamake,
-                for_corporation=False,
-                issuer_corporation=self.corporation,
-                issuer=self.character,
-                reward=50000000,
-                start_location=self.jita,
-                status=Contract.Status.IN_PROGRESS,
-                volume=50000,
-            )
-            # when
-            my_contract.send_customer_notification()
-            # then
-            self.assertEqual(mock_webhook_execute.call_count, 1)
-
-        @patch(MODULE_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
-        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        def test_can_send_failed(self, mock_webhook_execute):
-            # given
-            mock_webhook_execute.return_value.status_ok = True
-            my_contract = ContractFactory(
-                handler=self.handler,
-                contract_id=9999,
-                collateral=0,
-                date_issued=now(),
-                date_expired=now() + dt.timedelta(days=5),
-                days_to_complete=3,
-                end_location=self.amamake,
-                for_corporation=False,
-                issuer_corporation=self.corporation,
-                issuer=self.character,
-                reward=50000000,
-                start_location=self.jita,
-                status=Contract.Status.FAILED,
-                volume=50000,
-            )
-            # when
-            my_contract.send_customer_notification()
-            # then
-            self.assertEqual(mock_webhook_execute.call_count, 1)
-
-        @patch(MODULE_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
-        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
-        @patch(MODULE_PATH + ".DiscordUser.objects")
-        def test_aborts_without_Discord_user(self, mock_objects, mock_webhook_execute):
-            # given
-            mock_webhook_execute.return_value.status_ok = True
-            mock_objects.get.side_effect = DiscordUser.DoesNotExist
-            # when
-            self.contract_1.send_customer_notification()
-            # then
-            self.assertEqual(mock_webhook_execute.call_count, 0)
-
-
-if DiscordUser and DiscordClient:
-
-    class TestContractSendCustomerNotificationDiscordProxy(NoSocketsTestCase):
-        @classmethod
-        def setUpClass(cls):
-            super().setUpClass()
-            cls.handler, cls.user = create_contract_handler_w_contracts()
-            cls.character = cls.user.profile.main_character
-            cls.corporation = cls.character.corporation
-            cls.contract_1 = Contract.objects.get(contract_id=149409005)
-            cls.contract_2 = Contract.objects.get(contract_id=149409019)
-            cls.contract_3 = Contract.objects.get(contract_id=149409118)
-            cls.jita = Location.objects.get(id=60003760)
-            cls.amamake = Location.objects.get(id=1022167642188)
-            cls.amarr = Location.objects.get(id=60008494)
-
-        @patch(MODULE_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", True)
-        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODULE_PATH + ".DiscordClient", spec=True)
-        def test_can_send_status_via_grpc(self, mock_DiscordClient):
-            # when
-            self.contract_1.send_customer_notification()
-            # then
-            self.assertTrue(
-                mock_DiscordClient.return_value.create_direct_message.called
-            )
-            obj = self.contract_1.customer_notifications.get(
-                status=Contract.Status.OUTSTANDING
-            )
-            self.assertAlmostEqual(
-                obj.date_notified, now(), delta=dt.timedelta(seconds=30)
-            )
-
-        @patch(MODULE_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", True)
-        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODULE_PATH + ".DiscordClient", spec=True)
-        def test_can_handle_grpc_error(self, mock_DiscordClient):
-            # given
-            my_exception = to_discord_proxy_exception(create_rpc_error())
-            my_exception.details = lambda: "{}"
-            mock_DiscordClient.return_value.create_direct_message.side_effect = (
-                my_exception
-            )
-            # when
-            self.contract_1.send_customer_notification()
-            # then
-            self.assertTrue(
-                mock_DiscordClient.return_value.create_direct_message.called
-            )
-
-        @patch(MODULE_PATH + ".DISCORDPROXY_HOST", "1.2.3.4")
-        @patch(MODULE_PATH + ".DISCORDPROXY_PORT", 56789)
-        @patch(MODULE_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", True)
-        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
-        @patch(MODULE_PATH + ".DiscordClient", spec=True)
-        def test_can_use_custom_config_for_discordproxy(self, mock_DiscordClient):
-            # when
-            self.contract_1.send_customer_notification()
-            # then
-            self.assertTrue(
-                mock_DiscordClient.return_value.create_direct_message.called
-            )
-            _, kwargs = mock_DiscordClient.call_args
-            self.assertEqual(kwargs["target"], "1.2.3.4:56789")
 
 
 class TestContractCustomerNotification(NoSocketsTestCase):
@@ -443,3 +225,195 @@ class TestContractCustomerNotification(NoSocketsTestCase):
         notif = ContractCustomerNotificationFactory(contract=contract)
         expected = f"{contract.contract_id} - in_progress"
         self.assertEqual(str(notif), expected)
+
+
+if DiscordUser:
+
+    @patch(MODULE_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", False)
+    @patch(MODULE_PATH + ".dhooks_lite.Webhook.execute", spec=True)
+    class TestContract_SendCustomerNotification_WebHook(NoSocketsTestCase):
+        @classmethod
+        def setUpClass(cls):
+            super().setUpClass()
+            cls.user = UserMainDefaultFactory()
+            DiscordUserFactory(user=cls.user)
+            cls.handler = ContractHandlerFactory(user=cls.user)
+
+        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
+        def test_can_send_per_contract_status(self, mock_webhook_execute: MagicMock):
+            # given
+            mock_webhook_execute.return_value.status_ok = True
+
+            class Case(NamedTuple):
+                name: str
+                params: dict
+                want: Contract.Status
+
+            cases = [
+                Case("outstanding", {}, Contract.Status.OUTSTANDING),
+                Case("in progress", {"accepted": True}, Contract.Status.IN_PROGRESS),
+                Case("finished", {"finished": True}, Contract.Status.FINISHED),
+                Case("failed", {"failed": True}, Contract.Status.FAILED),
+            ]
+
+            for tc in cases:
+                with self.subTest(name=tc.name):
+                    # when
+                    contract = ContractFactory(
+                        handler=self.handler,
+                        user=self.user,
+                        create_pricing=True,
+                        **tc.params,
+                    )
+                    contract.send_customer_notification()
+
+                    # then
+                    self.assertEqual(mock_webhook_execute.call_count, 1)
+                    obj: Contract
+                    obj = contract.customer_notifications.get(status=tc.want)
+                    self.assertAlmostEqual(
+                        obj.date_notified, now(), delta=dt.timedelta(seconds=30)
+                    )
+                    mock_webhook_execute.reset_mock()
+
+        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
+        def test_aborts_without_webhook_url(self, mock_webhook_execute):
+            # given
+            mock_webhook_execute.return_value.status_ok = True
+            contract = ContractFactory(
+                handler=self.handler, user=self.user, create_pricing=True
+            )
+
+            # when
+            contract.send_customer_notification()
+
+            # then
+            self.assertEqual(mock_webhook_execute.call_count, 0)
+
+        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
+        @patch(MODULE_PATH + ".DiscordUser", None)
+        def test_aborts_without_discord(self, mock_webhook_execute):
+            # given
+            mock_webhook_execute.return_value.status_ok = True
+            contract = ContractFactory(
+                handler=self.handler, user=self.user, create_pricing=True
+            )
+
+            # when
+            contract.send_customer_notification()
+
+            # then
+            self.assertEqual(mock_webhook_execute.call_count, 0)
+
+        @patch(MODULE_PATH + ".FREIGHT_DISCORD_DISABLE_BRANDING", True)
+        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
+        def test_can_send_wo_branding(self, mock_webhook_execute):
+            # given
+            mock_webhook_execute.return_value.status_ok = True
+            contract = ContractFactory(
+                handler=self.handler, user=self.user, create_pricing=True
+            )
+
+            # when
+            contract.send_customer_notification()
+
+            # then
+            self.assertEqual(mock_webhook_execute.call_count, 1)
+
+        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
+        def test_log_error_from_execute(self, mock_webhook_execute):
+            # given
+            mock_webhook_execute.return_value.status_ok = False
+            mock_webhook_execute.return_value.status_code = 404
+            contract = ContractFactory(
+                handler=self.handler, user=self.user, create_pricing=True
+            )
+
+            # when
+            contract.send_customer_notification()
+
+            # then
+            self.assertEqual(mock_webhook_execute.call_count, 1)
+
+        @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", "url")
+        def test_aborts_without_Discord_user(self, mock_webhook_execute):
+            # given
+            mock_webhook_execute.return_value.status_ok = True
+            contract = ContractFactory(create_pricing=True)
+
+            # when
+            contract.send_customer_notification()
+
+            # then
+            self.assertEqual(mock_webhook_execute.call_count, 0)
+
+
+if DiscordUser and DiscordClient:
+
+    @patch(MODULE_PATH + ".FREIGHT_DISCORDPROXY_ENABLED", True)
+    @patch(MODULE_PATH + ".DiscordClient", spec=True)
+    @patch(MODULE_PATH + ".FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL", None)
+    class TestContract_SendCustomerNotification_DiscordProxy(NoSocketsTestCase):
+        @classmethod
+        def setUpClass(cls):
+            super().setUpClass()
+            cls.user = UserMainDefaultFactory()
+            DiscordUserFactory(user=cls.user)
+            cls.handler = ContractHandlerFactory(user=cls.user)
+
+        def test_can_send_status_via_grpc(self, mock_DiscordClient):
+            # given
+            contract = ContractFactory(
+                handler=self.handler, user=self.user, create_pricing=True
+            )
+
+            # when
+            contract.send_customer_notification()
+
+            # then
+            self.assertTrue(
+                mock_DiscordClient.return_value.create_direct_message.called
+            )
+            obj: Contract
+            obj = contract.customer_notifications.get(
+                status=Contract.Status.OUTSTANDING
+            )
+            self.assertAlmostEqual(
+                obj.date_notified, now(), delta=dt.timedelta(seconds=30)
+            )
+
+        def test_can_handle_grpc_error(self, mock_DiscordClient):
+            # given
+            my_exception = to_discord_proxy_exception(create_rpc_error())
+            my_exception.details = lambda: "{}"
+            mock_DiscordClient.return_value.create_direct_message.side_effect = (
+                my_exception
+            )
+            contract = ContractFactory(
+                handler=self.handler, user=self.user, create_pricing=True
+            )
+
+            # when
+            contract.send_customer_notification()
+
+            # then
+            self.assertTrue(
+                mock_DiscordClient.return_value.create_direct_message.called
+            )
+
+        @patch(MODULE_PATH + ".DISCORDPROXY_HOST", "1.2.3.4")
+        @patch(MODULE_PATH + ".DISCORDPROXY_PORT", 56789)
+        def test_can_use_custom_config_for_discordproxy(self, mock_DiscordClient):
+            contract = ContractFactory(
+                handler=self.handler, user=self.user, create_pricing=True
+            )
+
+            # when
+            contract.send_customer_notification()
+
+            # then
+            self.assertTrue(
+                mock_DiscordClient.return_value.create_direct_message.called
+            )
+            _, kwargs = mock_DiscordClient.call_args
+            self.assertEqual(kwargs["target"], "1.2.3.4:56789")

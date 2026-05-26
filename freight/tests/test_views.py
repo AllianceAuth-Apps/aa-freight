@@ -4,20 +4,25 @@ from unittest.mock import patch
 from django.test import RequestFactory, tag
 from django.urls import reverse
 
-from allianceauth.tests.auth_utils import AuthUtils
-from app_utils.testdata_factories import EveCharacterFactory, UserMainFactory
+from app_utils.testdata_factories import (
+    EveAllianceInfoFactory,
+    EveCharacterFactory,
+    EveCorporationInfoFactory,
+    UserFactory,
+    UserMainFactory,
+)
 from app_utils.testing import NoSocketsTestCase, json_response_to_python
 
 from freight import constants, views
 from freight.app_settings import FREIGHT_OPERATION_MODE_MY_ALLIANCE
-from freight.models import Contract, ContractHandler, Location
+from freight.models import ContractHandler
 from freight.tests.testdata.factories_2 import (
     ContractFactory,
     ContractHandlerFactory,
+    LocationStationFactory,
     PricingFactory,
     UserMainDefaultFactory,
 )
-from freight.tests.testdata.helpers import create_contract_handler_w_contracts
 
 MODULE_PATH = "freight.views"
 
@@ -139,9 +144,9 @@ class TestContractListData_Access(NoSocketsTestCase):
 
     def test_user_access_with_permission_and_no_main(self):
         # given
-        user = AuthUtils.create_user("John Doe")
-        user = AuthUtils.add_permission_to_user_by_name("freight.basic_access", user)
-        user = AuthUtils.add_permission_to_user_by_name("freight.use_calculator", user)
+        user = UserFactory(
+            permissions__=["freight.basic_access", "freight.use_calculator"]
+        )
         request = self.factory.get(reverse("freight:contract_list_user"))
         request.user = user
         # when
@@ -448,121 +453,311 @@ class TestStatistics(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        _, cls.user = create_contract_handler_w_contracts()
-        # expected contracts to load: 149409118, 149409218, 149409318
-        cls.user = AuthUtils.add_permission_to_user_by_name(
-            "freight.basic_access", cls.user
-        )
-        cls.user = AuthUtils.add_permission_to_user_by_name(
-            "freight.view_statistics", cls.user
-        )
-        jita = Location.objects.get(id=60003760)
-        amamake = Location.objects.get(id=1022167642188)
-        cls.pricing = PricingFactory(
-            start_location=jita, end_location=amamake, price_base=500000000
-        )
-        Contract.objects.update_pricing()
         cls.factory = RequestFactory()
+        cls.user = UserMainFactory(
+            permissions__=["freight.basic_access", "freight.view_statistics"]
+        )
+        cls.handler = ContractHandlerFactory(user=cls.user)
 
     def test_should_open_statistics_page(self):
         # given
         request = self.factory.get(reverse("freight:statistics"))
         request.user = self.user
+
         # when
         response = views.statistics(request)
+
         # then
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_statistics_routes_data(self):
+        # given
+        pricing = PricingFactory(
+            start_location=LocationStationFactory(name="Jita"),
+            end_location=LocationStationFactory(name="Amamake"),
+        )
+        pilot = EveCharacterFactory()
+        ContractFactory(
+            acceptor=pilot,
+            collateral=2_000_000_000,
+            finished=True,
+            handler=self.handler,
+            pricing=pricing,
+            reward=200_000_000,
+            volume=200_000,
+        )
+        ContractFactory(
+            acceptor=pilot,
+            collateral=1_000_000_000,
+            finished=True,
+            handler=self.handler,
+            pricing=pricing,
+            reward=1_00_000_000,
+            volume=100_000,
+        )
+        ContractFactory(
+            collateral=1_000_000_000,
+            handler=self.handler,
+            pricing=pricing,
+            reward=1_00_000_000,
+            volume=100_000,
+        )  # should be ignored
+        ContractFactory(
+            collateral=1_000_000_000,
+            handler=self.handler,
+            pricing=pricing,
+            reward=1_00_000_000,
+            volume=100_000,
+            failed=True,
+        )  # should be ignored
+        ContractFactory(
+            collateral=1_000_000_000,
+            handler=self.handler,
+            pricing=pricing,
+            reward=1_00_000_000,
+            volume=100_000,
+            canceled=True,
+        )  # should be ignored
+
         request = self.factory.get(reverse("freight:statistics_routes_data"))
         request.user = self.user
 
+        # when
         response = views.statistics_routes_data(request)
+
+        # then
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
-        data = json_response_to_python(response)["data"]
-        self.assertListEqual(
-            data,
-            [
-                {
-                    "contracts": 3,
-                    "rewards": 300000000,
-                    "collaterals": 3000000000,
-                    "volume": 345000.0,
-                    "pilots": 1,
-                    "name": "Jita <-> Amamake",
-                    "customers": 1,
-                }
-            ],
-        )
+        data: list = json_response_to_python(response)["data"]
+        self.assertEqual(len(data), 1)
+        obj = data.pop()
+        self.assertEqual(obj["collaterals"], 3_000_000_000)
+        self.assertEqual(obj["contracts"], 2)
+        self.assertEqual(obj["customers"], 2)
+        self.assertEqual(obj["name"], "Jita <-> Amamake")
+        self.assertEqual(obj["pilots"], 1)
+        self.assertEqual(obj["rewards"], 300_000_000)
+        self.assertEqual(obj["volume"], 300_000)
 
     def test_statistics_pilots_data(self):
+        # given
+        pricing = PricingFactory(
+            start_location=LocationStationFactory(name="Jita"),
+            end_location=LocationStationFactory(name="Amamake"),
+        )
+        pilot = EveCharacterFactory(
+            character_name="Bruce Wayne", corporation__corporation_name="Wayne Foods"
+        )
+        ContractFactory(
+            acceptor=pilot,
+            collateral=2_000_000_000,
+            finished=True,
+            handler=self.handler,
+            pricing=pricing,
+            reward=200_000_000,
+            volume=200_000,
+        )
+        ContractFactory(
+            acceptor=pilot,
+            collateral=1_000_000_000,
+            finished=True,
+            handler=self.handler,
+            pricing=pricing,
+            reward=1_00_000_000,
+            volume=100_000,
+        )
+        ContractFactory(
+            collateral=1_000_000_000,
+            handler=self.handler,
+            pricing=pricing,
+            reward=1_00_000_000,
+            volume=100_000,
+        )  # should be ignored
+        ContractFactory(
+            collateral=1_000_000_000,
+            handler=self.handler,
+            pricing=pricing,
+            reward=1_00_000_000,
+            volume=100_000,
+            failed=True,
+        )  # should be ignored
+        ContractFactory(
+            collateral=1_000_000_000,
+            handler=self.handler,
+            pricing=pricing,
+            reward=1_00_000_000,
+            volume=100_000,
+            canceled=True,
+        )  # should be ignored
+
         request = self.factory.get(reverse("freight:statistics_pilots_data"))
         request.user = self.user
 
+        # when
         response = views.statistics_pilots_data(request)
+
+        # then
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
-        data = json_response_to_python(response)["data"]
-
-        self.assertListEqual(
-            data,
-            [
-                {
-                    "rewards": 300000000,
-                    "collaterals": 3000000000,
-                    "volume": 345000.0,
-                    "corporation": "Wayne Enterprise",
-                    "contracts": 3,
-                    "name": "Bruce Wayne",
-                }
-            ],
-        )
+        data: list = json_response_to_python(response)["data"]
+        self.assertEqual(len(data), 1)
+        obj = data.pop()
+        self.assertEqual(obj["collaterals"], 3_000_000_000)
+        self.assertEqual(obj["contracts"], 2)
+        self.assertEqual(obj["name"], "Bruce Wayne")
+        self.assertEqual(obj["corporation"], "Wayne Foods")
+        self.assertEqual(obj["rewards"], 300_000_000)
+        self.assertEqual(obj["volume"], 300_000)
 
     def test_statistics_pilot_corporations_data(self):
+        # given
+        pricing = PricingFactory(
+            start_location=LocationStationFactory(name="Jita"),
+            end_location=LocationStationFactory(name="Amamake"),
+        )
+        corporation_name = "Wayne Foods"
+        alliance_name = "Wayne Inc."
+        pilot = EveCharacterFactory(
+            corporation=EveCorporationInfoFactory(
+                corporation_name=corporation_name,
+                alliance=EveAllianceInfoFactory(alliance_name=alliance_name),
+            ),
+        )
+        ContractFactory(
+            acceptor=pilot,
+            collateral=2_000_000_000,
+            finished=True,
+            handler=self.handler,
+            pricing=pricing,
+            reward=200_000_000,
+            volume=200_000,
+        )
+        ContractFactory(
+            acceptor=pilot,
+            collateral=1_000_000_000,
+            finished=True,
+            handler=self.handler,
+            pricing=pricing,
+            reward=1_00_000_000,
+            volume=100_000,
+        )
+        ContractFactory(
+            collateral=1_000_000_000,
+            handler=self.handler,
+            pricing=pricing,
+            reward=1_00_000_000,
+            volume=100_000,
+        )  # should be ignored
+        ContractFactory(
+            collateral=1_000_000_000,
+            handler=self.handler,
+            pricing=pricing,
+            reward=1_00_000_000,
+            volume=100_000,
+            failed=True,
+        )  # should be ignored
+        ContractFactory(
+            collateral=1_000_000_000,
+            handler=self.handler,
+            pricing=pricing,
+            reward=1_00_000_000,
+            volume=100_000,
+            canceled=True,
+        )  # should be ignored
+
         request = self.factory.get(
             reverse("freight:statistics_pilot_corporations_data")
         )
         request.user = self.user
 
+        # when
         response = views.statistics_pilot_corporations_data(request)
+
+        # then
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
-        data = json_response_to_python(response)["data"]
-
-        self.assertListEqual(
-            data,
-            [
-                {
-                    "name": "Wayne Enterprise",
-                    "rewards": 300000000,
-                    "collaterals": 3000000000,
-                    "volume": 345000.0,
-                    "alliance": "",
-                    "contracts": 3,
-                }
-            ],
-        )
+        data: list = json_response_to_python(response)["data"]
+        self.assertEqual(len(data), 1)
+        obj = data.pop()
+        self.assertEqual(obj["collaterals"], 3_000_000_000)
+        self.assertEqual(obj["contracts"], 2)
+        self.assertEqual(obj["name"], corporation_name)
+        self.assertEqual(obj["alliance"], alliance_name)
+        self.assertEqual(obj["rewards"], 300_000_000)
+        self.assertEqual(obj["volume"], 300_000)
 
     def test_statistics_customer_data(self):
+        # given
+        pricing = PricingFactory(
+            start_location=LocationStationFactory(name="Jita"),
+            end_location=LocationStationFactory(name="Amamake"),
+        )
+        corporation_name = "Finance ABC"
+        customer_name = "Clark Kent"
+        customer = EveCharacterFactory(
+            character_name=customer_name,
+            corporation=EveCorporationInfoFactory(corporation_name=corporation_name),
+        )
+        ContractFactory(
+            issuer=customer,
+            collateral=2_000_000_000,
+            finished=True,
+            handler=self.handler,
+            pricing=pricing,
+            reward=200_000_000,
+            volume=200_000,
+        )
+        ContractFactory(
+            issuer=customer,
+            collateral=1_000_000_000,
+            finished=True,
+            handler=self.handler,
+            pricing=pricing,
+            reward=1_00_000_000,
+            volume=100_000,
+        )
+        ContractFactory(
+            issuer=customer,
+            collateral=1_000_000_000,
+            handler=self.handler,
+            pricing=pricing,
+            reward=1_00_000_000,
+            volume=100_000,
+        )  # should be ignored
+        ContractFactory(
+            issuer=customer,
+            collateral=1_000_000_000,
+            handler=self.handler,
+            pricing=pricing,
+            reward=1_00_000_000,
+            volume=100_000,
+            failed=True,
+        )  # should be ignored
+        ContractFactory(
+            issuer=customer,
+            collateral=1_000_000_000,
+            handler=self.handler,
+            pricing=pricing,
+            reward=1_00_000_000,
+            volume=100_000,
+            canceled=True,
+        )  # should be ignored
+
         request = self.factory.get(reverse("freight:statistics_customer_data"))
         request.user = self.user
 
+        # when
         response = views.statistics_customer_data(request)
+
+        # then
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
-        data = json_response_to_python(response)["data"]
-
-        self.assertListEqual(
-            data,
-            [
-                {
-                    "rewards": 300000000,
-                    "collaterals": 3000000000,
-                    "volume": 345000.0,
-                    "corporation": "Wayne Enterprise",
-                    "contracts": 3,
-                    "name": "Robin",
-                }
-            ],
-        )
+        data: list = json_response_to_python(response)["data"]
+        self.assertEqual(len(data), 1)
+        obj = data.pop()
+        self.assertEqual(obj["collaterals"], 3_000_000_000)
+        self.assertEqual(obj["contracts"], 2)
+        self.assertEqual(obj["name"], customer_name)
+        self.assertEqual(obj["corporation"], corporation_name)
+        self.assertEqual(obj["rewards"], 300_000_000)
+        self.assertEqual(obj["volume"], 300_000)
