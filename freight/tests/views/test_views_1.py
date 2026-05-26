@@ -199,7 +199,7 @@ class TestContractListData_Categories(NoSocketsTestCase):
         cls.contract_canceled = ContractFactory(handler=cls.handler, canceled=True)
         cls.contract_failed = ContractFactory(handler=cls.handler, failed=True)
         cls.contract_finished = ContractFactory(handler=cls.handler, finished=True)
-        cls.contract_oustanding = ContractFactory(handler=cls.handler)
+        cls.contract_outstanding = ContractFactory(handler=cls.handler)
         cls.user_2 = UserMainFactory(
             permissions__=["freight.basic_access", "freight.use_calculator"]
         )
@@ -215,7 +215,7 @@ class TestContractListData_Categories(NoSocketsTestCase):
         cls.contract_finished_user = ContractFactory(
             handler=cls.handler, user=cls.user_2, finished=True
         )
-        cls.contract_oustanding_user = ContractFactory(
+        cls.contract_outstanding_user = ContractFactory(
             handler=cls.handler, user=cls.user_2
         )
 
@@ -232,12 +232,12 @@ class TestContractListData_Categories(NoSocketsTestCase):
         # then
         got = {obj["contract_id"] for obj in json_response_to_python(response)["data"]}
         want = {
-            self.contract_oustanding.contract_id,
+            self.contract_outstanding.contract_id,
             self.contract_accepted.contract_id,
             self.contract_finished.contract_id,
             self.contract_failed.contract_id,
             self.contract_canceled.contract_id,
-            self.contract_oustanding_user.contract_id,
+            self.contract_outstanding_user.contract_id,
             self.contract_accepted_user.contract_id,
             self.contract_finished_user.contract_id,
             self.contract_failed_user.contract_id,
@@ -259,9 +259,9 @@ class TestContractListData_Categories(NoSocketsTestCase):
         # then
         got = {obj["contract_id"] for obj in json_response_to_python(response)["data"]}
         want = {
-            self.contract_oustanding.contract_id,
+            self.contract_outstanding.contract_id,
             self.contract_accepted.contract_id,
-            self.contract_oustanding_user.contract_id,
+            self.contract_outstanding_user.contract_id,
             self.contract_accepted_user.contract_id,
         }
         self.assertSetEqual(got, want)
@@ -280,7 +280,7 @@ class TestContractListData_Categories(NoSocketsTestCase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         got = {obj["contract_id"] for obj in json_response_to_python(response)["data"]}
         want = {
-            self.contract_oustanding_user.contract_id,
+            self.contract_outstanding_user.contract_id,
             self.contract_accepted_user.contract_id,
             self.contract_finished_user.contract_id,
             self.contract_failed_user.contract_id,
@@ -379,7 +379,7 @@ class TestSetupContractHandler(NoSocketsTestCase):
         self.assertEqual(response.status_code, HTTPStatus.FOUND)
         self.assertEqual(response.url, reverse("freight:index"))
 
-    @tag("tox_disabled")  # FIXME: Test does not work in tox
+    @tag("tox_disabled")  # TODO: Make test work in tox
     def test_should_return_error_when_user_is_not_in_an_alliance(
         self, mock_run_contracts_sync, mock_message
     ):

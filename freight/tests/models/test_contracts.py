@@ -29,6 +29,10 @@ class TestContract(NoSocketsTestCase):
         want = "42: Jita -> Amamake"
         self.assertEqual(got, want)
 
+    def test_get_issues_list(self):
+        contract: Contract = ContractFactory.build(issues='["one", "two"]')
+        self.assertListEqual(contract.get_issue_list(), ["one", "two"])
+
 
 class TestContract_DateLatest(NoSocketsTestCase):
     def test_should_return_date_issues_for_new_contract(self):
@@ -101,19 +105,6 @@ class TestContract_GenerateEmbed(NoSocketsTestCase):
         contract.pricing = None
         x = contract._generate_embed()
         self.assertIsInstance(x, Embed)
-
-
-class TestContract_GetIssueList(NoSocketsTestCase):
-    def test_get_issues_list(self):
-        contract: Contract = ContractFactory.build(issues='["one", "two"]')
-        self.assertListEqual(contract.get_issue_list(), ["one", "two"])
-
-    # FIXME: Disabled test
-    # def test_hours_issued_2_completed(self):
-    #     self.contract.date_completed = self.contract.date_issued + dt.timedelta(hours=9)
-    #     self.assertEqual(self.contract.hours_issued_2_completed, 9)
-    #     self.contract.date_completed = None
-    #     self.assertIsNone(self.contract.hours_issued_2_completed)
 
 
 @patch(MODULE_PATH + ".dhooks_lite.Webhook.execute", spec=True)
