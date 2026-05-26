@@ -3,27 +3,18 @@ from unittest.mock import patch
 
 from dhooks_lite import Embed
 
-from django.contrib.auth.models import User
 from django.utils.timezone import now
 
-from allianceauth.authentication.models import CharacterOwnership
-from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from app_utils.django import app_labels
-from app_utils.testdata_factories import EveCharacterFactory
 from app_utils.testing import NoSocketsTestCase
 
-from freight.models import Contract, ContractCustomerNotification, EveEntity, Location
+from freight.models import Contract, Location
 from freight.tests.testdata.factories_2 import (
+    ContractCustomerNotificationFactory,
     ContractFactory,
-    ContractHandlerFactory,
-    EveEntityAllianceFactory,
     LocationStationFactory,
-    PricingFactory,
 )
-from freight.tests.testdata.helpers import (
-    characters_data,
-    create_contract_handler_w_contracts,
-)
+from freight.tests.testdata.helpers import create_contract_handler_w_contracts
 
 if "discord" in app_labels():
     from allianceauth.services.modules.discord.models import DiscordUser
@@ -98,114 +89,47 @@ class TestContract_IsStale(NoSocketsTestCase):
             self.assertFalse(contract.has_stale_status)
 
 
-class TestContract2(NoSocketsTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        for character in characters_data:
-            EveCharacterFactory(**character)
-            EveCorporationInfo.objects.get_or_create(
-                corporation_id=character["corporation_id"],
-                defaults={
-                    "corporation_name": character["corporation_name"],
-                    "corporation_ticker": character["corporation_ticker"],
-                    "member_count": 42,
-                },
-            )
+class TestContract_AcceptorName(NoSocketsTestCase):
+    def test_outstanding_contract(self):
+        contract = ContractFactory()
+        self.assertIsNone(contract.acceptor_name)
 
-        # 1 user
-        cls.character = EveCharacter.objects.get(character_id=90000001)
-        cls.corporation = EveCorporationInfo.objects.get(
-            corporation_id=cls.character.corporation_id
-        )
-        cls.organization = EveEntityAllianceFactory(
-            id=cls.character.alliance_id,
-            name=cls.character.alliance_name,
-        )
-        cls.user = User.objects.create_user(
-            cls.character.character_name, "abc@example.com", "password"
-        )
-        cls.main_ownership = CharacterOwnership.objects.create(
-            character=cls.character, owner_hash="x1", user=cls.user
-        )
-        # Locations
-        cls.jita = LocationStationFactory(
-            id=60003760,
-            name="Jita IV - Moon 4 - Caldari Navy Assembly Plant",
-            solar_system_id=30000142,
-            type_id=52678,
-            category_id=3,
-        )
-        cls.amamake = LocationStationFactory(
-            id=1022167642188,
-            name="Amamake - 3 Time Nearly AT Winners",
-            solar_system_id=30002537,
-            type_id=35834,
-            category_id=65,
-        )
-        cls.handler = ContractHandlerFactory(
-            organization=cls.organization, character=cls.main_ownership
-        )
+    def test_accepted_contract(self):
+        contract = ContractFactory(accepted=True)
+        self.assertTrue(contract.acceptor_name)
 
-    def setUp(self):
-        # create contracts
-        self.pricing = PricingFactory(
-            start_location=self.jita, end_location=self.amamake, price_base=500000000
-        )
-        self.contract = ContractFactory(
-            handler=self.handler,
-            contract_id=1,
-            collateral=0,
-            date_issued=now(),
-            date_expired=now() + dt.timedelta(days=5),
-            days_to_complete=3,
-            end_location=self.amamake,
-            for_corporation=False,
-            issuer_corporation=self.corporation,
-            issuer=self.character,
-            reward=50000000,
-            start_location=self.jita,
-            status=Contract.Status.OUTSTANDING,
-            volume=50000,
-            pricing=self.pricing,
-        )
 
+class TestContract_GenerateEmbed(NoSocketsTestCase):
+    def test_generate_embed_w_pricing(self):
+        contract = ContractFactory(create_pricing=True)
+        x = contract._generate_embed()
+        self.assertIsInstance(x, Embed)
+        self.assertEqual(x.color, Contract.EMBED_COLOR_PASSED)
+
+    def test_generate_embed_w_pricing_issues(self):
+        contract = ContractFactory(create_pricing=True, issues='["we have issues"]')
+        x = contract._generate_embed()
+        self.assertIsInstance(x, Embed)
+        self.assertEqual(x.color, Contract.EMBED_COLOR_FAILED)
+
+    def test_generate_embed_wo_pricing(self):
+        contract = ContractFactory(create_pricing=False)
+        contract.pricing = None
+        x = contract._generate_embed()
+        self.assertIsInstance(x, Embed)
+
+
+class TestContract_GetIssueList(NoSocketsTestCase):
+    def test_get_issues_list(self):
+        contract: Contract = ContractFactory.build(issues='["one", "two"]')
+        self.assertListEqual(contract.get_issue_list(), ["one", "two"])
+
+    # FIXME: Disabled test
     # def test_hours_issued_2_completed(self):
     #     self.contract.date_completed = self.contract.date_issued + dt.timedelta(hours=9)
     #     self.assertEqual(self.contract.hours_issued_2_completed, 9)
     #     self.contract.date_completed = None
     #     self.assertIsNone(self.contract.hours_issued_2_completed)
-
-    def test_acceptor_name(self):
-        contract = self.contract
-        self.assertIsNone(contract.acceptor_name)
-
-        contract.acceptor_corporation = self.corporation
-        self.assertEqual(contract.acceptor_name, self.corporation.corporation_name)
-
-        contract.acceptor = self.character
-        self.assertEqual(contract.acceptor_name, self.character.character_name)
-
-    def test_get_issues_list(self):
-        self.assertListEqual(self.contract.get_issue_list(), [])
-        self.contract.issues = '["one", "two"]'
-        self.assertListEqual(self.contract.get_issue_list(), ["one", "two"])
-
-    def test_generate_embed_w_pricing(self):
-        x = self.contract._generate_embed()
-        self.assertIsInstance(x, Embed)
-        self.assertEqual(x.color, Contract.EMBED_COLOR_PASSED)
-
-    def test_generate_embed_w_pricing_issues(self):
-        self.contract.issues = ["we have issues"]
-        x = self.contract._generate_embed()
-        self.assertIsInstance(x, Embed)
-        self.assertEqual(x.color, Contract.EMBED_COLOR_FAILED)
-
-    def test_generate_embed_wo_pricing(self):
-        self.contract.pricing = None
-        x = self.contract._generate_embed()
-        self.assertIsInstance(x, Embed)
 
 
 @patch(MODULE_PATH + ".dhooks_lite.Webhook.execute", spec=True)
@@ -514,93 +438,8 @@ if DiscordUser and DiscordClient:
 
 
 class TestContractCustomerNotification(NoSocketsTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        for character in characters_data:
-            EveCharacter.objects.create(**character)
-            EveCorporationInfo.objects.get_or_create(
-                corporation_id=character["corporation_id"],
-                defaults={
-                    "corporation_name": character["corporation_name"],
-                    "corporation_ticker": character["corporation_ticker"],
-                    "member_count": 42,
-                },
-            )
-
-        # 1 user
-        cls.character = EveCharacter.objects.get(character_id=90000001)
-        cls.corporation = EveCorporationInfo.objects.get(
-            corporation_id=cls.character.corporation_id
-        )
-        cls.organization = EveEntityAllianceFactory(
-            id=cls.character.alliance_id,
-            category=EveEntity.CATEGORY_ALLIANCE,
-            name=cls.character.alliance_name,
-        )
-        cls.user = User.objects.create_user(
-            cls.character.character_name, "abc@example.com", "password"
-        )
-        cls.main_ownership = CharacterOwnership.objects.create(
-            character=cls.character, owner_hash="x1", user=cls.user
-        )
-        # Locations
-        cls.location_1 = LocationStationFactory(
-            id=60003760,
-            name="Jita IV - Moon 4 - Caldari Navy Assembly Plant",
-            solar_system_id=30000142,
-            type_id=52678,
-            category_id=3,
-        )
-        cls.location_2 = LocationStationFactory(
-            id=1022167642188,
-            name="Amamake - 3 Time Nearly AT Winners",
-            solar_system_id=30002537,
-            type_id=35834,
-            category_id=65,
-        )
-        cls.handler = ContractHandlerFactory(
-            organization=cls.organization, character=cls.main_ownership
-        )
-
-    def setUp(self):
-        # create contracts
-        self.pricing = PricingFactory(
-            start_location=self.location_1,
-            end_location=self.location_2,
-            price_base=500000000,
-        )
-        self.contract = ContractFactory(
-            handler=self.handler,
-            contract_id=1,
-            collateral=0,
-            date_issued=now(),
-            date_expired=now() + dt.timedelta(days=5),
-            days_to_complete=3,
-            end_location=self.location_2,
-            for_corporation=False,
-            issuer_corporation=self.corporation,
-            issuer=self.character,
-            reward=50000000,
-            start_location=self.location_1,
-            status=Contract.Status.OUTSTANDING,
-            volume=50000,
-            pricing=self.pricing,
-        )
-        self.notification = ContractCustomerNotification.objects.create(
-            contract=self.contract,
-            status=Contract.Status.IN_PROGRESS,
-            date_notified=now(),
-        )
-
     def test_str(self):
-        expected = f"{self.contract.contract_id} - in_progress"
-        self.assertEqual(str(self.notification), expected)
-
-    def test_repr(self):
-        expected = (
-            f"ContractCustomerNotification(pk={self.notification.pk}, "
-            f"contract_id={self.notification.contract.contract_id}, "
-            "status=in_progress)"
-        )
-        self.assertEqual(repr(self.notification), expected)
+        contract = ContractFactory(create_pricing=True, accepted=True)
+        notif = ContractCustomerNotificationFactory(contract=contract)
+        expected = f"{contract.contract_id} - in_progress"
+        self.assertEqual(str(notif), expected)

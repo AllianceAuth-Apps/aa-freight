@@ -1,17 +1,25 @@
 import re
 from http import HTTPStatus
 
+import pook
+
 from django.test import override_settings
 from django.urls import reverse
 from django_webtest import WebTest
 
-from freight.models import Contract, Pricing
+from app_utils.testdata_factories import UserMainFactory
+from app_utils.testing import NoSocketsTestCase
+
+from freight.models import Contract, Location, Pricing
 from freight.tests.testdata.factories_2 import (
     ContractHandlerFactory,
     LocationStationFactory,
+    PositionFactory,
     PricingFactory,
     UserMainDefaultFactory,
+    make_esi_url,
 )
+from freight.views import ADD_LOCATION_TOKEN_TAG
 
 _RE_COMBINE_WHITESPACE = re.compile(r"\s+")
 
@@ -122,3 +130,74 @@ class TestCalculatorWeb2(WebTest):
         # then
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertIn("Please define a pricing/route!", response.text)
+
+
+class TestAddLocatoin(NoSocketsTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.user = UserMainFactory(
+            main_character__scopes=[
+                "esi-universe.read_structures.v1",
+            ],
+            permissions__=["freight.basic_access", "freight.add_location"],
+        )
+
+    @pook.on
+    def test_can_add_location(self):
+        # given
+        location_id = 1_000_000_000_001
+        pook.get(
+            make_esi_url(f"universe/structures/{location_id}"),
+            reply=HTTPStatus.OK,
+            response_json={
+                "owner_id": 1001,
+                "name": "Alpha",
+                "position": PositionFactory(),
+                "solar_system_id": 2001,
+                "type_id": 3001,
+            },
+        )
+        self.client.force_login(self.user)
+        token = self.user.token_set.first()
+        session = self.client.session
+        session[ADD_LOCATION_TOKEN_TAG] = token.pk
+        session.save()
+
+        # when
+        response = self.client.post(
+            reverse("freight:add_location_2"), data={"location_id": location_id}
+        )
+
+        # then
+        self.assertTrue(Location.objects.filter(id=location_id).exists())
+
+        self.assertEqual(response.status_code, HTTPStatus.FOUND)
+        self.assertEqual(response.url, reverse("freight:add_location_2"))
+
+    @pook.on
+    def test_should_return_error_when_esi_request_failed(self):
+        # given
+        location_id = 1_000_000_000_001
+        pook.get(
+            make_esi_url(f"universe/structures/{location_id}"),
+            reply=HTTPStatus.FORBIDDEN,
+            response_json={"error": "some error"},
+        )
+        self.client.force_login(self.user)
+        token = self.user.token_set.first()
+        session = self.client.session
+        session[ADD_LOCATION_TOKEN_TAG] = token.pk
+        session.save()
+
+        # when
+        response = self.client.post(
+            reverse("freight:add_location_2"), data={"location_id": location_id}
+        )
+
+        # then
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+        messages = list(response.context["messages"])
+        self.assertEqual(len(messages), 1)
+        self.assertIn("error", messages[0].tags)

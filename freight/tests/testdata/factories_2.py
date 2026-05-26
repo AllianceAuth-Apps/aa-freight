@@ -16,7 +16,14 @@ from app_utils.testdata_factories import (
     UserMainFactory,
 )
 
-from freight.models import Contract, ContractHandler, EveEntity, Location, Pricing
+from freight.models import (
+    Contract,
+    ContractCustomerNotification,
+    ContractHandler,
+    EveEntity,
+    Location,
+    Pricing,
+)
 from freight.models.routes import post_save
 
 if "discord" in app_labels():
@@ -121,7 +128,6 @@ class LocationStructureFactory(
 
 class UserMainDefaultFactory(UserMainFactory):
     main_character__scopes = [
-        "esi-universe.read_structures.v1",
         "esi-contracts.read_corporation_contracts.v1",
         "esi-universe.read_structures.v1",
     ]
@@ -209,6 +215,21 @@ class ContractFactory(
                 )
             ),
         )
+        canceled = factory.Trait(
+            status=Contract.Status.CANCELED,
+        )
+        failed = factory.Trait(
+            status=Contract.Status.FAILED,
+            date_accepted=factory.LazyAttribute(
+                lambda o: o.date_issued + dt.timedelta(hours=3)
+            ),
+            acceptor=factory.SubFactory(EveCharacterFactory),
+            acceptor_corporation=factory.LazyAttribute(
+                lambda o: EveCorporationInfoFactory(
+                    corporation_id=o.acceptor.corporation_id
+                )
+            ),
+        )
         finished = factory.Trait(
             status=Contract.Status.FINISHED,
             date_accepted=factory.LazyAttribute(
@@ -235,14 +256,25 @@ class ContractFactory(
     date_expired = factory.fuzzy.FuzzyDateTime(
         now() + dt.timedelta(hours=1), now() + dt.timedelta(days=7)
     )
-    end_location = factory.SubFactory(LocationStationFactory)
     for_corporation = False
     handler = factory.SubFactory(ContractHandlerFactory)
+    pricing = None
     reward = factory.fuzzy.FuzzyFloat(50_000_000, 100_000_000)
     status = Contract.Status.OUTSTANDING
-    start_location = factory.SubFactory(LocationStationFactory)
     title = factory.faker.Faker("sentence")
     volume = factory.fuzzy.FuzzyInteger(1_000, 100_000_000)
+
+    @factory.lazy_attribute
+    def start_location(self):
+        if self.pricing:
+            return self.pricing.start_location
+        return LocationStationFactory()
+
+    @factory.lazy_attribute
+    def end_location(self):
+        if self.pricing:
+            return self.pricing.end_location
+        return LocationStationFactory()
 
     @factory.lazy_attribute
     def issuer(self):
@@ -293,7 +325,7 @@ class PricingFactory(
         model = Pricing
 
     class Params:
-        contract = None
+        contract = None  # to create a pricing from a contract
 
     is_default = False
     is_active = True
@@ -357,3 +389,15 @@ if "discord" in app_labels():
         uid = factory.Sequence(lambda n: 1_000_000_001 + n)
         user = factory.SubFactory(UserMainDefaultFactory)
         username = factory.LazyAttribute(lambda o: o.user.username)
+
+
+class ContractCustomerNotificationFactory(
+    factory.django.DjangoModelFactory,
+    metaclass=BaseMetaFactory[ContractCustomerNotification],
+):
+    class Meta:
+        model = ContractCustomerNotification
+
+    contract = factory.SubFactory(ContractFactory)
+    status = factory.LazyAttribute(lambda o: o.contract.status)
+    date_notified = factory.LazyFunction(now)

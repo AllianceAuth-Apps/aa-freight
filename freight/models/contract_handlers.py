@@ -260,16 +260,15 @@ class ContractHandler(models.Model):
     def get_availability_text_for_contracts(self) -> str:
         """returns a text detailing the availability choice for this setup"""
 
+        text = f"Private ({self.organization.name})"
+
         if self.operation_mode == self.Mode.MY_ALLIANCE:
-            extra_text = "[My Alliance]"
+            return text + " [My Alliance]"
 
         elif self.operation_mode == self.Mode.MY_CORPORATION:
-            extra_text = "[My Corporation]"
+            return text + " [My Corporation]"
 
-        else:
-            extra_text = ""
-
-        return f"Private ({self.organization.name}) {extra_text}"
+        return text
 
     def token(self) -> Token:
         """Returns an valid esi token for the contract handler.

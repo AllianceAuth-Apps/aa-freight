@@ -5,13 +5,10 @@ from unittest.mock import patch
 
 import pook
 
-from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.test import TransactionTestCase
 from django.utils.timezone import now
 
-from allianceauth.authentication.models import CharacterOwnership
-from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 from app_utils.testdata_factories import (
     EveAllianceInfoFactory,
     EveCharacterFactory,
@@ -38,82 +35,76 @@ from freight.tests.testdata.factories_2 import (
     UserMainManagerFactory,
     make_esi_url,
 )
-from freight.tests.testdata.helpers import characters_data
 
 MODULE_PATH = "freight.models.contract_handlers"
 
 
 class TestContractHandler(NoSocketsTestCase):
-    def setUp(self):
-        for character in characters_data:
-            EveCharacterFactory(**character)
-            EveCorporationInfo.objects.get_or_create(
-                corporation_id=character["corporation_id"],
-                defaults={
-                    "corporation_name": character["corporation_name"],
-                    "corporation_ticker": character["corporation_ticker"],
-                    "member_count": 42,
-                },
-            )
-
-        # 1 user
-        self.character = EveCharacter.objects.get(character_id=90000001)
-        self.corporation = EveCorporationInfo.objects.get(
-            corporation_id=self.character.corporation_id
-        )
-        self.organization = EveEntityAllianceFactory(
-            id=self.character.alliance_id,
-            name=self.character.alliance_name,
-        )
-        self.user = User.objects.create_user(
-            self.character.character_name, "abc@example.com", "password"
-        )
-        self.main_ownership = CharacterOwnership.objects.create(
-            character=self.character, owner_hash="x1", user=self.user
-        )
-        self.handler = ContractHandlerFactory(
-            organization=self.organization, character=self.main_ownership
-        )
-
     def test_str(self):
-        self.assertEqual(str(self.handler), "Justice League")
-
-    def test_repr(self):
-        expected = (
-            f"ContractHandler(pk={self.handler.pk}, organization='Justice League')"
+        user = UserMainManagerFactory(
+            main_character__character=EveCharacterFactory(
+                corporation__corporation_name="Justice League"
+            )
         )
-        self.assertEqual(repr(self.handler), expected)
+        handler = ContractHandlerFactory(
+            user=user, operation_mode=ContractHandler.Mode.MY_CORPORATION
+        )
+        self.assertEqual(str(handler), "Justice League")
 
     def test_get_availability_text_for_contracts(self):
-        self.handler.operation_mode = FREIGHT_OPERATION_MODE_MY_ALLIANCE
-        self.assertEqual(
-            self.handler.get_availability_text_for_contracts(),
-            "Private (Justice League) [My Alliance]",
+        class Case(NamedTuple):
+            operation_mode: ContractHandler.Mode
+            want: str
+
+        cases = [
+            Case(
+                ContractHandler.Mode.MY_ALLIANCE,
+                "Private (Justice World) [My Alliance]",
+            ),
+            Case(
+                ContractHandler.Mode.MY_CORPORATION,
+                "Private (Justice League) [My Corporation]",
+            ),
+            Case(
+                ContractHandler.Mode.CORP_IN_ALLIANCE,
+                "Private (Justice League)",
+            ),
+            Case(
+                ContractHandler.Mode.CORP_PUBLIC,
+                "Private (Justice League)",
+            ),
+        ]
+
+        alliance = EveAllianceInfoFactory(alliance_name="Justice World")
+        corporation = EveCorporationInfoFactory(
+            alliance=alliance, corporation_name="Justice League"
         )
-        self.handler.operation_mode = FREIGHT_OPERATION_MODE_MY_CORPORATION
-        self.assertEqual(
-            self.handler.get_availability_text_for_contracts(),
-            "Private (Justice League) [My Corporation]",
-        )
-        self.handler.operation_mode = FREIGHT_OPERATION_MODE_CORP_PUBLIC
-        self.assertEqual(
-            self.handler.get_availability_text_for_contracts(),
-            "Private (Justice League) ",
-        )
+        my_character = EveCharacterFactory(corporation=corporation)
+        user = UserMainManagerFactory(main_character__character=my_character)
+
+        for tc in cases:
+            with self.subTest(mode=tc.operation_mode):
+                handler = ContractHandlerFactory(
+                    user=user, operation_mode=tc.operation_mode
+                )
+                got = handler.get_availability_text_for_contracts()
+                self.assertEqual(got, tc.want)
+
+                ContractHandler.objects.all().delete()
 
     @patch(MODULE_PATH + ".FREIGHT_CONTRACT_SYNC_GRACE_MINUTES", 30)
     def test_is_sync_ok(self):
         # recent sync
-        self.handler.last_sync = now()
-        self.assertTrue(self.handler.is_sync_ok)
+        handler = ContractHandler(last_sync=now())
+        self.assertTrue(handler.is_sync_ok)
 
         # sync within grace period
-        self.handler.last_sync = now() - dt.timedelta(minutes=29)
-        self.assertTrue(self.handler.is_sync_ok)
+        handler = ContractHandler(last_sync=now() - dt.timedelta(minutes=29))
+        self.assertTrue(handler.is_sync_ok)
 
         # no sync within grace period
-        self.handler.last_sync = now() - dt.timedelta(minutes=31)
-        self.assertFalse(self.handler.is_sync_ok)
+        handler = ContractHandler(last_sync=now() - dt.timedelta(minutes=31))
+        self.assertFalse(handler.is_sync_ok)
 
 
 class TestContractHandler_OperationModeFriendly(NoSocketsTestCase):

@@ -1,3 +1,4 @@
+from app_utils.testdata_factories import UserMainFactory
 from app_utils.testing import NoSocketsTestCase
 
 from freight.models import ContractHandler
@@ -101,3 +102,19 @@ class TestDiscordUserFactory(NoSocketsTestCase):
     def test_can_create(self):
         x = DiscordUserFactory()
         self.assertTrue(x)
+
+
+class TestUserMainFactory(NoSocketsTestCase):
+    def test_basic(self):
+        # related to a bug because there are two permission
+        # with name "add_location" in freight.
+        user = UserMainFactory(
+            main_character__scopes=[
+                "esi-universe.read_structures.v1",
+            ],
+            permissions__=[
+                "freight.basic_access",
+                "freight.add_location",
+            ],
+        )
+        self.assertTrue(user)

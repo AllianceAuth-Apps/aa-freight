@@ -3,14 +3,17 @@ from app_utils.testing import NoSocketsTestCase
 
 from freight.helpers import update_or_create_eve_entity_from_evecharacter
 from freight.models import EveEntity
-from freight.tests.testdata.helpers import load_eve_characters
+from freight.tests.testdata.factories_2 import EveCharacterFactory
+from freight.tests.testdata.helpers import characters_data
 
 
 class TestCreateEveEntityFromEveCharacter(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        load_eve_characters()
+        for character in characters_data:
+            EveCharacterFactory(**character)
+
         cls.character = EveCharacter.objects.get(character_id=90000001)
 
     def test_can_create_corporation_from_evecharacter(self):

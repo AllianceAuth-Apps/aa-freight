@@ -25,13 +25,6 @@ if "discord" in app_labels():
 _currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
 
-def _load_structures_data() -> list:
-    with open(_currentdir + "/universe_structures.json", "r", encoding="utf-8") as f:
-        data = json.load(f)
-
-    return data
-
-
 def _load_characters_data() -> list:
     with open(_currentdir + "/characters.json", "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -64,12 +57,11 @@ def _load_contract_data() -> list:
     return _contracts_data
 
 
-contracts_data = _load_contract_data()
+_contracts_data = _load_contract_data()
 characters_data = _load_characters_data()
-structures_data = _load_structures_data()
 
 
-def create_locations():
+def _create_locations():
     jita = LocationStationFactory(
         id=60003760,
         name="Jita IV - Moon 4 - Caldari Navy Assembly Plant",
@@ -92,18 +84,6 @@ def create_locations():
         category_id=3,
     )
     return jita, amamake, amarr
-
-
-def load_eve_characters():
-    for character in characters_data:
-        EveCharacterFactory(**character)
-
-
-def create_user_from_character(character: EveCharacter) -> User:
-    user = AuthUtils.create_user(username=character.character_name)
-    user.profile.main_character = character
-    user.profile.save()
-    return user
 
 
 def create_entities_from_characters():
@@ -162,9 +142,9 @@ def create_contract_handler_w_contracts(selected_contract_ids: list = None) -> t
         organization=my_organization, character=my_main_ownership
     )
 
-    create_locations()
+    _create_locations()
 
-    for contract in contracts_data:
+    for contract in _contracts_data:
         if (
             not selected_contract_ids
             or contract["contract_id"] in selected_contract_ids

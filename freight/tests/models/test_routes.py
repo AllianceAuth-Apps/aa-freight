@@ -5,11 +5,13 @@ from django.test import override_settings
 
 from app_utils.testing import NoSocketsTestCase
 
-from freight.models import ContractHandler, Location, Pricing
-from freight.tests.testdata.factories_2 import ContractFactory, PricingFactory
-from freight.tests.testdata.helpers import (
-    create_contract_handler_w_contracts,
-    create_locations,
+from freight.models import Location, Pricing
+from freight.tests.testdata.factories_2 import (
+    ContractFactory,
+    ContractHandlerFactory,
+    LocationStationFactory,
+    LocationStructureFactory,
+    PricingFactory,
 )
 
 MODULE_PATH = "freight.models.routes"
@@ -19,7 +21,20 @@ class TestLocation(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.jita, cls.amamake, _ = create_locations()
+        cls.jita = LocationStationFactory(
+            id=60003760,
+            name="Jita IV - Moon 4 - Caldari Navy Assembly Plant",
+            solar_system_id=30000142,
+            type_id=52678,
+            category_id=3,
+        )
+        cls.amamake = LocationStructureFactory(
+            id=1022167642188,
+            name="Amamake - 3 Time Nearly AT Winners",
+            solar_system_id=30002537,
+            type_id=35834,
+            category_id=65,
+        )
 
     def test_str(self):
         self.assertEqual(
@@ -54,23 +69,36 @@ class TestPricing(NoSocketsTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.handler, _ = create_contract_handler_w_contracts()
-        cls.jita = Location.objects.get(id=60003760)
-        cls.amamake = Location.objects.get(id=1022167642188)
-        cls.amarr = Location.objects.get(id=60008494)
+        cls.jita = LocationStationFactory(
+            id=60003760,
+            name="Jita IV - Moon 4 - Caldari Navy Assembly Plant",
+            solar_system_id=30000142,
+            type_id=52678,
+            category_id=3,
+        )
+        cls.amamake = LocationStructureFactory(
+            id=1022167642188,
+            name="Amamake - 3 Time Nearly AT Winners",
+            solar_system_id=30002537,
+            type_id=35834,
+            category_id=65,
+        )
+        cls.amarr = LocationStationFactory(
+            id=60008494,
+            name="Amarr VIII (Oris) - Emperor Family Academy",
+            solar_system_id=30002187,
+            type_id=1932,
+            category_id=3,
+        )
 
     @patch(MODULE_PATH + ".FREIGHT_FULL_ROUTE_NAMES", False)
     def test_str(self):
-        p = Pricing(
-            start_location=self.jita, end_location=self.amamake, price_base=50000000
-        )
+        p = Pricing(start_location=self.jita, end_location=self.amamake)
         expected = "Jita <-> Amamake"
         self.assertEqual(str(p), expected)
 
     def test_repr(self):
-        p = Pricing(
-            start_location=self.jita, end_location=self.amamake, price_base=50000000
-        )
+        p = Pricing(start_location=self.jita, end_location=self.amamake)
         expected = (
             f"Pricing(pk={p.pk}, "
             "name='Jita IV - Moon 4 - Caldari Navy Assembly Plant "
@@ -80,22 +108,16 @@ class TestPricing(NoSocketsTestCase):
 
     @patch(MODULE_PATH + ".FREIGHT_FULL_ROUTE_NAMES", False)
     def test_name_from_settings_short(self):
-        p = Pricing(
-            start_location=self.jita, end_location=self.amamake, price_base=50000000
-        )
+        p = Pricing(start_location=self.jita, end_location=self.amamake)
         self.assertEqual(p.name, "Jita <-> Amamake")
 
     def test_name_short(self):
-        p = Pricing(
-            start_location=self.jita, end_location=self.amamake, price_base=50000000
-        )
+        p = Pricing(start_location=self.jita, end_location=self.amamake)
         self.assertEqual(p.name_short, "Jita <-> Amamake")
 
     @patch(MODULE_PATH + ".FREIGHT_FULL_ROUTE_NAMES", True)
     def test_name_from_settings_full(self):
-        p = Pricing(
-            start_location=self.jita, end_location=self.amamake, price_base=50000000
-        )
+        p = Pricing(start_location=self.jita, end_location=self.amamake)
         self.assertEqual(
             p.name,
             "Jita IV - Moon 4 - Caldari Navy Assembly Plant <-> "
@@ -103,8 +125,8 @@ class TestPricing(NoSocketsTestCase):
         )
 
     def test_name_full(self):
-        p = Pricing(
-            start_location=self.jita, end_location=self.amamake, price_base=50000000
+        p: Pricing = PricingFactory.build(
+            start_location=self.jita, end_location=self.amamake
         )
         self.assertEqual(
             p.name_full,
@@ -368,71 +390,48 @@ class TestPricing(NoSocketsTestCase):
         p.clean()
 
 
-class TestPricingPricePerVolumeModifier(NoSocketsTestCase):
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.handler, _ = create_contract_handler_w_contracts()
-
+class TestPricing_PricePerVolumeModifier(NoSocketsTestCase):
     def test_return_none_if_not_set(self):
-        p = Pricing()
+        p = PricingFactory()
         self.assertIsNone(p.price_per_volume_modifier())
         self.assertIsNone(p.price_per_volume_eff())
 
     def test_is_ignored_in_price_calculation_if_not_set(self):
-        p = Pricing()
-        p.price_per_volume = 50
+        p = PricingFactory(price_per_volume=50)
         self.assertEqual(p.get_calculated_price(10, None), 500)
 
     def test_returns_none_if_not_set_in_pricing(self):
-        self.handler.price_per_volume_modifier = 10
-        self.handler.save()
-        p = Pricing()
-        p.price_per_volume = 50
-
+        ContractHandlerFactory(price_per_volume_modifier=10)
+        p = PricingFactory(price_per_volume=50)
         self.assertIsNone(p.price_per_volume_modifier())
 
     def test_can_calculate_with_plus_value(self):
-        self.handler.price_per_volume_modifier = 10
-        self.handler.save()
-
-        p = Pricing()
-        p.price_per_volume = 50
-        p.use_price_per_volume_modifier = True
+        ContractHandlerFactory(price_per_volume_modifier=10)
+        p = PricingFactory(price_per_volume=50, use_price_per_volume_modifier=True)
 
         self.assertEqual(p.price_per_volume_eff(), 55)
         self.assertEqual(p.get_calculated_price(10, None), 550)
 
     def test_can_calculate_with_negative_value(self):
-        self.handler.price_per_volume_modifier = -10
-        self.handler.save()
-
-        p = Pricing()
-        p.price_per_volume = 50
-        p.use_price_per_volume_modifier = True
+        ContractHandlerFactory(price_per_volume_modifier=-10)
+        p = PricingFactory(price_per_volume=50, use_price_per_volume_modifier=True)
 
         self.assertEqual(p.price_per_volume_eff(), 45)
         self.assertEqual(p.get_calculated_price(10, None), 450)
 
     def test_calculated_price_is_never_negative(self):
-        self.handler.price_per_volume_modifier = -200
-        self.handler.save()
-
-        p = Pricing()
-        p.price_per_volume = 50
-        p.use_price_per_volume_modifier = True
+        ContractHandlerFactory(price_per_volume_modifier=-200)
+        p = PricingFactory(price_per_volume=50, use_price_per_volume_modifier=True)
 
         self.assertEqual(p.price_per_volume_eff(), 0)
 
     def test_returns_none_if_not_set_for_handler(self):
-        p = Pricing(price_base=50000000)
-        p.use_price_per_volume_modifier = True
+        ContractHandlerFactory()
+        p = PricingFactory(use_price_per_volume_modifier=True)
         self.assertIsNone(p.price_per_volume_modifier())
 
     def test_returns_none_if_no_handler_defined(self):
-        ContractHandler.objects.all().delete()
-        p = Pricing(price_base=50000000)
-        p.use_price_per_volume_modifier = True
+        p = PricingFactory(use_price_per_volume_modifier=True)
         self.assertIsNone(p.price_per_volume_modifier())
 
 

@@ -279,7 +279,7 @@ def setup_contract_handler(request, token):
     if (
         Freight.category_for_operation_mode(FREIGHT_OPERATION_MODE)
         == EveEntity.CATEGORY_ALLIANCE
-    ) and token_char.alliance_id is None:
+    ) and not token_char.alliance_id:
         messages.error(
             request,
             _(
