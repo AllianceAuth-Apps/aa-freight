@@ -2,12 +2,20 @@
 
 from pathlib import Path
 
-from esi.clients import EsiClientProvider
+from esi.openapi_clients import ESIClientProvider
 
-from . import __version__
+from freight import __version__
 
-spec_file = Path(__file__).parent / "swagger.json"
-esi = EsiClientProvider(
-    app_info_text=f"aa-freight v{__version__}",
+spec_file = Path(__file__).parent / "openapi_2025-12-16.json"
+esi = ESIClientProvider(
+    compatibility_date="2025-12-16",
+    ua_appname="aa-freight",
+    ua_version=__version__,
+    operations=[
+        "GetCorporationsCorporationIdContracts",
+        "GetUniverseStationsStationId",
+        "GetUniverseStructuresStructureId",
+        "PostUniverseNames",
+    ],
     spec_file=spec_file,
 )

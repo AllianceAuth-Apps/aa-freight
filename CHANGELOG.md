@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 
 - BREAKING CHANGE: Now requires Python 3.10
+- Migrated ESI client to OpenAPI
+- Modernized test suite
+- Deprecated old test factories
 
 ### Fixed
 

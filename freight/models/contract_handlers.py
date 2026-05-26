@@ -293,10 +293,11 @@ class ContractHandler(models.Model):
         """Update contracts from ESI."""
         self._validate_update_readiness()
         token = self.token()
-        contracts = esi.client.Contracts.get_corporations_corporation_id_contracts(
-            token=token.valid_access_token(),
+        objs = esi.client.Contracts.GetCorporationsCorporationIdContracts(
+            token=token,
             corporation_id=self.character.character.corporation_id,
-        ).results()
+        ).results(use_etag=False)
+        contracts = [o.model_dump() for o in objs]
         if settings.DEBUG:
             self._save_contract_to_file(contracts)
 

@@ -5,14 +5,14 @@ from __future__ import annotations
 # pylint: disable = missing-class-docstring, import-outside-toplevel, redefined-builtin
 import json
 from datetime import datetime
+from http import HTTPStatus
 from time import sleep
 from typing import TYPE_CHECKING, Any, Tuple
-
-from bravado.exception import HTTPForbidden, HTTPNotFound, HTTPUnauthorized
 
 from django.contrib.auth.models import User
 from django.db import models, transaction
 from django.utils.timezone import now
+from esi.exceptions import HTTPClientError
 from esi.models import Token
 
 from allianceauth.eveonline.models import EveCharacter
@@ -89,41 +89,44 @@ class LocationManager(models.Manager):
 
         if self.STATION_ID_START <= location_id <= self.STATION_ID_END:
             logger.info("%s: Fetching station from ESI", location_id)
-            station = esi.client.Universe.get_universe_stations_station_id(
+            station = esi.client.Universe.GetUniverseStationsStationId(
                 station_id=location_id
-            ).results()
+            ).result(use_etag=False)
             return self.update_or_create(
                 id=location_id,
                 defaults={
-                    "name": station["name"],
-                    "solar_system_id": station["system_id"],
-                    "type_id": station["type_id"],
+                    "name": station.name,
+                    "solar_system_id": station.system_id,
+                    "type_id": station.type_id,
                     "category_id": Location.Category.STATION,
                 },
             )
 
         try:
-            structure = esi.client.Universe.get_universe_structures_structure_id(
-                token=token.valid_access_token(), structure_id=location_id
-            ).results()
-        except (HTTPUnauthorized, HTTPForbidden) as ex:
-            logger.warning("%s: No access to this structure: %s", location_id, ex)
-            if add_unknown:
-                return self.get_or_create(
-                    id=location_id,
-                    defaults={
-                        "name": f"Unknown structure {location_id}",
-                        "category_id": Location.Category.STRUCTURE,
-                    },
-                )
+            structure = esi.client.Universe.GetUniverseStructuresStructureId(
+                token=token,
+                structure_id=location_id,
+            ).result(use_etag=False)
+        except HTTPClientError as ex:
+            if ex.status_code in [HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN]:
+                logger.warning("%s: No access to this structure: %s", location_id, ex)
+                if add_unknown:
+                    return self.get_or_create(
+                        id=location_id,
+                        defaults={
+                            "name": f"Unknown structure {location_id}",
+                            "category_id": Location.Category.STRUCTURE,
+                        },
+                    )
+
             raise ex
 
         return self.update_or_create(
             id=location_id,
             defaults={
-                "name": structure["name"],
-                "solar_system_id": structure["solar_system_id"],
-                "type_id": structure["type_id"],
+                "name": structure.name,
+                "solar_system_id": structure.solar_system_id,
+                "type_id": structure.type_id,
                 "category_id": Location.Category.STRUCTURE,
             },
         )
@@ -143,19 +146,24 @@ class EveEntityManager(models.Manager):
     def update_or_create_esi(self, *, id: int) -> Tuple[Any, bool]:
         """updates or creates entity object with data fetched from ESI"""
         try:
-            response = esi.client.Universe.post_universe_names(ids=[id]).results()
-        except HTTPNotFound as ex:
-            raise ObjectNotFound(id, "unknown_type") from ex
+            objs = esi.client.Universe.PostUniverseNames(body=[id]).result(
+                use_etag=False
+            )
+        except HTTPClientError as ex:
+            if ex.status_code == HTTPStatus.NOT_FOUND:
+                raise ObjectNotFound(id, "unknown_type") from ex
 
-        if len(response) != 1:
+            raise ex
+
+        if len(objs) != 1:
             raise ObjectNotFound(id, "unknown_type")
 
-        entity_data = response[0]
+        obj = objs[0]
         return self.update_or_create(
-            id=entity_data["id"],
+            id=obj.id,
             defaults={
-                "name": entity_data["name"],
-                "category": entity_data["category"],
+                "name": obj.name,
+                "category": obj.category,
             },
         )
 

@@ -14,6 +14,7 @@ from django.utils.text import format_lazy
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as __
 from esi.decorators import token_required
+from esi.exceptions import HTTPError
 from esi.models import Token
 
 from allianceauth.authentication.models import CharacterOwnership
@@ -375,7 +376,7 @@ def add_location_2(request):
                 location, created = Location.objects.update_or_create_esi(
                     token=token, location_id=location_id, add_unknown=False
                 )
-            except OSError as ex:
+            except HTTPError as ex:
                 messages.error(
                     request,
                     __(

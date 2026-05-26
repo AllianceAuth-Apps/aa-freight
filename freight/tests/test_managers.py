@@ -3,9 +3,9 @@ from http import HTTPStatus
 from unittest.mock import Mock
 
 import pook
-from bravado.exception import HTTPError, HTTPForbidden
 
 from django.utils.timezone import now
+from esi.exceptions import HTTPError
 
 from allianceauth.eveonline.providers import ObjectNotFound
 from app_utils.testdata_factories import EveCharacterFactory, EveCorporationInfoFactory
@@ -261,33 +261,38 @@ class TestLocationManager_Structure_UpdateOrCreate(TestCaseWithClearCache):
         # given
         token = TokenFactory2(scopes=["esi-universe.read_structures.v1"])
         location_id = 1_000_000_000_001
+        status_code = HTTPStatus.FORBIDDEN
         pook.get(
             make_esi_url(f"universe/structures/{location_id}"),
-            reply=HTTPStatus.FORBIDDEN,
+            reply=status_code,
             response_json={"error": "some error"},
         )
 
         # when/then
-        with self.assertRaises(HTTPForbidden):
+        with self.assertRaises(HTTPError) as ex:
             Location.objects.update_or_create_esi(
                 token=token, location_id=location_id, add_unknown=False
             )
+            self.assertEqual(ex.status_code, status_code)
 
     @pook.on
     def test_should_raise_error_on_other_http_errors_for_structures(self):
         # given
         token = TokenFactory2(scopes=["esi-universe.read_structures.v1"])
         location_id = 1_000_000_000_001
+        status_code = HTTPStatus.INTERNAL_SERVER_ERROR
         pook.get(
             make_esi_url(f"universe/structures/{location_id}"),
-            reply=HTTPStatus.INTERNAL_SERVER_ERROR,
+            reply=status_code,
+            response_json={"error": "some error"},
         )
 
         # when/then
-        with self.assertRaises(HTTPError):
+        with self.assertRaises(HTTPError) as ex:
             Location.objects.update_or_create_esi(
                 token=token, location_id=location_id, add_unknown=False
             )
+            self.assertEqual(ex.status_code, status_code)
 
 
 class TestLocationManager_Station_UpdateOrCreate(TestCaseWithClearCache):
@@ -407,16 +412,19 @@ class TestLocationManager_Station_UpdateOrCreate(TestCaseWithClearCache):
     def test_should_raise_http_errors(self):
         # given
         location_id = 60_000_001
+        status_code = HTTPStatus.BAD_REQUEST
         pook.get(
             make_esi_url(f"universe/stations/{location_id}"),
-            reply=HTTPStatus.INTERNAL_SERVER_ERROR,
+            reply=status_code,
+            response_json={"error": "some error"},
         )
 
         # when/then
-        with self.assertRaises(HTTPError):
+        with self.assertRaises(HTTPError) as ex:
             Location.objects.update_or_create_esi(
                 token=None, location_id=location_id, add_unknown=False
             )
+            self.assertEqual(ex.status_code, status_code)
 
 
 class TestContractQuerySet(NoSocketsTestCase):

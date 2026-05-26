@@ -24,10 +24,12 @@ classifiers = [
     "Topic :: Internet :: WWW/HTTP :: Dynamic Content",
 ]
 dependencies = [
+    "django-esi>=8,<10",
     "allianceauth-app-utils>=1.32",
     "allianceauth>=4,<5",
     "dhooks-lite>=1.1.0",
     "django-navhelper",
+    "typing_extensions",
 ]
 [project.optional-dependencies]
 test = ["coverage", "factory_boy", "pook", "django-webtest"]
