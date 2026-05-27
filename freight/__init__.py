@@ -3,5 +3,5 @@
 # pylint: disable = invalid-name
 default_app_config = "freight.apps.FreightConfig"
 
-__version__ = "3.0.0a1"
+__version__ = "3.0.0b1"
 __title__ = "Freight"

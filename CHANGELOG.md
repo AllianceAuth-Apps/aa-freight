@@ -7,16 +7,33 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
-## [3.0.0a1] - tbd
+## [3.0.0b1] - 2026-05-27
+
+This release adds support for Alliance Auth V5 and contains breaking changes.
+
+### Update notes
+
+Please update your configuraiton for the periodic tasks in your local settings file to avoid load peaks on FC servers.
+
+The new configuration is:
+
+```py
+CELERYBEAT_SCHEDULE['freight_run_contracts_sync'] = {
+       'task': 'freight.tasks.run_contracts_sync',
+       'schedule': 600,
+   }
+```
 
 ### Changed
 
-- BREAKING CHANGE: Now requires Python 3.10
-- Added support for AA5
+- BREAKING CHANGE: Removed support for Python 3.8
+- BREAKING CHANGE: Removed support for Python 3.9
+- Added support for Alliance Auth 5
 - Migrated ESI client to OpenAPI
+- Removed logger tag
 - Modernized test suite
 - Deprecated old test factories
-- Removed logger tag
+- Refactoring
 
 ### Fixed
 
