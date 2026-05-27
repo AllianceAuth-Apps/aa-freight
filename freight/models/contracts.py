@@ -20,10 +20,8 @@ from allianceauth.services.hooks import get_extension_logger
 from app_utils.datetime import DATETIME_FORMAT
 from app_utils.django import app_labels
 from app_utils.helpers import humanize_number
-from app_utils.logging import LoggerAddTag
 from app_utils.urls import site_absolute_url
 
-from freight import __title__
 from freight.app_settings import (
     DISCORDPROXY_HOST,
     DISCORDPROXY_PORT,
@@ -54,7 +52,7 @@ try:
 except ImportError:
     DiscordClient = None
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 class Contract(models.Model):
@@ -256,14 +254,6 @@ class Contract(models.Model):
     def has_pricing_errors(self) -> bool:
         """Return True if this contract has pricing errors, else False."""
         return bool(self.issues)
-
-    # @property
-    # def hours_issued_2_completed(self) -> float:
-    #     if self.date_completed:
-    #         delta = self.date_completed - self.date_issued
-    #         return delta.days * 24 + (delta.seconds / 3600)
-
-    #     return None
 
     @property
     def date_latest(self) -> bool:
@@ -533,36 +523,45 @@ class Contract(models.Model):
             acceptor_text = f"by {self.acceptor_name} "
         else:
             acceptor_text = ""
-        if status_to_report == self.Status.OUTSTANDING:
-            contents += "We have received your contract"
-            if self.has_pricing_errors:
-                issues = self.get_issue_list()
+
+        match status_to_report:
+            case self.Status.OUTSTANDING:
+                contents += "We have received your contract"
+                if self.has_pricing_errors:
+                    issues = self.get_issue_list()
+                    contents += (
+                        ", but we found some issues.\n"
+                        "Please create a new courier contract "
+                        "and correct the following issues:\n"
+                    )
+                    for issue in issues:
+                        contents += f"• {issue}\n"
+                else:
+                    contents += (
+                        " and it will be picked up by one of our pilots shortly."
+                    )
+
+            case self.Status.IN_PROGRESS:
                 contents += (
-                    ", but we found some issues.\n"
-                    "Please create a new courier contract "
-                    "and correct the following issues:\n"
+                    f"Your contract has been picked up {acceptor_text}"
+                    "and will be delivered to you shortly."
                 )
-                for issue in issues:
-                    contents += f"• {issue}\n"
-            else:
-                contents += " and it will be picked up by one of our pilots shortly."
-        elif status_to_report == self.Status.IN_PROGRESS:
-            contents += (
-                f"Your contract has been picked up {acceptor_text}"
-                "and will be delivered to you shortly."
-            )
-        elif status_to_report == self.Status.FINISHED:
-            contents += (
-                "Your contract has been **delivered**.\n"
-                "Thank you for using our freight service."
-            )
-        elif status_to_report == self.Status.FAILED:
-            contents += (
-                f"Your contract has been **failed** {acceptor_text}"
-                "Thank you for using our freight service."
-            )
-        else:
-            raise NotImplementedError()
+
+            case self.Status.FINISHED:
+                contents += (
+                    "Your contract has been **delivered**.\n"
+                    "Thank you for using our freight service."
+                )
+
+            case self.Status.FAILED:
+                contents += (
+                    f"Your contract has been **failed** {acceptor_text}"
+                    "Thank you for using our freight service."
+                )
+
+            case _:
+                raise NotImplementedError()
+
         return contents
 
 

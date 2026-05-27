@@ -5,18 +5,18 @@ from typing import List, Optional
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 from django.utils.translation import gettext_lazy as _
 
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.logging import LoggerAddTag
 
-from freight import __title__
 from freight.app_settings import FREIGHT_FULL_ROUTE_NAMES
 from freight.managers import LocationManager, PricingManager
 
 from .contract_handlers import ContractHandler
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 class Location(models.Model):
@@ -25,9 +25,9 @@ class Location(models.Model):
     class Category(models.IntegerChoices):
         """A location category."""
 
-        STATION_ID = 3, "station"
-        STRUCTURE_ID = 65, "structure"
-        UNKNOWN_ID = 0, "(unknown)"
+        STATION = 3, "station"
+        STRUCTURE = 65, "structure"
+        UNKNOWN = 0, "(unknown)"
 
     id = models.BigIntegerField(
         primary_key=True,
@@ -39,7 +39,7 @@ class Location(models.Model):
 
     category_id = models.PositiveIntegerField(
         choices=Category.choices,
-        default=Category.UNKNOWN_ID,
+        default=Category.UNKNOWN,
         help_text="Eve Online category ID",
     )
     name = models.CharField(
@@ -226,17 +226,6 @@ class Pricing(models.Model):
         unique_together = (("start_location", "end_location"),)
         verbose_name = _("pricing")
         verbose_name_plural = _("pricings")
-
-    def save(self, *args, **kwargs) -> None:
-        update_contracts = kwargs.pop("update_contracts", True)
-        super().save(*args, **kwargs)
-        if update_contracts:
-            self._update_contracts()
-
-    def _update_contracts(self):
-        from freight.tasks import update_contracts_pricing
-
-        update_contracts_pricing.delay()
 
     def __str__(self) -> str:
         return self.name
@@ -454,3 +443,13 @@ class Pricing(models.Model):
         if len(issues) == 0:
             return None
         return issues
+
+
+@receiver(post_save, sender=Pricing)
+def update_contracts_pricing(
+    sender, instance, **kwargs  # pylint: disable=unused-argument
+):
+    """Update pricing for all contracts."""
+    from freight import tasks
+
+    tasks.update_contracts_pricing.delay()

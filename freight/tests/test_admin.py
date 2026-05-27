@@ -2,20 +2,17 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 from django.contrib.admin.sites import AdminSite
-from django.contrib.auth.models import User
 from django.test import TestCase
 
-from app_utils.testing import create_user_from_evecharacter
+from app_utils.testdata_factories import UserFactory
 
 from freight.admin import ContractAdmin
 from freight.models import Contract
-
-from ..tests.testdata.factories import (
-    create_contract,
-    create_contract_handler,
-    create_pricing,
+from freight.tests.testdata.factories_2 import (
+    ContractFactory,
+    ContractHandlerFactory,
+    PricingFactory,
 )
-from .testdata.helpers import create_entities_from_characters, create_locations
 
 MODULE_PATH = "freight.admin"
 
@@ -29,13 +26,9 @@ class TestContractAdmin(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        create_locations()
-        create_entities_from_characters()
         cls.modeladmin = ContractAdmin(model=Contract, admin_site=AdminSite())
-        cls.user = User.objects.create_superuser("Clark Kent")
-        _, character_ownership = create_user_from_evecharacter(90000001)
-        cls.handler = create_contract_handler(character=character_ownership)
-        cls.contract = create_contract(handler=cls.handler)
+        cls.user = UserFactory(is_superuser=True, is_staff=True)
+        cls.handler = ContractHandlerFactory()
 
     @patch(MODULE_PATH + ".ContractAdmin.message_user", spec=True)
     @patch(MODULE_PATH + ".Contract.send_pilot_notification")
@@ -43,7 +36,8 @@ class TestContractAdmin(TestCase):
         self, mock_send_pilot_notification, mock_message_user
     ):
         # given
-        obj_qs = Contract.objects.filter(pk=self.contract.pk)
+        ContractFactory(handler=self.handler)
+        obj_qs = Contract.objects.all()
         # when
         self.modeladmin.send_pilots_notification(MockRequest(self.user), obj_qs)
         # then
@@ -56,7 +50,8 @@ class TestContractAdmin(TestCase):
         self, mock_send_customer_notification, mock_message_user
     ):
         # given
-        obj_qs = Contract.objects.filter(pk=self.contract.pk)
+        ContractFactory(handler=self.handler)
+        obj_qs = Contract.objects.all()
         # when
         self.modeladmin.send_customer_notification(MockRequest(self.user), obj_qs)
         # then
@@ -65,6 +60,7 @@ class TestContractAdmin(TestCase):
 
     def test_should_open_list(self):
         # given
+        ContractFactory(handler=self.handler)
         self.client.force_login(self.user)
         # when
         response = self.client.get("/admin/freight/contract/")
@@ -76,16 +72,12 @@ class TestPricingAdmin(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = User.objects.create_superuser("Clark Kent")
-        create_locations()
-        create_pricing(
-            start_location_id=60003760,
-            end_location_id=1022167642188,
-            price_base=100000000,
-        )
+        cls.user = UserFactory(is_superuser=True, is_staff=True)
+        PricingFactory()
 
     def test_should_open_list(self):
         # given
+        PricingFactory()
         self.client.force_login(self.user)
         # when
         response = self.client.get("/admin/freight/pricing/")
