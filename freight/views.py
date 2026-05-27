@@ -28,8 +28,8 @@ from .app_settings import (
     FREIGHT_STATISTICS_MAX_DAYS,
 )
 from .forms import CalculatorForm
-from .helpers import update_or_create_eve_entity_from_evecharacter
-from .models import Contract, ContractHandler, EveEntity, Freight, Location, Pricing
+from .helpers import update_or_create_eveentity_from_character
+from .models import Contract, ContractHandler, EveEntity, Location, Pricing
 
 logger = get_extension_logger(__name__)
 
@@ -41,7 +41,8 @@ def add_common_context(request, context: dict) -> dict:
     pending_user_count = (
         Contract.objects.all().issued_by_user(request.user).pending_count()
     )
-    my_mode = Freight.operation_mode_friendly(FREIGHT_OPERATION_MODE)
+    operation_mode = ContractHandler.Mode(FREIGHT_OPERATION_MODE)
+    my_mode = operation_mode.name_display()
     setup_str = __("Setup")
     button_label = format_lazy(
         "{setup} {operation_mode}", setup=setup_str, operation_mode=my_mode
@@ -291,8 +292,9 @@ def setup_contract_handler(request, token: Token):
         )
         return redirect("freight:index")
 
+    operation_mode = ContractHandler.Mode(FREIGHT_OPERATION_MODE)
     handler = ContractHandler.objects.first()
-    if handler and handler.operation_mode != FREIGHT_OPERATION_MODE:
+    if handler and handler.operation_mode != operation_mode:
         messages.error(
             request,
             __(
@@ -304,7 +306,7 @@ def setup_contract_handler(request, token: Token):
         )
         return redirect("freight:index")
 
-    category = Freight.category_for_operation_mode(FREIGHT_OPERATION_MODE)
+    category = operation_mode.category()
     if category == EveEntity.CATEGORY_ALLIANCE and not token_char.alliance_id:
         messages.error(
             request,
@@ -316,15 +318,13 @@ def setup_contract_handler(request, token: Token):
         )
         return redirect("freight:index")
 
-    organization, _ = update_or_create_eve_entity_from_evecharacter(
-        token_char, category
-    )
+    organization, _ = update_or_create_eveentity_from_character(token_char, category)
 
     handler, _ = ContractHandler.objects.update_or_create(
         organization=organization,
         defaults={
             "character": owned_char,
-            "operation_mode": FREIGHT_OPERATION_MODE,
+            "operation_mode": operation_mode,
         },
     )
     tasks.run_contracts_sync.delay(force_sync=True)
@@ -340,7 +340,7 @@ def setup_contract_handler(request, token: Token):
         % {
             "organization": organization.name,
             "character": handler.character.character.character_name,
-            "operation_mode": handler.operation_mode_friendly,
+            "operation_mode": handler.operation_mode_display,
         },
     )
     return redirect("freight:index")

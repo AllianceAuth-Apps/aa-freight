@@ -24,7 +24,7 @@ from freight.app_settings import (
     FREIGHT_OPERATION_MODE_MY_CORPORATION,
     FREIGHT_OPERATION_MODES,
 )
-from freight.models import Contract, ContractHandler, EveEntity, Freight
+from freight.models import Contract, ContractHandler, EveEntity
 from freight.tests.helpers import extract
 from freight.tests.testdata.factories_2 import (
     ContractFactory,
@@ -109,6 +109,27 @@ class TestContractHandler(NoSocketsTestCase):
         self.assertFalse(handler.is_sync_ok)
 
 
+class TestContractHandler_OperationMode_Sync(NoSocketsTestCase):
+    """Ensure the values of the operatin modes stay in sync."""
+
+    def test_modes_should_have_same_values_as_settings(self):
+        cases = [
+            (
+                FREIGHT_OPERATION_MODE_CORP_IN_ALLIANCE,
+                ContractHandler.Mode.CORP_IN_ALLIANCE,
+            ),
+            (FREIGHT_OPERATION_MODE_CORP_PUBLIC, ContractHandler.Mode.CORP_PUBLIC),
+            (FREIGHT_OPERATION_MODE_MY_ALLIANCE, ContractHandler.Mode.MY_ALLIANCE),
+            (
+                FREIGHT_OPERATION_MODE_MY_CORPORATION,
+                ContractHandler.Mode.MY_CORPORATION,
+            ),
+        ]
+        for setting, mode in cases:
+            with self.subTest(setting=setting):
+                self.assertEqual(setting, mode)
+
+
 class TestContractHandler_OperationModeFriendly(NoSocketsTestCase):
     def test_should_return_friendly_text_for_known_modes(self):
         cases = [
@@ -118,15 +139,30 @@ class TestContractHandler_OperationModeFriendly(NoSocketsTestCase):
             (ContractHandler.Mode.CORP_PUBLIC, FREIGHT_OPERATION_MODES[3][1]),
         ]
         for mode, want in cases:
-            with patch(MODULE_PATH + ".FREIGHT_OPERATION_MODE", mode):
-                handler = ContractHandlerFactory(operation_mode=mode)
-                self.assertEqual(handler.operation_mode_friendly, want)
+            with self.subTest(mode=mode):
+                with patch(MODULE_PATH + ".FREIGHT_OPERATION_MODE", mode):
+                    handler = ContractHandlerFactory(operation_mode=mode)
+                    self.assertEqual(handler.operation_mode_display, want)
 
     def test_should_raise_exception_for_unknown_mode(self):
         handler = ContractHandlerFactory()
         handler.operation_mode = "invalid"
         with self.assertRaises(ValueError):
-            handler.operation_mode_friendly
+            handler.operation_mode_display
+
+
+class TestContractHandler_Mode_Category(NoSocketsTestCase):
+    def test_get_category_for_operation_mode_1(self):
+        cases = [
+            (ContractHandler.Mode.MY_ALLIANCE, EveEntity.CATEGORY_ALLIANCE),
+            (ContractHandler.Mode.MY_CORPORATION, EveEntity.CATEGORY_CORPORATION),
+            (ContractHandler.Mode.CORP_IN_ALLIANCE, EveEntity.CATEGORY_CORPORATION),
+            (ContractHandler.Mode.CORP_PUBLIC, EveEntity.CATEGORY_CORPORATION),
+        ]
+        for mode, want in cases:
+            with self.subTest(mode=mode):
+                got = mode.category()
+                self.assertEqual(got, want)
 
 
 class TestContractHandler_UpdateContractsEsi(TransactionTestCase):
@@ -627,25 +663,3 @@ class TestEveEntity_IdentifyCategory(NoSocketsTestCase):
         self.assertTrue(self.character.is_character)
         self.assertFalse(self.corporation.is_character)
         self.assertFalse(self.alliance.is_character)
-
-
-class TestFreight(NoSocketsTestCase):
-    def test_get_category_for_operation_mode_1(self):
-        self.assertEqual(
-            Freight.category_for_operation_mode(FREIGHT_OPERATION_MODE_MY_ALLIANCE),
-            EveEntity.CATEGORY_ALLIANCE,
-        )
-        self.assertEqual(
-            Freight.category_for_operation_mode(FREIGHT_OPERATION_MODE_MY_CORPORATION),
-            EveEntity.CATEGORY_CORPORATION,
-        )
-        self.assertEqual(
-            Freight.category_for_operation_mode(
-                FREIGHT_OPERATION_MODE_CORP_IN_ALLIANCE
-            ),
-            EveEntity.CATEGORY_CORPORATION,
-        )
-        self.assertEqual(
-            Freight.category_for_operation_mode(FREIGHT_OPERATION_MODE_CORP_PUBLIC),
-            EveEntity.CATEGORY_CORPORATION,
-        )
