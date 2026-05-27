@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING, Any, Tuple
 from django.contrib.auth.models import User
 from django.db import models, transaction
 from django.utils.timezone import now
-from esi.exceptions import HTTPClientError
+from esi.exceptions import HTTPClientError, HTTPServerError
 from esi.models import Token
 
 from allianceauth.eveonline.models import EveCharacter
@@ -359,8 +359,9 @@ class ContractManagerBase(models.Manager):
             return None, None
 
         try:
-            entity: EveEntity = EveEntity.objects.get_or_create_esi(id=acceptor_id)[0]
-        except OSError:
+            entity: EveEntity
+            entity, _ = EveEntity.objects.get_or_create_esi(id=acceptor_id)
+        except HTTPServerError:
             logger.exception(
                 "%s: Failed to identify acceptor for this contract",
                 contract["contract_id"],
