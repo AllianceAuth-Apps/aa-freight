@@ -12,6 +12,7 @@ from django.db import models, transaction
 from django.utils.timezone import now
 from django.utils.translation import gettext_lazy as _
 from esi.errors import TokenError
+from esi.exceptions import HTTPError
 from esi.models import Token
 
 from allianceauth.authentication.models import CharacterOwnership
@@ -21,16 +22,10 @@ from allianceauth.eveonline.models import (
     EveCorporationInfo,
 )
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.logging import LoggerAddTag
 
-from freight import __title__
 from freight.app_settings import (
     FREIGHT_CONTRACT_SYNC_GRACE_MINUTES,
     FREIGHT_OPERATION_MODE,
-    FREIGHT_OPERATION_MODE_CORP_IN_ALLIANCE,
-    FREIGHT_OPERATION_MODE_CORP_PUBLIC,
-    FREIGHT_OPERATION_MODE_MY_ALLIANCE,
-    FREIGHT_OPERATION_MODE_MY_CORPORATION,
     FREIGHT_OPERATION_MODES,
 )
 from freight.constants import AVATAR_SIZE
@@ -38,7 +33,7 @@ from freight.helpers import get_or_create_eve_character
 from freight.managers import EveEntityManager
 from freight.providers import esi
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+logger = get_extension_logger(__name__)
 
 
 class Freight(models.Model):
@@ -55,21 +50,6 @@ class Freight(models.Model):
             ("view_contracts", "Can view the contracts list"),
             ("view_statistics", "Can view freight statistics"),
         )
-
-    @classmethod
-    def operation_mode_friendly(cls, operation_mode) -> str:
-        """returns user friendly description of operation mode"""
-        msg = [(x, y) for x, y in FREIGHT_OPERATION_MODES if x == operation_mode]
-        if len(msg) != 1:
-            raise ValueError("Undefined mode")
-        return msg[0][1]
-
-    @staticmethod
-    def category_for_operation_mode(mode: str) -> str:
-        """Eve Entity category for given operation mode."""
-        if mode == FREIGHT_OPERATION_MODE_MY_ALLIANCE:
-            return EveEntity.CATEGORY_ALLIANCE
-        return EveEntity.CATEGORY_CORPORATION
 
 
 class EveEntity(models.Model):
@@ -162,6 +142,28 @@ class ContractHandler(models.Model):
         (ERROR_UNKNOWN, "Unknown error"),
     ]
 
+    class Mode(models.TextChoices):
+        """The operation mode of the contract handler."""
+
+        CORP_IN_ALLIANCE = "corp_in_alliance"
+        CORP_PUBLIC = "corp_public"
+        MY_ALLIANCE = "my_alliance"
+        MY_CORPORATION = "my_corporation"
+
+        def name_display(self) -> str:
+            """returns user friendly description of operation mode"""
+            msg = [(x, y) for x, y in FREIGHT_OPERATION_MODES if x == self]
+            if len(msg) != 1:
+                raise ValueError("Undefined mode")
+            return msg[0][1]
+
+        def category(self) -> str:
+            """Return Eve Entity category for operation mode."""
+            if self.value == self.MY_ALLIANCE:
+                return EveEntity.CATEGORY_ALLIANCE
+
+            return EveEntity.CATEGORY_CORPORATION
+
     organization = models.OneToOneField(
         EveEntity,
         on_delete=models.CASCADE,
@@ -179,7 +181,7 @@ class ContractHandler(models.Model):
     )
     operation_mode = models.CharField(
         max_length=32,
-        default=FREIGHT_OPERATION_MODE_MY_ALLIANCE,
+        default=Mode.MY_ALLIANCE,
         verbose_name=_("operation mode"),
         help_text=_("Defines what kind of contracts are synced"),
     )
@@ -227,9 +229,9 @@ class ContractHandler(models.Model):
         )
 
     @property
-    def operation_mode_friendly(self) -> str:
-        """returns user friendly description of operation mode"""
-        return Freight.operation_mode_friendly(self.operation_mode)
+    def operation_mode_display(self) -> str:
+        """Return user friendly description of operation mode."""
+        return self.Mode(self.operation_mode).name_display()
 
     # @property
     # def last_error_message_friendly(self) -> str:
@@ -255,16 +257,15 @@ class ContractHandler(models.Model):
     def get_availability_text_for_contracts(self) -> str:
         """returns a text detailing the availability choice for this setup"""
 
-        if self.operation_mode == FREIGHT_OPERATION_MODE_MY_ALLIANCE:
-            extra_text = "[My Alliance]"
+        text = f"Private ({self.organization.name})"
 
-        elif self.operation_mode == FREIGHT_OPERATION_MODE_MY_CORPORATION:
-            extra_text = "[My Corporation]"
+        if self.operation_mode == self.Mode.MY_ALLIANCE:
+            return text + " [My Alliance]"
 
-        else:
-            extra_text = ""
+        if self.operation_mode == self.Mode.MY_CORPORATION:
+            return text + " [My Corporation]"
 
-        return f"Private ({self.organization.name}) {extra_text}"
+        return text
 
     def token(self) -> Token:
         """Returns an valid esi token for the contract handler.
@@ -285,14 +286,15 @@ class ContractHandler(models.Model):
 
         return token
 
-    def update_contracts_esi(self, force_sync=False) -> bool:
+    def update_contracts_esi(self, force_sync=False):
         """Update contracts from ESI."""
         self._validate_update_readiness()
         token = self.token()
-        contracts = esi.client.Contracts.get_corporations_corporation_id_contracts(
-            token=token.valid_access_token(),
+        objs = esi.client.Contracts.GetCorporationsCorporationIdContracts(
+            token=token,
             corporation_id=self.character.character.corporation_id,
-        ).results()
+        ).results(use_etag=False)
+        contracts = [o.model_dump() for o in objs]
         if settings.DEBUG:
             self._save_contract_to_file(contracts)
 
@@ -337,24 +339,26 @@ class ContractHandler(models.Model):
             issuer_corporation_id = int(issuer.corporation_id)
             issuer_alliance_id = int(issuer.alliance_id) if issuer.alliance_id else None
 
-            if self.operation_mode == FREIGHT_OPERATION_MODE_MY_ALLIANCE:
-                in_scope = issuer_alliance_id == assignee_id
+            match self.operation_mode:
+                case self.Mode.MY_ALLIANCE:
+                    in_scope = issuer_alliance_id == assignee_id
 
-            elif self.operation_mode == FREIGHT_OPERATION_MODE_MY_CORPORATION:
-                in_scope = assignee_id == issuer_corporation_id
+                case self.Mode.MY_CORPORATION:
+                    in_scope = assignee_id == issuer_corporation_id
 
-            elif self.operation_mode == FREIGHT_OPERATION_MODE_CORP_IN_ALLIANCE:
-                in_scope = issuer_alliance_id == int(
-                    self.character.character.alliance_id
-                )
+                case self.Mode.CORP_IN_ALLIANCE:
+                    in_scope = issuer_alliance_id == int(
+                        self.character.character.alliance_id
+                    )
 
-            elif self.operation_mode == FREIGHT_OPERATION_MODE_CORP_PUBLIC:
-                in_scope = True
+                case self.Mode.CORP_PUBLIC:
+                    in_scope = True
 
-            else:
-                raise NotImplementedError(
-                    f"Unsupported operation mode: {self.operation_mode}"
-                )
+                case _:
+                    raise NotImplementedError(
+                        f"Unsupported operation mode: {self.operation_mode}"
+                    )
+
             if in_scope:
                 contracts.append(contract)
 
@@ -379,10 +383,9 @@ class ContractHandler(models.Model):
                     self.contracts.update_or_create_from_dict(
                         handler=self, contract=contract, token=token
                     )
-                except OSError:
+                except HTTPError:
                     logger.exception(
-                        "%s: An unexpected error ocurred while trying to load contract "
-                        "%s",
+                        "%s: A HTTP error ocurred while trying to store contract: %s",
                         self,
                         (
                             contract["contract_id"]

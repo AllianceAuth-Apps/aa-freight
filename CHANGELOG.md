@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [3.0.0a1] - tbd
+
+### Changed
+
+- BREAKING CHANGE: Now requires Python 3.10
+- Added support for AA5
+- Migrated ESI client to OpenAPI
+- Modernized test suite
+- Deprecated old test factories
+- Removed logger tag
+
+### Fixed
+
+- Trying to resolve a invalid eve entity ID raises exception instead of creating an empty object
+
 ## [2.0.0] - 2025-08-29
 
 ### Update notes

@@ -1,25 +1,25 @@
 """Managers for Freight."""
 
-# pylint: disable = missing-class-docstring, import-outside-toplevel, redefined-builtin
+from __future__ import annotations
 
+# pylint: disable = missing-class-docstring, import-outside-toplevel, redefined-builtin
 import json
 from datetime import datetime
+from http import HTTPStatus
 from time import sleep
-from typing import Any, Tuple
-
-from bravado.exception import HTTPForbidden, HTTPUnauthorized
+from typing import TYPE_CHECKING, Any, Tuple
 
 from django.contrib.auth.models import User
 from django.db import models, transaction
 from django.utils.timezone import now
+from esi.exceptions import HTTPClientError, HTTPServerError
 from esi.models import Token
 
 from allianceauth.eveonline.models import EveCharacter
 from allianceauth.eveonline.providers import ObjectNotFound
 from allianceauth.services.hooks import get_extension_logger
-from app_utils.logging import LoggerAddTag
 
-from . import __title__, constants
+from . import constants
 from .app_settings import (
     FREIGHT_DISCORD_CUSTOMERS_WEBHOOK_URL,
     FREIGHT_DISCORD_WEBHOOK_URL,
@@ -29,7 +29,10 @@ from .app_settings import (
 from .helpers import get_or_create_eve_character, get_or_create_eve_corporation_info
 from .providers import esi
 
-logger = LoggerAddTag(get_extension_logger(__name__), __title__)
+if TYPE_CHECKING:
+    from freight.models import Contract
+
+logger = get_extension_logger(__name__)
 
 
 class PricingManager(models.Manager):
@@ -49,12 +52,13 @@ class PricingManager(models.Manager):
 
     def get_or_default(self, pk: int = None):
         """Return the pricing for given pk if found else default pricing."""
-        if pk:
-            try:
-                return self.filter(is_active=True).get(pk=pk)
-            except self.model.DoesNotExist:
-                return self.get_default()
-        return self.get_default()
+        if not pk:
+            return self.get_default()
+
+        try:
+            return self.filter(is_active=True).get(pk=pk)
+        except self.model.DoesNotExist:
+            return self.get_default()
 
 
 class LocationManager(models.Manager):
@@ -84,42 +88,45 @@ class LocationManager(models.Manager):
 
         if self.STATION_ID_START <= location_id <= self.STATION_ID_END:
             logger.info("%s: Fetching station from ESI", location_id)
-            station = esi.client.Universe.get_universe_stations_station_id(
+            station = esi.client.Universe.GetUniverseStationsStationId(
                 station_id=location_id
-            ).results()
+            ).result(use_etag=False)
             return self.update_or_create(
                 id=location_id,
                 defaults={
-                    "name": station["name"],
-                    "solar_system_id": station["system_id"],
-                    "type_id": station["type_id"],
-                    "category_id": Location.Category.STATION_ID,
+                    "name": station.name,
+                    "solar_system_id": station.system_id,
+                    "type_id": station.type_id,
+                    "category_id": Location.Category.STATION,
                 },
             )
 
         try:
-            structure = esi.client.Universe.get_universe_structures_structure_id(
-                token=token.valid_access_token(), structure_id=location_id
-            ).results()
-        except (HTTPUnauthorized, HTTPForbidden) as ex:
-            logger.warning("%s: No access to this structure: %s", location_id, ex)
-            if add_unknown:
-                return self.get_or_create(
-                    id=location_id,
-                    defaults={
-                        "name": f"Unknown structure {location_id}",
-                        "category_id": Location.Category.STRUCTURE_ID,
-                    },
-                )
+            structure = esi.client.Universe.GetUniverseStructuresStructureId(
+                token=token,
+                structure_id=location_id,
+            ).result(use_etag=False)
+        except HTTPClientError as ex:
+            if ex.status_code in [HTTPStatus.UNAUTHORIZED, HTTPStatus.FORBIDDEN]:
+                logger.warning("%s: No access to this structure: %s", location_id, ex)
+                if add_unknown:
+                    return self.get_or_create(
+                        id=location_id,
+                        defaults={
+                            "name": f"Unknown structure {location_id}",
+                            "category_id": Location.Category.STRUCTURE,
+                        },
+                    )
+
             raise ex
 
         return self.update_or_create(
             id=location_id,
             defaults={
-                "name": structure["name"],
-                "solar_system_id": structure["solar_system_id"],
-                "type_id": structure["type_id"],
-                "category_id": Location.Category.STRUCTURE_ID,
+                "name": structure.name,
+                "solar_system_id": structure.solar_system_id,
+                "type_id": structure.type_id,
+                "category_id": Location.Category.STRUCTURE,
             },
         )
 
@@ -137,15 +144,25 @@ class EveEntityManager(models.Manager):
 
     def update_or_create_esi(self, *, id: int) -> Tuple[Any, bool]:
         """updates or creates entity object with data fetched from ESI"""
-        response = esi.client.Universe.post_universe_names(ids=[id]).results()
-        if len(response) != 1:
+        try:
+            objs = esi.client.Universe.PostUniverseNames(body=[id]).result(
+                use_etag=False
+            )
+        except HTTPClientError as ex:
+            if ex.status_code == HTTPStatus.NOT_FOUND:
+                raise ObjectNotFound(id, "unknown_type") from ex
+
+            raise ex
+
+        if len(objs) != 1:
             raise ObjectNotFound(id, "unknown_type")
-        entity_data = response[0]
+
+        obj = objs[0]
         return self.update_or_create(
-            id=entity_data["id"],
+            id=obj.id,
             defaults={
-                "name": entity_data["name"],
-                "category": entity_data["category"],
+                "name": obj.name,
+                "category": obj.category,
             },
         )
 
@@ -170,7 +187,9 @@ class ContractQuerySet(models.QuerySet):
         )
 
     def update_pricing(self) -> int:
-        """Updates contracts with matching pricing"""
+        """Update contracts with matching pricing
+        and return number of processed contracts.
+        """
         from .models import Pricing
 
         def _make_key(location_id_1: int, location_id_2: int) -> str:
@@ -221,6 +240,7 @@ class ContractQuerySet(models.QuerySet):
             "Checking %d contracts if customer notifications need to be sent",
             self.count(),
         )
+        contract: Contract
         for contract in self:
             if contract.has_expired:
                 logger.debug("contract %d has expired", contract.contract_id)
@@ -261,6 +281,9 @@ class ContractQuerySet(models.QuerySet):
             )
 
         raise ValueError(f"Invalid category: {category}")
+
+
+# TODO: Add handling for optional values, e.g. collateral
 
 
 class ContractManagerBase(models.Manager):
@@ -336,8 +359,9 @@ class ContractManagerBase(models.Manager):
             return None, None
 
         try:
-            entity: EveEntity = EveEntity.objects.get_or_create_esi(id=acceptor_id)[0]
-        except OSError:
+            entity: EveEntity
+            entity, _ = EveEntity.objects.get_or_create_esi(id=acceptor_id)
+        except HTTPServerError:
             logger.exception(
                 "%s: Failed to identify acceptor for this contract",
                 contract["contract_id"],
@@ -384,6 +408,7 @@ class ContractManagerBase(models.Manager):
                 "and FREIGHT_NOTIFY_ALL_CONTRACTS option is set to False."
             )
             return
+
         self._sent_pilot_notifications(force_sent, rate_limited)
         self._sent_customer_notifications(force_sent, rate_limited)
 

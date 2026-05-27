@@ -1,17 +1,21 @@
 import datetime as dt
 
+from typing_extensions import deprecated
+
 from django.utils.timezone import now
 
 from allianceauth.eveonline.models import EveCharacter, EveCorporationInfo
 
-from ...models import Contract, ContractHandler, Pricing
+from freight.models import Contract, ContractHandler, Pricing
 
 
+@deprecated("Replaced by `ContractHandlerFactory`")
 def create_contract_handler(**kwargs):
     kwargs["organization_id"] = kwargs["character"].character.corporation_id
     return ContractHandler.objects.create(**kwargs)
 
 
+@deprecated("Replaced by `ContractFactory`")
 def create_contract(**kwargs):
     contract_id = int(dt.datetime.now().timestamp())
     params = {
@@ -40,6 +44,7 @@ def create_contract(**kwargs):
     return Contract.objects.create(**params)
 
 
+@deprecated("Replaced by `PricingFactory`")
 def create_pricing(update_contracts: bool = False, **kwargs) -> Pricing:
     obj = Pricing(**kwargs)
     obj.save(update_contracts=update_contracts)
