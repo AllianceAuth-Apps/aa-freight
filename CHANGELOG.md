@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [3.0.0b2] - 2026-05-28
+
+## Fixed
+
+- Breaks with Alliance Auth 5.1 due to unexpected API change: `cannot import name 'ObjectNotFound' from 'allianceauth.eveonline.providers'`
+
 ## [3.0.0b1] - 2026-05-27
 
 This release adds support for Alliance Auth V5 and contains breaking changes.
