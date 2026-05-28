@@ -16,7 +16,6 @@ from esi.exceptions import HTTPClientError, HTTPServerError
 from esi.models import Token
 
 from allianceauth.eveonline.models import EveCharacter
-from allianceauth.eveonline.providers import ObjectNotFound
 from allianceauth.services.hooks import get_extension_logger
 
 from . import constants
@@ -144,18 +143,10 @@ class EveEntityManager(models.Manager):
 
     def update_or_create_esi(self, *, id: int) -> Tuple[Any, bool]:
         """updates or creates entity object with data fetched from ESI"""
-        try:
-            objs = esi.client.Universe.PostUniverseNames(body=[id]).result(
-                use_etag=False
-            )
-        except HTTPClientError as ex:
-            if ex.status_code == HTTPStatus.NOT_FOUND:
-                raise ObjectNotFound(id, "unknown_type") from ex
-
-            raise ex
+        objs = esi.client.Universe.PostUniverseNames(body=[id]).result(use_etag=False)
 
         if len(objs) != 1:
-            raise ObjectNotFound(id, "unknown_type")
+            raise RuntimeError(id, f"can't resolve ID {id}")  # should not happen
 
         obj = objs[0]
         return self.update_or_create(
