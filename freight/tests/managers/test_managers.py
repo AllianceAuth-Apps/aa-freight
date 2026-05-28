@@ -7,7 +7,6 @@ import pook
 from django.utils.timezone import now
 from esi.exceptions import HTTPError
 
-from allianceauth.eveonline.providers import ObjectNotFound
 from app_utils.testdata_factories import EveCharacterFactory, EveCorporationInfoFactory
 from app_utils.testing import NoSocketsTestCase, generate_invalid_pk
 
@@ -105,7 +104,7 @@ class TestEveEntityManager(TestCaseWithClearCache):
         )
 
         # when/then
-        with self.assertRaises(ObjectNotFound):
+        with self.assertRaises(HTTPError):
             EveEntity.objects.get_or_create_esi(id=666)
 
 
