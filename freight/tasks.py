@@ -12,9 +12,9 @@ from .models import Contract, ContractHandler, Location
 logger = get_extension_logger(__name__)
 
 
-@shared_task(base=QueueOnce)
+@shared_task(base=QueueOnce, bind=True)
 @rate_limit_retry_task
-def update_contracts_esi(force_sync=False) -> None:
+def update_contracts_esi(_self, force_sync=False) -> None:
     """start syncing contracts"""
     _contract_handler().update_contracts_esi(force_sync)
 
@@ -42,9 +42,9 @@ def update_contracts_pricing() -> int:
     return update_count
 
 
-@shared_task(base=QueueOnce)
+@shared_task(base=QueueOnce, bind=True)
 @rate_limit_retry_task
-def update_location(location_id: int) -> None:
+def update_location(_self, location_id: int) -> None:
     """Updates the location from ESI"""
     Location.objects.get(id=location_id)
     token = _contract_handler().token()
