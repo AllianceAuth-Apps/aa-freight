@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [3.0.0] - 2026-06-02
+
+This release adds support for Alliance Auth V5 and contains breaking changes.
+
+### Update notes
+
+Please update your configuraiton for the periodic tasks in your local settings file to avoid load peaks on FC's servers.
+
+The new configuration is:
+
+```python
+CELERYBEAT_SCHEDULE['freight_run_contracts_sync'] = {
+       'task': 'freight.tasks.run_contracts_sync',
+       'schedule': 600,
+   }
+```
+
+### Changed
+
+- BREAKING CHANGE: Removed support for Python 3.8
+- BREAKING CHANGE: Removed support for Python 3.9
+- Added support for Alliance Auth 5
+- Migrated ESI client to OpenAPI
+- Removed logger tag
+- Modernized test suite
+- Deprecated old test factories
+- Refactoring
+
+### Fixed
+
+- Trying to resolve a invalid eve entity ID raises exception instead of creating an empty object
+- Breaks with Alliance Auth 5.1 due to unexpected API change: `cannot import name 'ObjectNotFound' from 'allianceauth.eveonline.providers'`
+- esi rate limit decorator not working as expected
+
 ## [3.0.0b2] - 2026-05-28
 
 ## Fixed
