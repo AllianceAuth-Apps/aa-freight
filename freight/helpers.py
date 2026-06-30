@@ -54,7 +54,7 @@ def get_or_create_eve_character(character_id: int) -> Tuple[EveCharacter, bool]:
     try:
         return EveCharacter.objects.get(character_id=character_id), False
     except EveCharacter.DoesNotExist:
-        return EveCharacter.objects.create_character(character_id=character_id), True
+        return EveCharacter.objects.create_character(character_id), True
 
 
 def get_or_create_eve_corporation_info(
@@ -64,7 +64,4 @@ def get_or_create_eve_corporation_info(
     try:
         return (EveCorporationInfo.objects.get(corporation_id=corporation_id), False)
     except EveCorporationInfo.DoesNotExist:
-        return (
-            EveCorporationInfo.objects.create_corporation(corp_id=corporation_id),
-            True,
-        )
+        return (EveCorporationInfo.objects.create_corporation(corporation_id), True)
