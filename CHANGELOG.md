@@ -7,13 +7,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased] - yyyy-mm-dd
 
+## [3.0.1] - 2026-06-30
+
+### Fixed
+
+- Task update_contracts_esi fails with: `EveCorporationInfo matching query does not exist`
+
 ## [3.0.0] - 2026-06-02
 
 This release adds support for Alliance Auth V5 and contains breaking changes.
 
 ### Update notes
 
-Please update your configuraiton for the periodic tasks in your local settings file to avoid load peaks on FC's servers.
+Please update your configuration for the periodic tasks in your local settings file to avoid load peaks on FC's servers.
 
 The new configuration is:
 
@@ -53,7 +59,7 @@ This release adds support for Alliance Auth V5 and contains breaking changes.
 
 ### Update notes
 
-Please update your configuraiton for the periodic tasks in your local settings file to avoid load peaks on FC servers.
+Please update your configuration for the periodic tasks in your local settings file to avoid load peaks on FC servers.
 
 The new configuration is:
 
