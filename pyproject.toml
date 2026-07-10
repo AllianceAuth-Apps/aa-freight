@@ -36,7 +36,7 @@ dependencies = [
 test = ["coverage", "factory_boy", "pook"]
 
 [project.urls]
-Homepage = "https://gitlab.com/ErikKalkoken/aa-freight"
+Homepage = "https://github.com/AllianceAuth-Apps/aa-freight"
 
 [tool.flit.module]
 name = "freight"

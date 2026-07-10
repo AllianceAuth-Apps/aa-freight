@@ -1,13 +1,13 @@
 # Freight for Alliance Auth
 
-Freight is an [Alliance Auth](https://gitlab.com/allianceauth/allianceauth) (AA) app for running a freight service.
+An Alliance Auth app for running a freight service.
 
 [![release](https://img.shields.io/pypi/v/aa-freight?label=release)](https://pypi.org/project/aa-freight/)
 [![python](https://img.shields.io/pypi/pyversions/aa-freight)](https://pypi.org/project/aa-freight/)
 [![django](https://img.shields.io/pypi/djversions/aa-freight?label=django)](https://pypi.org/project/aa-freight/)
-[![pipeline](https://gitlab.com/ErikKalkoken/aa-freight/badges/master/pipeline.svg)](https://gitlab.com/ErikKalkoken/aa-freight/-/pipelines)
-[![codecov](https://codecov.io/gl/ErikKalkoken/aa-freight/branch/master/graph/badge.svg?token=SDOK25QUHd)](https://codecov.io/gl/ErikKalkoken/aa-freight)
-[![license](https://img.shields.io/badge/license-MIT-green)](https://gitlab.com/ErikKalkoken/aa-freight/-/blob/master/LICENSE)
+[![CI/CD Pipeline](https://github.com/AllianceAuth-Apps/aa-freight/actions/workflows/ci-cd.yaml/badge.svg)](https://github.com/AllianceAuth-Apps/aa-freight/actions/workflows/ci-cd.yaml)
+[![codecov](https://codecov.io/github/AllianceAuth-Apps/aa-freight/graph/badge.svg?token=2SItpjDnGw)](https://codecov.io/github/AllianceAuth-Apps/aa-freight)
+[![license](https://img.shields.io/badge/license-MIT-green)](https://github.com/AllianceAuth-Apps/aa-freight#MIT-1-ov-file)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![chat](https://img.shields.io/discord/790364535294132234)](https://discord.gg/zmh52wnfvM)
@@ -26,7 +26,7 @@ Freight is an [Alliance Auth](https://gitlab.com/allianceauth/allianceauth) (AA)
 
 ## Overview
 
-This app helps running a central freight service for an alliance or corporation. It allows different modes of operation that support the most common approaches a central freight service is setup. (e.g. for alliance members only or run by a corporation outside the alliance)
+Freight is an [Alliance Auth](https://gitlab.com/allianceauth/allianceauth) (AA) app that helps running a central freight service for an alliance or corporation. It allows different modes of operation that support the most common approaches a central freight service is setup. (e.g. for alliance members only or run by a corporation outside the alliance)
 
 ## Key Features
 
@@ -200,12 +200,12 @@ This is an overview of all permissions used by this app:
 
 Name | Purpose | Code
 -- | -- | --
-Can add / update locations | User can add and update Eve Online contract locations, e.g. stations and upwell structures |  `add_location`
-Can access this app |Enabling the app for a user. This permission should be enabled for everyone who is allowed to use the app (e.g. Member state) |  `basic_access`
-Can setup contract handler | Add or updates the character for syncing contracts. This should be limited to users with admins / leadership privileges. Note that characters need to retain that permission for the update process to continue to function. |  `setup_contract_handler`
-Can use the calculator | Enables using the calculator page and the "My Contracts" page. This permission is usually enabled for every user with the member state. |  `use_calculator`
-Can view the contracts list | Enables viewing the page with all outstanding courier contracts  |  `view_contracts`
-Can see statistics | User with this permission can view the statistics page  |  `view_statistics`
+Can add / update locations | User can add and update Eve Online contract locations, e.g. stations and upwell structures | `add_location`
+Can access this app | Enabling the app for a user. This permission should be enabled for everyone who is allowed to use the app (e.g. Member state) | `basic_access`
+Can setup contract handler | Add or updates the character for syncing contracts. This should be limited to users with admins / leadership privileges. Note that characters need to retain that permission for the update process to continue to function. | `setup_contract_handler`
+Can use the calculator | Enables using the calculator page and the "My Contracts" page. This permission is usually enabled for every user with the member state. | `use_calculator`
+Can view the contracts list | Enables viewing the page with all outstanding courier contracts | `view_contracts`
+Can see statistics | User with this permission can view the statistics page | `view_statistics`
 
 ## User Guide
 
@@ -231,7 +231,7 @@ All pricing parameters can be found on the admin panel under Pricing, with the e
 Parameter | Description | Pricing Functionality
 -- | -- | --
 Start Location | Starting station or structure for courier route | -
-End Location | Destination station or structure for courier route  | -
+End Location | Destination station or structure for courier route | -
 Is Active | Non active pricings will not be used or shown | -
 Is Bidirectional | Wether this pricing shall apply to contracts for both directions of the route or only the specified direction | -
 Price base | Base price in ISK. If this is the only defined pricing component it will be shown as "Fix price" in the calculator. | Pricing component
@@ -278,10 +278,10 @@ The following operation modes are available:
 
 Name | Description
 -- | --
-`'my_alliance'`| courier contracts assigned to configured alliance by an alliance member
-`'my_corporation'`| courier contracts assigned to configured corporation by a corp member
-`'corp_in_alliance'`| courier contracts assigned to configured corporation by an alliance member
-`'corp_public'`| any courier contract assigned to the configured corporation
+`'my_alliance'` | courier contracts assigned to configured alliance by an alliance member
+`'my_corporation'` | courier contracts assigned to configured corporation by a corp member
+`'corp_in_alliance'` | courier contracts assigned to configured corporation by an alliance member
+`'corp_public'` | any courier contract assigned to the configured corporation
 
 You can switch to a different operation mode with the following process. Please note that this will delete your current contract statistics:
 

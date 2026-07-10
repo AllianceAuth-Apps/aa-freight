@@ -1,7 +1,7 @@
-"""Freight is an Alliance Auth app for running a freight service."""
+"""An Alliance Auth app for running a freight service."""
 
 # pylint: disable = invalid-name
 default_app_config = "freight.apps.FreightConfig"
 
-__version__ = "3.0.1"
+__version__ = "3.0.2"
 __title__ = "Freight"
