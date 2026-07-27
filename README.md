@@ -108,7 +108,7 @@ command=/home/allianceserver/venv/auth/bin/celery -A myauth worker -l info --max
 
 On Ubuntu you can run `systemctl status supervisor` to see where your supervisor config file is located.
 
-> ![NOTE]
+> [!NOTE]
 > You need to restart the supervisor service itself to activate those changes.
 
 e.g. on Ubuntu:
