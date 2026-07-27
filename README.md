@@ -108,7 +108,8 @@ command=/home/allianceserver/venv/auth/bin/celery -A myauth worker -l info --max
 
 On Ubuntu you can run `systemctl status supervisor` to see where your supervisor config file is located.
 
-Note that you need to restart the supervisor service itself to activate those changes.
+> [!NOTE]
+> You need to restart the supervisor service itself to activate those changes.
 
 e.g. on Ubuntu:
 
@@ -250,9 +251,12 @@ Details | Text with additional instructions for using this pricing | Info
 
 ### Adding locations
 
-If you are creating a pricing for a new route you may need to first add the locations (stations and/or structures).<br>The easiest way is to create a courier contract between those locations in game and then run contract sync. Those locations will then be added automatically.<br>Alternatively you can use the "Add Location" feature on the main page of the app. This will require you to provide the respective station or structure eve ID.
+If you are creating a pricing for a new route you may need to first add the locations (stations and/or structures). The easiest way is to create a courier contract between those locations in game and then run contract sync. Those locations will then be added automatically.
 
-> **Hint**:<br>You can get the structure ID of any Upwell structure you have docking rights to by creating a link in-game and then copying that link into a out-of-game text editor. For a detailed guide see [this article](https://wiki.eveuniversity.org/How_to_get_ID#In_game_links) on the Eve Uni wiki.
+Alternatively you can use the "Add Location" feature on the main page of the app. This will require you to provide the respective station or structure eve ID.
+
+> [!TIP]
+> You can get the structure ID of any Upwell structure you have docking rights to by creating a link in-game and then copying that link into a out-of-game text editor. For a detailed guide see [this article](https://wiki.eveuniversity.org/How_to_get_ID#In_game_links) on the Eve Uni wiki.
 
 ### Contract Check
 

@@ -1,10 +1,14 @@
+# This file expects an .env file to exist that defines MANAGE_PY_PATH
+# For example MANAGE_PY_PATH=/home/allianceserver/venv/myauth/manage.py
+
+-include .env
+export
+
 appname = aa-freight
 package = freight
-myauth_path =
 
 help:
 	@echo "Makefile for $(appname)"
-
 
 makemessages:
 	cd $(package) && \
@@ -43,7 +47,10 @@ compilemessages:
 		-l zh_Hans
 
 coverage:
-	coverage run --concurrency=multiprocessing ../myauth/manage.py test --keepdb --failfast --timing --parallel && coverage combine && coverage html && coverage report -m
+	coverage run $(MANAGE_PY_PATH) test $(package) --keepdb --failfast && coverage html && coverage report -m
+
+pylint:
+	pylint --load-plugins pylint_django $(package)
 
 graph_models:
-	python ../myauth/manage.py graph_models $(package) --arrow-shape normal -o $(appname)_models.png
+	python $(MANAGE_PY_PATH) graph_models $(package) --arrow-shape normal -o $(appname)_models.png
