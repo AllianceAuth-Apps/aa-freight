@@ -28,12 +28,12 @@ dependencies = [
     "allianceauth>=4,<6",
     "allianceauth-app-utils>=1.33.2",
     "dhooks-lite>=1.1.0",
-    "django-esi>=8,<10",
+    "django-esi>=8,<11",
     "django-navhelper",
     "typing_extensions",
 ]
 [project.optional-dependencies]
-test = ["coverage", "factory_boy", "pook"]
+test = ["coverage", "factory_boy", "pookx"]
 
 [project.urls]
 Homepage = "https://github.com/AllianceAuth-Apps/aa-freight"
